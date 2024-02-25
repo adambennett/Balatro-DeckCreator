@@ -30,7 +30,7 @@ end
 
 function GUI.registerGlobals()
     G.FUNCS.DeckEditModuleOpenGithub = function()
-        love.system.openURL("https://github.com/adambennett/Balatro-DeckEditModule")
+        love.system.openURL("https://github.com/adambennett/Balatro-DeckCreator")
     end
 
     G.FUNCS.DeckCreatorModuleChangeEditionCount = function(args)
