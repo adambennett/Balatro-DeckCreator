@@ -2,7 +2,7 @@
 --- MOD_NAME: Deck Creator
 --- MOD_ID: DeckCreatorModule
 --- MOD_AUTHOR: [Nyoxide]
---- MOD_DESCRIPTION: GUI mod for creating, saving, and loading your own customizable decks!
+--- MOD_DESCRIPTION: GUI mod for creating, saving, loading, and sharing your own customizable decks!
 
 ----------------------------------------------
 ------------MOD CODE -------------------------
