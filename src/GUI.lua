@@ -274,7 +274,7 @@ function GUI.createDecksMenu()
                                             )}),
                                             Helper.createOptionSelector({label = "Winning Ante", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 50), opt_callback = 'DeckCreatorModuleChangeWinAnte', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.win_ante
-                                            ), multiArrows = true}),
+                                            ), multiArrows = true, minorArrows = true }),
 
                                             -- Description Line 1
                                             --[[{
@@ -512,7 +512,7 @@ function GUI.createDecksMenu()
                                                       nodes = {
                                                           Helper.createOptionSelector({label = "Discount Percent", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeInterestCap', current_option = (
                                                                   Utils.customDeckList[#Utils.customDeckList].config.discount_percent
-                                                          ), multiArrows = true }),
+                                                          ), multiArrows = true, minorArrows = true }),
                                                       }
                                                   },
                                               }
@@ -599,7 +599,7 @@ function GUI.createDecksMenu()
                                             ), multiArrows = true }),
                                             Helper.createOptionSelector({label = "Hand Size", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 25), opt_callback = 'DeckCreatorModuleChangeHandSize', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.hand_size
-                                            )}),
+                                            ), multiArrows = true, minorArrows = true, doubleArrowsOnly = true }),
                                         }
                                     }
                                 end
@@ -622,19 +622,19 @@ function GUI.createDecksMenu()
                                         nodes = {
                                             Helper.createOptionSelector({label = "Joker Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeJokerRate', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.joker_rate
-                                            ), multiArrows = true }),
+                                            ), multiArrows = true, minorArrows = true }),
                                             Helper.createOptionSelector({label = "Tarot Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeTarotRate', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.tarot_rate
-                                            ), multiArrows = true }),
+                                            ), multiArrows = true, minorArrows = true }),
                                             Helper.createOptionSelector({label = "Planet Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangePlanetRate', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.planet_rate
-                                            ), multiArrows = true }),
+                                            ), multiArrows = true, minorArrows = true }),
                                             Helper.createOptionSelector({label = "Spectral Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeSpectralRate', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.spectral_rate
-                                            ), multiArrows = true }),
+                                            ), multiArrows = true, minorArrows = true }),
                                             Helper.createOptionSelector({label = "Playing Card Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangePlayingCardRate', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.playing_card_rate
-                                            ), multiArrows = true })
+                                            ), multiArrows = true, minorArrows = true })
                                         }
                                     }
                                 end

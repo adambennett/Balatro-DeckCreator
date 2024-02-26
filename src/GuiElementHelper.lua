@@ -23,11 +23,19 @@ function Helper.registerGlobals()
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
         elseif e.config.ref_value == 'll' then
             --cycle left x10
-            e.config.ref_table.current_option = e.config.ref_table.current_option - 10
+            local inc = 10
+            if e.config.minorArrows then
+                inc = 5
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
         elseif e.config.ref_value == 'lll' then
             --cycle left x100
-            e.config.ref_table.current_option = e.config.ref_table.current_option - 100
+            local inc = 100
+            if e.config.minorArrows then
+                inc = 10
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
         elseif e.config.ref_value == 'r' then
             --cycle right
@@ -35,11 +43,19 @@ function Helper.registerGlobals()
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
         elseif e.config.ref_value == 'rr' then
             --cycle right x10
-            e.config.ref_table.current_option = e.config.ref_table.current_option + 10
+            local inc = 10
+            if e.config.minorArrows then
+                inc = 5
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
         elseif e.config.ref_value == 'rrr' then
             --cycle right x100
-            e.config.ref_table.current_option = e.config.ref_table.current_option + 100
+            local inc = 100
+            if e.config.minorArrows then
+                inc = 10
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
         end
         local to_val = e.config.ref_table.options[e.config.ref_table.current_option]
@@ -110,10 +126,6 @@ function Helper.createOptionSelector(args)
 
     local disabled = #args.options < 2
 
-    -- Add new buttons for increments of 10 and 100
-    -- This requires creating new UI elements similar to existing arrows
-    -- and assigning them appropriate callback functions or identifiers.
-
     local t = {
         n = G.UIT.C,
         config = {
@@ -125,9 +137,11 @@ function Helper.createOptionSelector(args)
             focus_args = args.focus_args
         },
         nodes = {
-            args.multiArrows and {
+            not args.doubleArrowsOnly and args.multiArrows and {
                 n = G.UIT.C,
                 config = {
+                    minorArrows = args.minorArrows,
+                    doubleArrowsOnly = args.doubleArrowsOnly,
                     align = "cm",
                     r = 0.1,
                     minw = 0.6*args.scale,
@@ -146,6 +160,8 @@ function Helper.createOptionSelector(args)
             args.multiArrows and {
                 n = G.UIT.C,
                 config = {
+                    minorArrows = args.minorArrows,
+                    doubleArrowsOnly = args.doubleArrowsOnly,
                     align = "cm",
                     r = 0.1,
                     minw = 0.6*args.scale,
@@ -164,6 +180,8 @@ function Helper.createOptionSelector(args)
             {
                 n = G.UIT.C,
                 config = {
+                    minorArrows = args.minorArrows,
+                    doubleArrowsOnly = args.doubleArrowsOnly,
                     align = "cm",
                     r = 0.1,
                     minw = 0.6*args.scale,
@@ -209,6 +227,8 @@ function Helper.createOptionSelector(args)
             {
                 n = G.UIT.C,
                 config = {
+                    minorArrows = args.minorArrows,
+                    doubleArrowsOnly = args.doubleArrowsOnly,
                     align = "cm",
                     r = 0.1,
                     minw = 0.6*args.scale,
@@ -227,6 +247,8 @@ function Helper.createOptionSelector(args)
             args.multiArrows and {
                 n = G.UIT.C,
                 config = {
+                    minorArrows = args.minorArrows,
+                    doubleArrowsOnly = args.doubleArrowsOnly,
                     align = "cm",
                     r = 0.1,
                     minw = 0.6*args.scale,
@@ -242,9 +264,11 @@ function Helper.createOptionSelector(args)
                     { n=G.UIT.T, config={ref_table = args, ref_value = 'rr', scale = args.text_scale, colour = not disabled and G.C.UI.TEXT_LIGHT or G.C.UI.TEXT_INACTIVE} }
                 }
             } or nil,
-            args.multiArrows and {
+            not args.doubleArrowsOnly and args.multiArrows and {
                 n = G.UIT.C,
                 config = {
+                    minorArrows = args.minorArrows,
+                    doubleArrowsOnly = args.doubleArrowsOnly,
                     align = "cm",
                     r = 0.1,
                     minw = 0.6*args.scale,
