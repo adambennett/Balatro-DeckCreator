@@ -20,7 +20,7 @@ function Persistence.loadAllDecks()
     if allDecks then
         Utils.customDeckList = {}
         for _, deckConfig in ipairs(allDecks) do
-            local loadedDeck = Utils.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.cardConfig, deckConfig.spritePos, deckConfig.loc_txt)
+            local loadedDeck = Utils.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.config, deckConfig.spritePos, deckConfig.loc_txt)
             Utils.addDeckToList(loadedDeck)
         end
     else
