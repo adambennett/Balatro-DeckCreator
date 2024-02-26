@@ -1,15 +1,15 @@
-local DeckCreator = {}
-
 local Persistence = require "Persistence"
 local GUI = require "GUI"
 local Helper = require "GuiElementHelper"
 local Utils = require "Utils"
 
+local DeckCreator = {}
+
 function DeckCreator.LoadCustomDecks()
     GUI.registerGlobals()
     GUI.registerCreateDeckButton()
     Helper.registerGlobals()
-    Persistence.loadAllDecks()
+    Persistence.loadAllDeckLists()
 
     G.FUNCS.LogDebug = function(message)
         Utils.log(message)

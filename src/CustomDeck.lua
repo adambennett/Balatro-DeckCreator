@@ -1,5 +1,6 @@
-local CustomDeck = {name = "", slug = "", config = {}, spritePos = {}, loc_txt = {}, unlocked = true, discovered = true}
 local Utils = require "Utils"
+
+local CustomDeck = {name = "", slug = "", config = {}, spritePos = {}, loc_txt = {}, unlocked = true, discovered = true}
 
 function CustomDeck:blankDeck()
     o = {}

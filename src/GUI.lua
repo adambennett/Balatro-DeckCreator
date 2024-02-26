@@ -1,9 +1,9 @@
-local GUI = {}
-
 local Persistence = require "Persistence"
 local Utils = require "Utils"
 local CustomDeck = require "CustomDeck"
 local Helper = require "GuiElementHelper"
+
+local GUI = {}
 
 function GUI.registerGlobals()
     G.FUNCS.DeckEditModuleOpenGithub = function()
