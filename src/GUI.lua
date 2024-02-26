@@ -134,7 +134,6 @@ function GUI.registerGlobals()
 
         local newDeck = CustomDeck:fullNew(
                 Utils.customDeckList[#Utils.customDeckList].name,
-                Utils.customDeckList[#Utils.customDeckList].name,
                 {name = Utils.customDeckList[#Utils.customDeckList].name, text = {
                     [1] = desc1, [2] = desc2, [3] = desc3, [4] = desc4
                 }},
@@ -199,24 +198,44 @@ function GUI.registerGlobals()
 end
 
 function GUI.registerCreateDeckButton()
-    SMODS.registerUIElement("DeckCreatorModule", {{
-         n = G.UIT.R,
-         config = {
-             padding = 0.5,
-             align = "cm"
-         },
-         nodes = {
-             UIBox_button({
-                 label = {" Create Deck "},
-                 shadow = true,
-                 scale = scale,
-                 colour = G.C.BOOSTER,
-                 button = "DeckEditModuleOpenCreateDeck",
-                 minh = 0.8,
-                 minw = 8
-             })
-         }
-    }})
+    SMODS.registerUIElement("DeckCreatorModule", {
+        {
+             n = G.UIT.R,
+             config = {
+                 padding = 0.5,
+                 align = "cm"
+             },
+             nodes = {
+                 UIBox_button({
+                     label = {" Create Deck "},
+                     shadow = true,
+                     scale = scale,
+                     colour = G.C.BOOSTER,
+                     button = "DeckEditModuleOpenCreateDeck",
+                     minh = 0.8,
+                     minw = 8
+                 })
+             }
+        },
+        {
+             n = G.UIT.R,
+             config = {
+                 padding = 0.1,
+                 align = "cm"
+             },
+             nodes = {
+                 UIBox_button({
+                     label = {" Source Code "},
+                     shadow = true,
+                     scale = scale,
+                     colour = G.C.BOOSTER,
+                     button = "DeckEditModuleOpenGithub",
+                     minh = 0.8,
+                     minw = 8
+                 })
+             }
+        }
+    })
 end
 
 function GUI.createDecksMenu()
@@ -253,6 +272,22 @@ function GUI.createDecksMenu()
                                                 n = G.UIT.R,
                                                 config = {
                                                     align = "cm",
+                                                    padding = 0.05,
+                                                    minw = 4  -- Adjust the width as needed
+                                                },
+                                                nodes = {
+                                                    {
+                                                        n=G.UIT.R,
+                                                        config={align = "cm"},
+                                                        nodes={{n=G.UIT.T, config={text = "Deck Name", scale = 0.5, colour = G.C.UI.TEXT_LIGHT}}}
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                n = G.UIT.R,
+                                                config = {
+                                                    align = "cm",
+                                                    padding = 0.1,
                                                     minw = 4  -- Adjust the width as needed
                                                 },
                                                 nodes = {

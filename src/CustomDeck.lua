@@ -1,4 +1,5 @@
 local CustomDeck = {name = "", slug = "", config = {}, spritePos = {}, loc_txt = {}, unlocked = true, discovered = true}
+local Utils = require "Utils"
 
 function CustomDeck:blankDeck()
     o = {}
@@ -82,7 +83,7 @@ function CustomDeck:new(name, slug, config, spritePos, loc_txt)
     return o
 end
 
-function CustomDeck:fullNew(name, slug, loc_txt, dollars, handSize, discards, hands, reRollCost, jokerSlots, anteScaling, consumableSlots, dollarsPerHand, dollarsPerDiscard, jokerRate, tarotRate, planetRate, spectralRate, playingCardRate, randomizeRankSuit, noFaces, interestAmount, interestCap, discountPercent, edition, doubleTag, balanceChips, editionCount, deckBackIndex, winAnte, inflation, shopSlots,
+function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, reRollCost, jokerSlots, anteScaling, consumableSlots, dollarsPerHand, dollarsPerDiscard, jokerRate, tarotRate, planetRate, spectralRate, playingCardRate, randomizeRankSuit, noFaces, interestAmount, interestCap, discountPercent, edition, doubleTag, balanceChips, editionCount, deckBackIndex, winAnte, inflation, shopSlots,
                             allPolychrome, allHolo, allFoil, allBonus, allMult, allWild, allGlass, allSteel, allStone, allGold, allLucky, enableEternalsInShop, boosterAnteScaling, chipsDollarCap, discardCost,
                             minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards)
     o = {}
@@ -91,13 +92,23 @@ function CustomDeck:fullNew(name, slug, loc_txt, dollars, handSize, discards, ha
 
     o.loc_txt = loc_txt
     o.name = name
-    o.slug = "b_" .. slug
+    if name:match("^%s*$") then
+        o.name = "Custom Deck_" .. Utils.tableLength(Utils.customDeckList)
+        o.loc_txt.name = o.name
+    end
+
+    o.slug = "b_" .. o.name
     o.spritePos = {x = 0, y = 0}
     if deckBackIndex ~= nil and deckBackIndex > 0 and deckBackIndex <= #CustomDeck.getAllDeckBacks() then
         o.spritePos = CustomDeck.getAllDeckBacks()[deckBackIndex]
     end
     o.unlocked = true
     o.discovered = true
+
+    if name:match("^%s*$") then
+        o.name = "Custom Deck_" .. Utils.tableLength(Utils.customDeckList)
+        o.loc_txt.name = o.name
+    end
 
     o.config = {
         customDeck = true,
@@ -172,6 +183,12 @@ function CustomDeck:register()
     if not SMODS.Decks[self] then
         table.insert(SMODS.Decks, self)
     end
+end
+
+function CustomDeck.createCustomDeck(name, slug, cardConfig, spritePos, loc_txt)
+    local customDeck = CustomDeck:new(name, slug, cardConfig, spritePos, loc_txt)
+    customDeck:register()
+    return customDeck
 end
 
 function CustomDeck.getAllDeckBacks()

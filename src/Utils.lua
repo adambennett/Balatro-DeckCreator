@@ -1,5 +1,4 @@
 local Utils = {}
-local CustomDeck = require "CustomDeck"
 
 Utils.customDeckList = {}
 
@@ -9,12 +8,6 @@ end
 
 function Utils.log(message)
     sendDebugMessage("DeckCreatorMod: " .. message)
-end
-
-function Utils.createCustomDeck(name, slug, cardConfig, spritePos, loc_txt)
-    local customDeck = CustomDeck:new(name, slug, cardConfig, spritePos, loc_txt)
-    customDeck:register()
-    return customDeck
 end
 
 function Utils.generateIntegerList()
@@ -68,6 +61,12 @@ function Utils.tableToString(tbl, indent)
         end
     end
     return str
+end
+
+function Utils.tableLength(table)
+    local count = 0
+    for _ in pairs(table) do count = count + 1 end
+    return count
 end
 
 function Utils.fullDeckConversionFunctions(arg)

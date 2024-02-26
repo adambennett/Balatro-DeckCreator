@@ -354,6 +354,21 @@ function Helper.createTextInput(args)
             }}
         }}
     }}
+
+    if args.label then
+        t = {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.05,
+                id = args.id or nil
+            },
+            nodes={
+                args.label and {n=G.UIT.R, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = args.label, scale = 0.5*args.scale, colour = G.C.UI.TEXT_LIGHT}}}} or nil,
+                t
+            }
+        }
+    end
     return t
 end
 
