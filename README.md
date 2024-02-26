@@ -4,6 +4,10 @@
 
 Deck Creator is a small tool for the game Balatro that allows users to create, save, load, and even share custom decks. Currently only some basic options are provided, but future updates should add more functionality. I'm open to suggestions and contributions!
 
+## Requirements
+
+Requires Steamodded v0.6.2+
+
 ## How to Use
 
 - Load up modded Balatro (see [Steamodded](https://github.com/Steamopollys/Steamodded))
