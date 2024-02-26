@@ -35,7 +35,14 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleChangeDeckBackIndex = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.deck_back_index = args.to_val
+        local current_option_index = 1
+        for i, option in ipairs(CustomDeck.getAllDeckBackNames()) do
+            if option == args.to_val then
+                current_option_index = i
+                break
+            end
+        end
+        Utils.customDeckList[#Utils.customDeckList].config.deck_back_index = current_option_index
     end
 
     G.FUNCS.DeckCreatorModuleChangeEditionCount = function(args)
@@ -262,12 +269,12 @@ function GUI.createDecksMenu()
                                                     }),
                                                 }
                                             },
-                                            Helper.createOptionSelector({label = "Card Back", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 15), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
+                                            Helper.createOptionSelector({label = "Card Back", scale = 0.8, options = CustomDeck.getAllDeckBackNames(), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.deck_back_index
                                             )}),
                                             Helper.createOptionSelector({label = "Winning Ante", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 50), opt_callback = 'DeckCreatorModuleChangeWinAnte', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.win_ante
-                                            )}),
+                                            ), multiArrows = true}),
 
                                             -- Description Line 1
                                             --[[{
@@ -584,10 +591,10 @@ function GUI.createDecksMenu()
                                             colour = G.C.BLACK
                                         },
                                         nodes = {
-                                            Helper.createOptionSelector({label = "# of Hands", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNumHands', current_option = (
+                                            Helper.createOptionSelector({label = "Number of Hands", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNumHands', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.hands
                                             ), multiArrows = true}),
-                                            Helper.createOptionSelector({label = "# of Discards", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNumDiscards', current_option = (
+                                            Helper.createOptionSelector({label = "Number of Discards", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNumDiscards', current_option = (
                                                     Utils.customDeckList[#Utils.customDeckList].config.discards
                                             ), multiArrows = true }),
                                             Helper.createOptionSelector({label = "Hand Size", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 25), opt_callback = 'DeckCreatorModuleChangeHandSize', current_option = (

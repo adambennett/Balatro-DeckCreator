@@ -194,4 +194,24 @@ function CustomDeck.getAllDeckBacks()
     }
 end
 
+function CustomDeck.getAllDeckBackNames()
+    return {
+        "Red",
+        "Blue",
+        "Yellow",
+        "Green",
+        "Black",
+        "Magic",
+        "Nebula",
+        "Ghost",
+        "Abandoned",
+        "Checkered",
+        "Zodiac",
+        "Painted",
+        "Anaglyph",
+        "Plasma",
+        "Erratic"
+    }
+end
+
 return CustomDeck
