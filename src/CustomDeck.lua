@@ -1,4 +1,5 @@
 local Utils = require "Utils"
+local CardUtils = require "CardUtils"
 
 local CustomDeck = {name = "", slug = "", config = {}, spritePos = {}, loc_txt = {}, unlocked = true, discovered = true}
 
@@ -8,13 +9,20 @@ function CustomDeck:blankDeck()
     self.__index = self
 
     o.name = ""
+    o.slug = ""
     o.descLine1 = ""
     o.descLine2 = ""
     o.descLine3 = ""
     o.descLine4 = ""
+    o.loc_txt = {
+        name = "",
+        text = {}
+    }
 
     o.config = {
+        customCardList = CardUtils.resetPlayingCardsToDefault(),
         customDeck = true,
+        custom_cards_set = false,
         dollars = 4,
         hand_size = 8,
         discards = 3,
@@ -73,6 +81,10 @@ function CustomDeck:new(name, slug, config, spritePos, loc_txt)
     setmetatable(o, self)
     self.__index = self
 
+    if slug == nil or slug == "" then
+        slug = "b_" .. name
+    end
+
     o.loc_txt = loc_txt
     o.name = name
     o.slug = "b_" .. slug
@@ -86,7 +98,7 @@ end
 
 function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, reRollCost, jokerSlots, anteScaling, consumableSlots, dollarsPerHand, dollarsPerDiscard, jokerRate, tarotRate, planetRate, spectralRate, playingCardRate, randomizeRankSuit, noFaces, interestAmount, interestCap, discountPercent, edition, doubleTag, balanceChips, editionCount, deckBackIndex, winAnte, inflation, shopSlots,
                             allPolychrome, allHolo, allFoil, allBonus, allMult, allWild, allGlass, allSteel, allStone, allGold, allLucky, enableEternalsInShop, boosterAnteScaling, chipsDollarCap, discardCost,
-                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards)
+                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, customCardList, customCardsSet)
     o = {}
     setmetatable(o, self)
     self.__index = self
@@ -106,13 +118,10 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.unlocked = true
     o.discovered = true
 
-    if name:match("^%s*$") then
-        o.name = "Custom Deck_" .. Utils.tableLength(Utils.customDeckList)
-        o.loc_txt.name = o.name
-    end
-
     o.config = {
+        customCardList = customCardList,
         customDeck = true,
+        custom_cards_set = customCardsSet,
         dollars = dollars - 4,
         hand_size = handSize - 8,
         discards = discards - 3,

@@ -26,6 +26,58 @@ function Utils.generateBoundedIntegerList(min, max)
     return list
 end
 
+function Utils.suits()
+    return {
+        "Clubs",
+        "Diamonds",
+        "Hearts",
+        "Spades"
+    }
+end
+
+function Utils.ranks()
+    return {
+        2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"
+    }
+end
+
+function Utils.editions(includeNegative)
+    local output = {
+        "Foil",
+        "Holo",
+        "Polychrome",
+    }
+    if includeNegative then
+        table.insert(output, "Negative")
+    end
+    table.insert(output, "None")
+    return output
+end
+
+function Utils.enhancements()
+    local output = {
+        "Bonus",
+        "Glass",
+        "Gold",
+        "Lucky",
+        "Mult",
+        "Steel",
+        "Stone",
+        "Wild"
+    }
+    table.insert(output, "None")
+    return output
+end
+
+function Utils.seals()
+    return {
+        "Blue",
+        "Gold",
+        "Purple",
+        "Red"
+    }
+end
+
 function Utils.timestamp()
     -- Get the current hour, minute, and other date components
     local hour = tonumber(os.date("%H"))

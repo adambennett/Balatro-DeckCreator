@@ -2,6 +2,7 @@ local Persistence = require "Persistence"
 local GUI = require "GUI"
 local Helper = require "GuiElementHelper"
 local Utils = require "Utils"
+local CardUtils = require "CardUtils"
 
 local DeckCreator = {}
 
@@ -13,6 +14,10 @@ function DeckCreator.LoadCustomDecks()
 
     G.FUNCS.LogDebug = function(message)
         Utils.log(message)
+    end
+
+    G.FUNCS.LogTableToString = function(table)
+        Utils.log(Utils.tableToString(table))
     end
 
     local BackApply_to_runRef = Back.apply_to_run
@@ -152,6 +157,24 @@ function DeckCreator.LoadCustomDecks()
             return args.chips, args.mult
         end
         return origReturn1, origReturn2
+    end
+
+    local GameStartRun = Game.start_run
+    function Game:start_run(args)
+        local originalResult = GameStartRun(self, args)
+
+        local deck = self.GAME.selected_back
+
+        G.FUNCS.LogTableToString(deck.effect.config)
+
+        if deck.effect.config.customDeck then
+
+            if deck.effect.config.custom_cards_set then
+                CardUtils.initializeCustomCardList(deck.effect.config.customCardList)
+            end
+        end
+
+        return originalResult
     end
 end
 
