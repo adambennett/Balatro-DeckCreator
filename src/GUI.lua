@@ -12,35 +12,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddCard = function()
-
-        local newCardName = GUI.addCard.rank .. " of " .. GUI.addCard.suit
-        local rank = GUI.addCard.rank
-        if rank == 10 then rank = "T" end
-        local key = GUI.addCard.suitKey .. "_" .. rank
-        local newCard = {
-            name = newCardName ,
-            value = GUI.addCard.rank,
-            suit = GUI.addCard.suit,
-            pos = {x=0,y=1},
-            edition = GUI.addCard.edition,
-            editionKey = GUI.addCard.editionKey,
-            enhancement = GUI.addCard.enhancement,
-            enhancementKey = GUI.addCard.enhancementKey,
-            seal = GUI.addCard.seal
-        }
-
-        local counter = 1
-        for i = 1, GUI.addCard.copies do
-            if Utils.customDeckList[#Utils.customDeckList].config.customCardList[key] == nil then
-                Utils.customDeckList[#Utils.customDeckList].config.customCardList[key] = newCard
-            else
-                while Utils.customDeckList[#Utils.customDeckList].config.customCardList[key .. "_" .. counter] ~= nil do
-                    counter = counter + 1
-                end
-                Utils.customDeckList[#Utils.customDeckList].config.customCardList[key .. "_" .. counter] = newCard
-            end
-        end
-
+        CardUtils.addCardToDeck({ addCard = GUI.addCard, deck_list = Utils.customDeckList})
         Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
         G.FUNCS:exit_overlay_menu()
         G.FUNCS.overlay_menu({
@@ -55,9 +27,46 @@ function GUI.registerGlobals()
         })
     end
 
+    Utils.generateCardLists = {
+        suits = Utils.suits(),
+        ranks = Utils.ranks(),
+        editions = Utils.editions(false),
+        enhancements = Utils.enhancements(),
+        seals = Utils.seals()
+    }
+
+    G.FUNCS.DeckCreatorModuleGenerateCard = function()
+        local addCard = {
+            rank = "Random",
+            suit = "Random",
+            edition = "Random",
+            enhancement = "Random",
+            seal = "Random",
+            copies = 1
+        }
+        CardUtils.addCardToDeck({ addCard = addCard, deck_list = Utils.customDeckList})
+        Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
+        G.FUNCS:exit_overlay_menu()
+        G.FUNCS.overlay_menu({
+            definition = GUI.createDecksMenu("Base Deck")
+        })
+    end
+
     G.FUNCS.DeckCreatorModuleDeleteAllCardsFromBaseDeck = function()
         Utils.customDeckList[#Utils.customDeckList].config.customCardList = {}
         Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
+
+        -- Works but doesn't recalculate sums properly
+        --[[for j = 1, #Helper.deckEditorAreas do
+            for i = #Helper.deckEditorAreas[j].cards,1, -1 do
+                local c = Helper.deckEditorAreas[j]:remove_card(Helper.deckEditorAreas[j].cards[i])
+                c:remove()
+                c = nil
+            end
+        end
+        G.playing_cards = {}
+        Helper.calculateDeckEditorSums()]]
+
         G.FUNCS:exit_overlay_menu()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
@@ -189,7 +198,10 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
         CardUtils.resetToMainMenuState()
-        G.FUNCS.mods_button()
+        G.FUNCS:exit_overlay_menu()
+        G.FUNCS.overlay_menu({
+            definition = create_UIBox_mods(arg_736_0)
+        })
     end
 
     G.FUNCS.DeckCreatorModuleOpenCreateDeck = function()
@@ -342,8 +354,8 @@ end
 function GUI.resetAddCard()
     return {
         rank = 2,
-        suit = "Hearts",
-        suitKey = "H",
+        suit = "Clubs",
+        suitKey = "C",
         edition = "None",
         enhancement = "None",
         editionKey = "",
@@ -395,7 +407,7 @@ function GUI.createAddCardsMenu()
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    Helper.createOptionSelector({label = "Rank", scale = 0.8, options = Utils.ranks(), opt_callback = 'DeckCreatorModuleAddCardChangeRank', current_option = (
+                                                                    Helper.createOptionSelector({label = "Rank", scale = 0.8, options = Utils.ranks(true), opt_callback = 'DeckCreatorModuleAddCardChangeRank', current_option = (
                                                                             GUI.addCard.rank
                                                                     )}),
                                                                 }
@@ -407,7 +419,7 @@ function GUI.createAddCardsMenu()
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    Helper.createOptionSelector({label = "Edition", scale = 0.8, options = Utils.editions(false), opt_callback = 'DeckCreatorModuleAddCardChangeEdition', current_option = (
+                                                                    Helper.createOptionSelector({label = "Edition", scale = 0.8, options = Utils.editions(false, true), opt_callback = 'DeckCreatorModuleAddCardChangeEdition', current_option = (
                                                                             GUI.addCard.edition
                                                                     )}),
                                                                 }
@@ -419,7 +431,7 @@ function GUI.createAddCardsMenu()
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    Helper.createOptionSelector({label = "Seal", scale = 0.8, options = Utils.seals(), opt_callback = 'DeckCreatorModuleAddCardChangeSeal', current_option = (
+                                                                    Helper.createOptionSelector({label = "Seal", scale = 0.8, options = Utils.seals(true), opt_callback = 'DeckCreatorModuleAddCardChangeSeal', current_option = (
                                                                             GUI.addCard.seal
                                                                     )}),
                                                                 }
@@ -437,7 +449,7 @@ function GUI.createAddCardsMenu()
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    Helper.createOptionSelector({label = "Suit", scale = 0.8, options = Utils.suits(), opt_callback = 'DeckCreatorModuleAddCardChangeSuit', current_option = (
+                                                                    Helper.createOptionSelector({label = "Suit", scale = 0.8, options = Utils.suits(true), opt_callback = 'DeckCreatorModuleAddCardChangeSuit', current_option = (
                                                                             GUI.addCard.suit
                                                                     )}),
                                                                 }
@@ -449,7 +461,7 @@ function GUI.createAddCardsMenu()
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    Helper.createOptionSelector({label = "Enhancement", scale = 0.8, options = Utils.enhancements(), opt_callback = 'DeckCreatorModuleAddCardChangeEnhancement', current_option = (
+                                                                    Helper.createOptionSelector({label = "Enhancement", scale = 0.8, options = Utils.enhancements(true), opt_callback = 'DeckCreatorModuleAddCardChangeEnhancement', current_option = (
                                                                             GUI.addCard.enhancement
                                                                     )}),
                                                                 }
@@ -461,9 +473,9 @@ function GUI.createAddCardsMenu()
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    Helper.createOptionSelector({label = "Number of Copies", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 999), opt_callback = 'DeckCreatorModuleAddCardChangeCopies', current_option = (
+                                                                    Helper.createOptionSelector({label = "Number of Copies", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 99), opt_callback = 'DeckCreatorModuleAddCardChangeCopies', current_option = (
                                                                             GUI.addCard.copies
-                                                                    ), multiArrows = true }),
+                                                                    ), multiArrows = true, minorArrows = true }),
                                                                 }
                                                             }
                                                         }
@@ -1052,6 +1064,26 @@ function GUI.createDecksMenu(chosen)
                                                                     create_toggle({label = "Hold -1 cards in hand per $5", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'minus_hand_size_per_X_dollar'}),
                                                                 }
                                                             },
+                                                            {
+                                                                n = G.UIT.R,
+                                                                config = {
+                                                                    align = "cm",
+                                                                    padding = 0.1
+                                                                },
+                                                                nodes = {
+                                                                    create_toggle({label = "Gain $1 per round for each of your Enhanced cards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'one_dollar_for_each_enhanced_card'}),
+                                                                }
+                                                            },
+                                                            {
+                                                                n = G.UIT.R,
+                                                                config = {
+                                                                    align = "cm",
+                                                                    padding = 0.1
+                                                                },
+                                                                nodes = {
+                                                                    create_toggle({label = "Gain $10 when a Glass card breaks", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'ten_dollars_for_broken_glass'}),
+                                                                }
+                                                            },
                                                         }
                                                     },
                                                     {
@@ -1108,6 +1140,26 @@ function GUI.createDecksMenu(chosen)
                                                                     create_toggle({label = "Raise prices by $1 on every purchase", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'inflation'}),
                                                                 }
                                                             },
+                                                            {
+                                                                n = G.UIT.R,
+                                                                config = {
+                                                                    align = "cm",
+                                                                    padding = 0.1
+                                                                },
+                                                                nodes = {
+                                                                    create_toggle({label = "Lose $1 per round for each Negative Joker", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'lose_one_dollar_per_negative_joker'}),
+                                                                }
+                                                            },
+                                                            {
+                                                                n = G.UIT.R,
+                                                                config = {
+                                                                    align = "cm",
+                                                                    padding = 0.1
+                                                                },
+                                                                nodes = {
+                                                                    create_toggle({label = "Receive random Negative Joker when a Glass card breaks", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'negative_joker_for_broken_glass'}),
+                                                                }
+                                                            },
                                                         }
                                                     }
                                                 }
@@ -1138,8 +1190,8 @@ function GUI.createDecksMenu(chosen)
                                     },
                                     {
 
-                                        label = " Deck Mods ",
-                                        chosen = chosen == "Deck Mods",
+                                        label = " Run Mods ",
+                                        chosen = chosen == "Run Mods",
                                         tab_definition_function = function()
                                             return {
                                                 n = G.UIT.ROOT,
@@ -1174,7 +1226,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Polychrome", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_polychrome'}),
+                                                                    create_toggle({label = "Randomize Ranks and Suits", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_rank_suit'}),
                                                                 }
                                                             },
                                                             {
@@ -1184,7 +1236,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Foil", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_foil'}),
+                                                                    create_toggle({label = "Increase Starting Money ($0 - $100)", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_money_big'}),
                                                                 }
                                                             },
                                                             {
@@ -1194,7 +1246,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Mult", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_mult'}),
+                                                                    create_toggle({label = "Scramble All Money Settings", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_money'}),
                                                                 }
                                                             },
                                                             {
@@ -1204,7 +1256,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Glass", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_glass'}),
+                                                                    create_toggle({label = "Scramble Appearance Rate Settings", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_appearance_rates'}),
                                                                 }
                                                             },
                                                             {
@@ -1214,7 +1266,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Stone", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_stone'}),
+                                                                    create_toggle({label = "Randomize Suits", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_suits'}),
                                                                 }
                                                             },
                                                             {
@@ -1224,7 +1276,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Lucky", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_lucky'}),
+                                                                    create_toggle({label = "Start with 2 Random Jokers", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'two_random_jokers'}),
                                                                 }
                                                             },
                                                         }
@@ -1240,7 +1292,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Randomize Ranks and Suits", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_rank_suit'}),
+                                                                    create_toggle({label = "No Numbered Cards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'no_numbered_cards'}),
                                                                 }
                                                             },
                                                             {
@@ -1250,7 +1302,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Holo", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_holo'}),
+                                                                    create_toggle({label = "Scramble Number of Hands & Discards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_hands_discards'}),
                                                                 }
                                                             },
                                                             {
@@ -1260,7 +1312,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Bonus", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_bonus'}),
+                                                                    create_toggle({label = "Increase Starting Money ($0 - $20)", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_money_small'}),
                                                                 }
                                                             },
                                                             {
@@ -1270,7 +1322,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Wild", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_wild'}),
+                                                                    create_toggle({label = "Random Starting Items", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'random_starting_items'}),
                                                                 }
                                                             },
                                                             {
@@ -1280,7 +1332,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Steel", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_steel'}),
+                                                                    create_toggle({label = "Randomly Enable Gameplay Settings", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomly_enable_gameplay'}),
                                                                 }
                                                             },
                                                             {
@@ -1290,7 +1342,17 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Cards Gold", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_gold'}),
+                                                                    create_toggle({label = "Randomize Ranks", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_ranks'}),
+                                                                }
+                                                            },
+                                                            {
+                                                                n = G.UIT.R,
+                                                                config = {
+                                                                    align = "cm",
+                                                                    padding = 0.1
+                                                                },
+                                                                nodes = {
+                                                                    create_toggle({label = "Start with 1 Random Voucher", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'one_random_voucher'}),
                                                                 }
                                                             },
                                                         }

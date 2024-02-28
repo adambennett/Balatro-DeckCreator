@@ -44,7 +44,7 @@ function CustomDeck:blankDeck()
         balance_chips = false,
         inflation = false,
         all_polychrome = false,
-        deck_back_index = 0,
+        deck_back_index = 1,
         extra_hand_bonus = 1,
         win_ante = 8,
         joker_rate = 20,
@@ -112,8 +112,11 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
 
     o.slug = "b_" .. o.name
     o.spritePos = {x = 0, y = 0}
-    if deckBackIndex ~= nil and deckBackIndex > 0 and deckBackIndex <= #CustomDeck.getAllDeckBacks() then
-        o.spritePos = CustomDeck.getAllDeckBacks()[deckBackIndex]
+    local list = CustomDeck.getAllDeckBacks()
+    if deckBackIndex ~= nil and deckBackIndex > 0 and deckBackIndex <= #list then
+        o.spritePos = list[deckBackIndex]
+    else
+        o.spritePos = list[math.random(1, #list)]
     end
     o.unlocked = true
     o.discovered = true
@@ -163,7 +166,6 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         enable_eternals_in_shop = enableEternalsInShop,
         booster_ante_scaling = boosterAnteScaling,
         chips_dollar_cap = chipsDollarCap,
-        discard_cost = discardCost,
         minus_hand_size_per_X_dollar = minus_hand_size_per_X_dollar,
         all_eternal = allEternal,
         debuff_played_cards = debuffPlayedCards,
@@ -186,6 +188,9 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         o.config.hand_size = math.floor(dollars / 5) - 7
     end
 
+    if discardCost ~= nil and discardCost > 0 then
+        o.config.discard_cost = discardCost
+    end
     return o
 end
 
@@ -237,7 +242,8 @@ function CustomDeck.getAllDeckBackNames()
         "Painted",
         "Anaglyph",
         "Plasma",
-        "Erratic"
+        "Erratic",
+        "Random"
     }
 end
 

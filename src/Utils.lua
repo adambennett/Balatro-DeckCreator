@@ -26,23 +26,36 @@ function Utils.generateBoundedIntegerList(min, max)
     return list
 end
 
-function Utils.suits()
-    return {
+function Utils.suits(includeRandom)
+    includeRandom = includeRandom or false
+    local output = {
         "Clubs",
         "Diamonds",
         "Hearts",
         "Spades"
     }
+    if includeRandom then
+        table.insert(output, "Random")
+    end
+    return output
 end
 
-function Utils.ranks()
-    return {
+function Utils.ranks(includeRandom)
+    includeRandom = includeRandom or false
+    local output = {
         2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"
     }
+    if includeRandom then
+        table.insert(output, "Random")
+    end
+    return output
 end
 
-function Utils.editions(includeNegative)
+function Utils.editions(includeNegative, includeRandom)
+    includeRandom = includeRandom or false
+    includeNegative = includeNegative or false
     local output = {
+        "None",
         "Foil",
         "Holo",
         "Polychrome",
@@ -50,12 +63,16 @@ function Utils.editions(includeNegative)
     if includeNegative then
         table.insert(output, "Negative")
     end
-    table.insert(output, "None")
+    if includeRandom then
+        table.insert(output, "Random")
+    end
     return output
 end
 
-function Utils.enhancements()
+function Utils.enhancements(includeRandom)
+    includeRandom = includeRandom or false
     local output = {
+        "None",
         "Bonus",
         "Glass",
         "Gold",
@@ -65,17 +82,25 @@ function Utils.enhancements()
         "Stone",
         "Wild"
     }
-    table.insert(output, "None")
+    if includeRandom then
+        table.insert(output, "Random")
+    end
     return output
 end
 
-function Utils.seals()
-    return {
+function Utils.seals(includeRandom)
+    includeRandom = includeRandom or false
+    local output = {
+        "None",
         "Blue",
         "Gold",
         "Purple",
         "Red"
     }
+    if includeRandom then
+        table.insert(output, "Random")
+    end
+    return output
 end
 
 function Utils.timestamp()

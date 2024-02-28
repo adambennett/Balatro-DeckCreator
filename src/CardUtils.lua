@@ -1,3 +1,5 @@
+local Utils = require "Utils"
+
 local CardUtils = {}
 
 function CardUtils.resetToMainMenuState()
@@ -14,7 +16,7 @@ function CardUtils.resetToMainMenuState()
     G.playing_cards = nil
     G.GAME.starting_deck_size = nil
     G.VIEWING_DECK = nil]]
-    G.FUNCS.go_to_menu()
+    -- G.FUNCS.go_to_menu()
 end
 
 function CardUtils.resetPlayingCardsToDefault()
@@ -34,12 +36,12 @@ function CardUtils.initializeCustomCardList(deck)
             rank = rank,
             enhancement = v.enhancement ~= "None" and v.enhancementKey or nil,
             edition = v.edition ~= "None" and v.editionKey or nil,
-            seal = v.seal
+            seal = v.seal ~= "None" and v.seal or nil
         }
     end
 
     for k, v in ipairs(card_protos) do
-        local _card = Card(G.deck.T.x, G.deck.T.y, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
+        local _card = Card(9999, 9999, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
         if v.edition then _card:set_edition({[v.edition] = true}, true, true) end
         if v.seal then _card:set_seal(v.seal, true, true) end
         G.deck:emplace(_card)
@@ -65,7 +67,7 @@ function CardUtils.getCardsFromCustomCardList(deck)
         consumeable_W = 2.3*G.CARD_W,
         consumeable_H = 0.95*G.CARD_H
     }
-    G.deck = CardArea(0, 0, CAI.deck_W,CAI.deck_H, {card_limit = 52, type = 'deck'})
+    G.deck = CardArea(9999, 9999, CAI.deck_W,CAI.deck_H, {card_limit = 52, type = 'deck'})
     G.playing_cards = {}
 
     local card_protos = {}
@@ -78,7 +80,7 @@ function CardUtils.getCardsFromCustomCardList(deck)
             rank = rank,
             enhancement = v.enhancement ~= "None" and v.enhancementKey or nil,
             edition = v.edition ~= "None" and v.editionKey or nil,
-            seal = v.seal
+            seal = v.seal ~= "None" and v.seal or nil
         }
     end
 
@@ -88,6 +90,96 @@ function CardUtils.getCardsFromCustomCardList(deck)
         if v.seal then _card:set_seal(v.seal, true, true) end
         -- G.deck:emplace(_card)
         table.insert(G.playing_cards, _card)
+    end
+end
+
+function CardUtils.addCardToDeck(args)
+    local deckList = args.deck_list or {}
+
+    local counter = 1
+    for i = 1, args.addCard.copies do
+
+        local generatedCard = {
+            rank = args.addCard.rank,
+            suit = args.addCard.suit,
+            suitKey = args.addCard.suitKey,
+            edition = args.addCard.edition,
+            enhancement = args.addCard.enhancement,
+            editionKey = args.addCard.editionKey,
+            enhancementKey = args.addCard.enhancementKey,
+            seal = args.addCard.seal,
+            copies = args.addCard.copies
+        }
+
+        if args.addCard.suit == "Random" then
+            local list = Utils.suits()
+            local randomSuit = list[math.random(1, #list)]
+            generatedCard.suit = randomSuit
+            generatedCard.suitKey = string.sub(randomSuit, 1, 1)
+        end
+
+        if args.addCard.rank == "Random" then
+            local list = Utils.ranks()
+            generatedCard.rank = list[math.random(1, #list)]
+        end
+
+        if args.addCard.enhancement == "Random" then
+            if math.random(1, 100) > 80 then
+                local list = Utils.enhancements()
+                local randomEnhance = list[math.random(1, #list)]
+                generatedCard.enhancement = randomEnhance
+                generatedCard.enhancementKey = randomEnhance ~= "None" and "m_" .. string.lower(randomEnhance) or nil
+            else
+                generatedCard.enhancement = "None"
+            end
+
+        end
+
+        if args.addCard.edition == "Random" then
+            if math.random(1, 100) > 90 then
+                local list = Utils.editions(false)
+                local randomEdition = list[math.random(1, #list)]
+                generatedCard.edition = randomEdition
+                generatedCard.editionKey = randomEdition ~= "None" and string.lower(randomEdition) or nil
+            else
+                generatedCard.edition = "None"
+            end
+        end
+
+        if args.addCard.seal == "Random" then
+            if math.random(1, 100) > 70 then
+                local list = Utils.seals()
+                generatedCard.seal = list[math.random(1, #list)]
+            else
+                generatedCard.seal = "None"
+            end
+
+        end
+
+        local newCardName = generatedCard.rank .. " of " .. generatedCard.suit
+        local rank = generatedCard.rank
+        if rank == 10 then rank = "T" end
+        local key = generatedCard.suitKey .. "_" .. rank
+        local newCard = {
+            name = newCardName ,
+            value = generatedCard.rank,
+            suit = generatedCard.suit,
+            pos = {x=0,y=1},
+            edition = generatedCard.edition,
+            editionKey = generatedCard.editionKey,
+            enhancement = generatedCard.enhancement,
+            enhancementKey = generatedCard.enhancementKey,
+            seal = generatedCard.seal
+        }
+
+        if deckList[#deckList].config.customCardList[key] == nil then
+            deckList[#deckList].config.customCardList[key] = newCard
+        else
+            while deckList[#deckList].config.customCardList[key .. "_" .. counter] ~= nil do
+                counter = counter + 1
+            end
+            deckList[#deckList].config.customCardList[key .. "_" .. counter] = newCard
+        end
     end
 end
 
