@@ -6,9 +6,66 @@ local CardUtils = require "CardUtils"
 
 local GUI = {}
 
+GUI.DynamicUIManager = {}
+
+function GUI.DynamicUIManager.initTab(args)
+    local label = args.label
+    local id = args.id
+    local updateFunction = args.updateFunction
+    local staticPageDefinition = args.staticPageDefinition
+
+    GUI.DynamicUIManager.tabs = GUI.DynamicUIManager.tabs or {}
+    GUI.DynamicUIManager.tabs[label] = id
+
+    G.E_MANAGER:add_event(Event({func = function()
+        updateFunction{cycle_config = {current_option = 1}}
+        return true
+    end}))
+    return GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
+end
+
+function GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
+    return {
+        n = G.UIT.ROOT,
+        config = {
+            emboss = 0.05,
+            minh = 6,
+            r = 0.1,
+            minw = 8,
+            align = "cm",
+            padding = 0.2,
+            colour = G.C.BLACK
+        },
+        nodes = {
+            staticPageDefinition
+        }
+    }
+end
+
+function GUI.DynamicUIManager.updateDynamicArea(dynamicArea, uiDefinition)
+    if dynamicArea.config.object then
+        dynamicArea.config.object:remove()
+    end
+    dynamicArea.config.object = UIBox{
+        definition = uiDefinition,
+        config = {offset = {x=0, y=0}, align = 'cm', parent = dynamicArea}
+    }
+end
+
 function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleOpenGithub = function()
         love.system.openURL("https://github.com/adambennett/Balatro-DeckCreator")
+    end
+
+    G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage = function(args)
+        if not args or not args.cycle_config then return end
+        local tabInfo = GUI.DynamicUIManager.tabs["Starting Items"]
+        if G.OVERLAY_MENU then
+            local dynamicArea = G.OVERLAY_MENU:get_UIE_by_ID(tabInfo)
+            if dynamicArea then
+                GUI.DynamicUIManager.updateDynamicArea(dynamicArea, GUI.startingItemsPageDynamic(args.cycle_config.current_option))
+            end
+        end
     end
 
     G.FUNCS.DeckCreatorModuleAddCard = function()
@@ -56,8 +113,7 @@ function GUI.registerGlobals()
         Utils.customDeckList[#Utils.customDeckList].config.customCardList = {}
         Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
 
-        -- Works but doesn't recalculate sums properly
-        --[[for j = 1, #Helper.deckEditorAreas do
+        for j = 1, #Helper.deckEditorAreas do
             for i = #Helper.deckEditorAreas[j].cards,1, -1 do
                 local c = Helper.deckEditorAreas[j]:remove_card(Helper.deckEditorAreas[j].cards[i])
                 c:remove()
@@ -65,12 +121,13 @@ function GUI.registerGlobals()
             end
         end
         G.playing_cards = {}
-        Helper.calculateDeckEditorSums()]]
+        Helper.calculateDeckEditorSums()
 
-        G.FUNCS:exit_overlay_menu()
+
+        --[[G.FUNCS:exit_overlay_menu()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
-        })
+        })]]
     end
 
     G.FUNCS.DeckCreatorModuleAddCardChangeRank = function(args)
@@ -1362,25 +1419,15 @@ function GUI.createDecksMenu(chosen)
                                         end
                                     },
                                     {
-
                                         label = " Starting Items ",
                                         chosen = chosen == "Starting Items",
                                         tab_definition_function = function()
-                                            return {
-                                                n = G.UIT.ROOT,
-                                                config = {
-                                                    emboss = 0.05,
-                                                    minh = 6,
-                                                    r = 0.1,
-                                                    minw = 8,
-                                                    align = "cm",
-                                                    padding = 0.2,
-                                                    colour = G.C.BLACK
-                                                },
-                                                nodes = {
-
-                                                }
-                                            }
+                                            return GUI.DynamicUIManager.initTab({
+                                                label = "Starting Items",
+                                                id = "test_dynamic_moveable",
+                                                updateFunction = G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage,
+                                                staticPageDefinition = GUI.startingItemsPageStatic()
+                                            })
                                         end
                                     },
                                     {
@@ -1416,5 +1463,168 @@ function GUI.createDecksMenu(chosen)
         }
     }))
 end
+
+function GUI.deckEditorPageStatic()
+    return {
+        n=G.UIT.ROOT,
+        config={align = "cm", colour = G.C.CLEAR},
+        nodes= {
+            {
+                n = G.UIT.R,
+                config = { align = "cm", padding = 0.05 },
+                nodes = {}
+            },
+            {
+                n = G.UIT.R,
+                config = { align = "cm" },
+                nodes = {
+                    {
+                        n=G.UIT.O,
+                        config={id = 'dynamicDeckEditorAreaCards', object = Moveable()}
+                    },
+                    {
+                        n=G.UIT.B,
+                        config={w = 0.2, h = 0.1}
+                    },
+                    {
+                        n=G.UIT.O,
+                        config={align = "cm", padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05, id = 'dynamicDeckEditorAreaDeckTables', object = Moveable()}
+                    }
+                }
+            },
+            {
+                n = G.UIT.R,
+                config={align = "cm", minh = 0.4, padding = 0.05},
+                nodes = {
+                    {
+                        n = G.UIT.C,
+                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
+                        nodes = {
+                            {
+                                n = G.UIT.R,
+                                config = {
+                                    align = "cm",
+                                    padding = 0.1
+                                },
+                                nodes = {
+                                    UIBox_button({
+                                        label = {" Add Card "},
+                                        shadow = true,
+                                        scale = 0.75 * 0.4,
+                                        colour = G.C.BOOSTER,
+                                        button = "DeckCreatorModuleOpenAddCardToDeck",
+                                        minh = 0.8,
+                                        minw = 3
+                                    })
+                                }
+                            }
+                        }
+                    },
+                    {
+                        n = G.UIT.C,
+                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
+                        nodes = {
+                            {
+                                n = G.UIT.R,
+                                config = {
+                                    align = "cm",
+                                    padding = 0.1
+                                },
+                                nodes = {
+                                    UIBox_button({
+                                        label = {" Generate Card "},
+                                        shadow = true,
+                                        scale = 0.75 * 0.4,
+                                        colour = G.C.BOOSTER,
+                                        button = "DeckCreatorModuleGenerateCard",
+                                        minh = 0.8,
+                                        minw = 3
+                                    })
+                                }
+                            }
+                        }
+                    },
+                    {
+                        n = G.UIT.C,
+                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
+                        nodes = {
+                            {
+                                n = G.UIT.R,
+                                config = {
+                                    align = "cm",
+                                    padding = 0.1
+                                },
+                                nodes = {
+                                    UIBox_button({
+                                        label = {" Remove All "},
+                                        shadow = true,
+                                        scale = 0.75 * 0.4,
+                                        colour = G.C.BOOSTER,
+                                        button = "DeckCreatorModuleDeleteAllCardsFromBaseDeck",
+                                        minh = 0.8,
+                                        minw = 3
+                                    })
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+end
+
+function GUI.deckEditorPageDynamic()
+
+end
+
+function GUI.startingItemsPageStatic()
+    return {
+        n=G.UIT.C,
+        config={align = "cm", padding = 0.0},
+        nodes = {
+            {n=G.UIT.R, config={align = "cm", padding = 0.1, minh = 7, minw = 4.2}, nodes={
+                {n=G.UIT.O, config={id = 'test_dynamic_moveable', object = Moveable()}},
+            }},
+            {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+                create_option_cycle({id = 'starting_items_page',scale = 0.9, h = 0.3, w = 3.5, options = {1, 2}, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleUpdateStartingItemsPage', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true}})
+            }},
+        }
+    }
+end
+
+function GUI.startingItemsPageDynamic(page)
+    return {n=G.UIT.ROOT, config={align = "cm", padding = 0.1, colour = G.C.CLEAR}, nodes={
+        {
+            n = G.UIT.C,
+            config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
+            nodes = {
+                {
+                    n = G.UIT.R,
+                    config = {
+                        align = "cm",
+                        padding = 0.1
+                    },
+                    nodes = {
+                        {n=G.UIT.T, config={text = "Page " .. tostring(page), scale = 0.5, colour = G.C.UI.TEXT_LIGHT}},
+                    }
+                },
+                {
+                    n = G.UIT.R,
+                    config = {
+                        align = "cm",
+                        padding = 0.1
+                    },
+                    nodes = {
+                        {n=G.UIT.T, config={text = "Page " .. tostring(page), scale = 0.5, colour = G.C.UI.TEXT_DARK}},
+                    }
+                },
+            }
+        },
+    }}
+end
+
+
+
 
 return GUI
