@@ -20,6 +20,7 @@ function CustomDeck:blankDeck()
     }
 
     o.config = {
+        uuid = Utils.uuid(),
         customCardList = CardUtils.resetPlayingCardsToDefault(),
         customDeck = true,
         custom_cards_set = false,
@@ -98,7 +99,7 @@ end
 
 function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, reRollCost, jokerSlots, anteScaling, consumableSlots, dollarsPerHand, dollarsPerDiscard, jokerRate, tarotRate, planetRate, spectralRate, playingCardRate, randomizeRankSuit, noFaces, interestAmount, interestCap, discountPercent, edition, doubleTag, balanceChips, editionCount, deckBackIndex, winAnte, inflation, shopSlots,
                             allPolychrome, allHolo, allFoil, allBonus, allMult, allWild, allGlass, allSteel, allStone, allGold, allLucky, enableEternalsInShop, boosterAnteScaling, chipsDollarCap, discardCost,
-                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, customCardList, customCardsSet)
+                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, customCardList, customCardsSet, uuid)
     o = {}
     setmetatable(o, self)
     self.__index = self
@@ -122,6 +123,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.discovered = true
 
     o.config = {
+        uuid = uuid or Utils.uuid(),
         customCardList = customCardList,
         customDeck = true,
         custom_cards_set = customCardsSet,

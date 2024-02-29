@@ -18,6 +18,7 @@ function Persistence.loadAllDeckLists()
 
     Utils.customDeckList = {}
     local deckNames = {}
+    local loadedUUIDs = {}
 
     for _, file in ipairs(files) do
         if string.sub(file, -4) == ".txt" then  -- Check if the file is a .txt file
@@ -29,21 +30,24 @@ function Persistence.loadAllDeckLists()
                 local allDecks = func()
                 for _, deckConfig in ipairs(allDecks) do
 
-                    local baseName = deckConfig.name
-                    local count = deckNames[baseName] or 0
-                    deckNames[baseName] = count + 1
-                    if count > 0 then
-                        deckConfig.name = baseName .. " (" .. count .. ")"
-                        deckConfig.loc_txt.name = deckConfig.name
-                        deckConfig.slug = deckConfig.name
-                    end
+                    if deckConfig.config.uuid == nil or loadedUUIDs[deckConfig.config.uuid] == nil then
+                        local baseName = deckConfig.name
+                        local count = deckNames[baseName] or 0
+                        deckNames[baseName] = count + 1
+                        if count > 0 then
+                            deckConfig.name = baseName .. " (" .. count .. ")"
+                            deckConfig.loc_txt.name = deckConfig.name
+                            deckConfig.slug = deckConfig.name
+                        end
 
-                    if file ~= "CustomDecks.txt" then
-                        deckConfig.loc_txt.text = { "Custom Deck", "imported via", "{C:attention}" .. file .. "{}", "" }
-                    end
+                        if file ~= "CustomDecks.txt" then
+                            deckConfig.loc_txt.text = { "Custom Deck", "imported via", "{C:attention}" .. file .. "{}", "" }
+                        end
 
-                    local loadedDeck = CustomDeck.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.config, deckConfig.spritePos, deckConfig.loc_txt)
-                    Utils.addDeckToList(loadedDeck)
+                        local loadedDeck = CustomDeck.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.config, deckConfig.spritePos, deckConfig.loc_txt)
+                        Utils.addDeckToList(loadedDeck)
+                        loadedUUIDs[loadedDeck.config.uuid] = true
+                    end
                 end
             else
                 Utils.log("Could not deserialize custom deck data from " .. file .. ": " .. err)
