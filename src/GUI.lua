@@ -9,18 +9,15 @@ local GUI = {}
 GUI.DynamicUIManager = {}
 
 function GUI.DynamicUIManager.initTab(args)
-    local label = args.label
-    local id = args.id
-    local updateFunction = args.updateFunction
+    local updateFunctions = args.updateFunctions
     local staticPageDefinition = args.staticPageDefinition
 
-    GUI.DynamicUIManager.tabs = GUI.DynamicUIManager.tabs or {}
-    GUI.DynamicUIManager.tabs[label] = id
-
-    G.E_MANAGER:add_event(Event({func = function()
-        updateFunction{cycle_config = {current_option = 1}}
-        return true
-    end}))
+    for _, updateFunction in pairs(updateFunctions) do
+        G.E_MANAGER:add_event(Event({func = function()
+            updateFunction{cycle_config = {current_option = 1}}
+            return true
+        end}))
+    end
     return GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
 end
 
@@ -42,14 +39,17 @@ function GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
     }
 end
 
-function GUI.DynamicUIManager.updateDynamicArea(dynamicArea, uiDefinition)
-    if dynamicArea.config.object then
-        dynamicArea.config.object:remove()
+function GUI.DynamicUIManager.updateDynamicAreas(uiDefinitions)
+    for id, uiDefinition in pairs(uiDefinitions) do
+        local dynamicArea = G.OVERLAY_MENU:get_UIE_by_ID(id)
+        if dynamicArea and dynamicArea.config.object then
+            dynamicArea.config.object:remove()
+            dynamicArea.config.object = UIBox{
+                definition = uiDefinition,
+                config = {offset = {x=0, y=0}, align = 'cm', parent = dynamicArea}
+            }
+        end
     end
-    dynamicArea.config.object = UIBox{
-        definition = uiDefinition,
-        config = {offset = {x=0, y=0}, align = 'cm', parent = dynamicArea}
-    }
 end
 
 function GUI.registerGlobals()
@@ -59,13 +59,9 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage = function(args)
         if not args or not args.cycle_config then return end
-        local tabInfo = GUI.DynamicUIManager.tabs["Starting Items"]
-        if G.OVERLAY_MENU then
-            local dynamicArea = G.OVERLAY_MENU:get_UIE_by_ID(tabInfo)
-            if dynamicArea then
-                GUI.DynamicUIManager.updateDynamicArea(dynamicArea, GUI.startingItemsPageDynamic(args.cycle_config.current_option))
-            end
-        end
+        GUI.DynamicUIManager.updateDynamicAreas({
+            ["test_dynamic_moveable"] = GUI.startingItemsPageDynamic(args.cycle_config.current_option)
+        })
     end
 
     G.FUNCS.DeckCreatorModuleAddCard = function()
@@ -1423,9 +1419,7 @@ function GUI.createDecksMenu(chosen)
                                         chosen = chosen == "Starting Items",
                                         tab_definition_function = function()
                                             return GUI.DynamicUIManager.initTab({
-                                                label = "Starting Items",
-                                                id = "test_dynamic_moveable",
-                                                updateFunction = G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage,
+                                                updateFunctions = { G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage },
                                                 staticPageDefinition = GUI.startingItemsPageStatic()
                                             })
                                         end
