@@ -4,6 +4,32 @@ local CustomDeck = require "CustomDeck"
 local Persistence = {}
 local filename = "CustomDecks.txt"
 
+local function serializeDeck(val, depth)
+    local temp = string.rep(" ", depth)
+
+    if type(val) == "table" then
+        temp = temp .. "{\n"
+        local entries = {}
+        for k, v in pairs(val) do
+            local entry = string.rep(" ", depth + 1)
+            if type(k) == "string" then
+                entry = entry .. "[" .. string.format("%q", k) .. "] = "
+            end
+            entry = entry .. serializeDeck(v, depth + 2)
+            table.insert(entries, entry)
+        end
+        temp = temp .. table.concat(entries, ",\n")  -- Concatenating with comma separator
+        temp = temp .. "\n" .. string.rep(" ", depth) .. "}"
+    else
+        if type(val) == "string" then
+            temp = temp .. string.format("%q", val)
+        else
+            temp = temp .. tostring(val)
+        end
+    end
+    return temp
+end
+
 function Persistence.saveAllDecks()
     local directory = "Mods/Deck Creator/Custom Decks"
     local filePath = directory .. "/" .. filename
@@ -60,32 +86,6 @@ function Persistence.loadAllDeckLists()
     else
         Utils.log(Utils.tableLength(Utils.customDeckList) .. " custom decks loaded")
     end
-end
-
-function serializeDeck(val, depth)
-    local temp = string.rep(" ", depth)
-
-    if type(val) == "table" then
-        temp = temp .. "{\n"
-        local entries = {}
-        for k, v in pairs(val) do
-            local entry = string.rep(" ", depth + 1)
-            if type(k) == "string" then
-                entry = entry .. "[" .. string.format("%q", k) .. "] = "
-            end
-            entry = entry .. serializeDeck(v, depth + 2)
-            table.insert(entries, entry)
-        end
-        temp = temp .. table.concat(entries, ",\n")  -- Concatenating with comma separator
-        temp = temp .. "\n" .. string.rep(" ", depth) .. "}"
-    else
-        if type(val) == "string" then
-            temp = temp .. string.format("%q", val)
-        else
-            temp = temp .. tostring(val)
-        end
-    end
-    return temp
 end
 
 return Persistence

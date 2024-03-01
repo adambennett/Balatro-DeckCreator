@@ -28,7 +28,7 @@ end
 
 function SMODS.INIT.DeckCreatorModule()
     table.insert(package.loaders, 1, customLoader)
-    require "DeckCreator".LoadCustomDecks()
+    require "DeckCreator".Initialize()
 end
 
 ----------------------------------------------

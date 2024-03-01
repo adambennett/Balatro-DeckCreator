@@ -3,8 +3,8 @@ local CardUtils = require "CardUtils"
 
 local Helper = {}
 
-local FakeBlind = {}
-function FakeBlind:debuff_card(arg) end
+Helper.deckEditorAreas = {}
+Helper.sums = {}
 
 function Helper.registerGlobals()
     G.FUNCS.DeckCreatorModuleOptionCycle = function(e)
@@ -428,15 +428,15 @@ function Helper.createMultiRowTabs(args)
     return output
 end
 
-Helper.deckEditorAreas = {}
-
 function Helper.view_deck(unplayed_only)
     Helper.deckEditorAreas = {}
     local deck_tables = {}
     local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
     CardUtils.getCardsFromCustomCardList(deckList)
-    Utils.log("Custom card list before view deck init:\n" .. Utils.tableToString(deckList))
+    -- Utils.log("Custom card list before view deck init:\n" .. Utils.tableToString(deckList))
 
+    local FakeBlind = {}
+    function FakeBlind:debuff_card(arg) end
     remove_nils(G.playing_cards)
     G.VIEWING_DECK = true
     G.GAME.blind = FakeBlind
@@ -465,7 +465,7 @@ function Helper.view_deck(unplayed_only)
         else
             val = 'v.base was nil'
         end
-        Utils.log("Inserting into SUITS[" .. val .. "]")
+        -- Utils.log("Inserting into SUITS[" .. val .. "]")
 
         table.insert(SUITS[v.base.suit], v)
     end
@@ -783,7 +783,6 @@ function Helper.view_deck(unplayed_only)
     return output
 end
 
-Helper.sums = {}
 function Helper.calculateDeckEditorSums()
     local unplayed_only = false
     local flip_col = G.C.WHITE
@@ -867,7 +866,7 @@ function Helper.calculateDeckEditorSums()
         }
     end
 
-    Utils.log("rank tallies after recalculate:\n" .. Utils.tableToString(Helper.sums.rank_tallies))
+    -- Utils.log("rank tallies after recalculate:\n" .. Utils.tableToString(Helper.sums.rank_tallies))
 end
 
 return Helper

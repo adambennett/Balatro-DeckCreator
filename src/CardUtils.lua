@@ -2,26 +2,7 @@ local Utils = require "Utils"
 
 local CardUtils = {}
 
-function CardUtils.resetToMainMenuState()
---[[    for k, v in ipairs(G.playing_cards) do
-        v:remove()
-    end
-
-    if G.deck_preview ~= nil then
-        G.deck_preview:remove()
-        G.deck_preview = nil
-    end
-
-    G.deck = nil
-    G.playing_cards = nil
-    G.GAME.starting_deck_size = nil
-    G.VIEWING_DECK = nil]]
-    -- G.FUNCS.go_to_menu()
-end
-
-function CardUtils.resetPlayingCardsToDefault()
-    return CardUtils.standardCardSet()
-end
+-- CardUtils.CardInstances = {}
 
 function CardUtils.initializeCustomCardList(deck)
     G.playing_cards = {}
@@ -41,7 +22,7 @@ function CardUtils.initializeCustomCardList(deck)
     end
 
     for k, v in ipairs(card_protos) do
-        local _card = Card(9999, 9999, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
+        local _card = Card(G.deck.T.x, G.deck.T.y, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
         if v.edition then _card:set_edition({[v.edition] = true}, true, true) end
         if v.seal then _card:set_seal(v.seal, true, true) end
         G.deck:emplace(_card)
@@ -52,22 +33,25 @@ function CardUtils.initializeCustomCardList(deck)
     G.deck.card_limit = #G.playing_cards
 end
 
+CardUtils.allCardsEverMade = {}
+
 function CardUtils.getCardsFromCustomCardList(deck)
-    local CAI = {
-        discard_W = G.CARD_W,
-        discard_H = G.CARD_H,
-        deck_W = G.CARD_W*1.1,
-        deck_H = 0.95*G.CARD_H,
-        hand_W = 6*G.CARD_W,
-        hand_H = 0.95*G.CARD_H,
-        play_W = 5.3*G.CARD_W,
-        play_H = 0.95*G.CARD_H,
-        joker_W = 4.9*G.CARD_W,
-        joker_H = 0.95*G.CARD_H,
-        consumeable_W = 2.3*G.CARD_W,
-        consumeable_H = 0.95*G.CARD_H
-    }
-    G.deck = CardArea(9999, 9999, CAI.deck_W,CAI.deck_H, {card_limit = 52, type = 'deck'})
+
+    local flushCount = 0
+    Utils.log("G.playing_cards size before loop: " .. (G.playing_cards and #G.playing_cards or 'nil'))
+    if G.playing_cards and #G.playing_cards > 0 then
+        for j = 1, #G.playing_cards do
+            Utils.log("Looped g_playing_cards")
+            local c = G.playing_cards[j]
+            if c then
+                flushCount = flushCount + 1
+                c:remove()
+                c = nil
+            end
+        end
+    end
+    Utils.log("Flushed " .. flushCount .. " cards from G.playing_cards. Size: " .. (G.playing_cards and #G.playing_cards or 'nil'))
+
     G.playing_cards = {}
 
     local card_protos = {}
@@ -80,17 +64,29 @@ function CardUtils.getCardsFromCustomCardList(deck)
             rank = rank,
             enhancement = v.enhancement ~= "None" and v.enhancementKey or nil,
             edition = v.edition ~= "None" and v.editionKey or nil,
-            seal = v.seal ~= "None" and v.seal or nil
+            seal = v.seal ~= "None" and v.seal or nil,
+            key = k
         }
     end
 
+    -- CardUtils.CardInstances = {}
+    local memoryBefore = collectgarbage("count")
     for k, v in ipairs(card_protos) do
-        local _card = Card(G.deck.T.x, G.deck.T.y, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
+        local _card = Card(999, 999, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
+        _card.uuid = v.key
         if v.edition then _card:set_edition({[v.edition] = true}, true, true) end
         if v.seal then _card:set_seal(v.seal, true, true) end
         -- G.deck:emplace(_card)
         table.insert(G.playing_cards, _card)
+        table.insert(CardUtils.allCardsEverMade, _card)
+        -- CardUtils.CardInstances[_card.uuid] = v
+        --[[CardUtils.CardInstances[_card] = {}
+        table.insert(CardUtils.CardInstances[_card], v)]]
+        -- Utils.log("Inserting v into CardInstanceMap(" .. #CardUtils.CardInstances .. "): " .. Utils.tableToString(CardUtils.CardInstances[_card]))
     end
+    local memoryAfter = collectgarbage("count")
+    local diff = memoryAfter - memoryBefore
+    Utils.log("MEMORY CHECK (CardCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
 end
 
 function CardUtils.addCardToDeck(args)
@@ -169,16 +165,20 @@ function CardUtils.addCardToDeck(args)
             editionKey = generatedCard.editionKey,
             enhancement = generatedCard.enhancement,
             enhancementKey = generatedCard.enhancementKey,
-            seal = generatedCard.seal
+            seal = generatedCard.seal,
+            uuid = Utils.uuid()
         }
 
         if deckList[#deckList].config.customCardList[key] == nil then
+            newCard.key = key
             deckList[#deckList].config.customCardList[key] = newCard
         else
             while deckList[#deckList].config.customCardList[key .. "_" .. counter] ~= nil do
                 counter = counter + 1
             end
-            deckList[#deckList].config.customCardList[key .. "_" .. counter] = newCard
+            local extraKey = key .. "_" .. counter
+            newCard.key = extraKey
+            deckList[#deckList].config.customCardList[extraKey] = newCard
         end
     end
 end

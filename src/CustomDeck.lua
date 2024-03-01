@@ -20,8 +20,9 @@ function CustomDeck:blankDeck()
     }
 
     o.config = {
+        invert_back = true,
         uuid = Utils.uuid(),
-        customCardList = CardUtils.resetPlayingCardsToDefault(),
+        customCardList = CardUtils.standardCardSet(),
         customDeck = true,
         custom_cards_set = false,
         dollars = 4,
@@ -123,6 +124,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.discovered = true
 
     o.config = {
+        invert_back = true,
         uuid = uuid or Utils.uuid(),
         customCardList = customCardList,
         customDeck = true,
@@ -193,6 +195,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     if discardCost ~= nil and discardCost > 0 then
         o.config.discard_cost = discardCost
     end
+    o:register()
     return o
 end
 
@@ -210,7 +213,7 @@ end
 
 function CustomDeck.getAllDeckBacks()
     return {
-        {x=0,y=0},
+        {x=0,y=0, customDeck = true},
         {x=0,y=2},
         {x=1,y=2},
         {x=2,y=2},
