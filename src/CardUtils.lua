@@ -1,8 +1,7 @@
 local Utils = require "Utils"
 
 local CardUtils = {}
-
--- CardUtils.CardInstances = {}
+CardUtils.allCardsEverMade = {}
 
 function CardUtils.initializeCustomCardList(deck)
     G.playing_cards = {}
@@ -33,27 +32,22 @@ function CardUtils.initializeCustomCardList(deck)
     G.deck.card_limit = #G.playing_cards
 end
 
-CardUtils.allCardsEverMade = {}
-
-function CardUtils.getCardsFromCustomCardList(deck)
-
-    local flushCount = 0
-    Utils.log("G.playing_cards size before loop: " .. (G.playing_cards and #G.playing_cards or 'nil'))
+function CardUtils.flushGPlayingCards()
     if G.playing_cards and #G.playing_cards > 0 then
         for j = 1, #G.playing_cards do
-            Utils.log("Looped g_playing_cards")
             local c = G.playing_cards[j]
             if c then
-                flushCount = flushCount + 1
                 c:remove()
                 c = nil
             end
         end
     end
-    Utils.log("Flushed " .. flushCount .. " cards from G.playing_cards. Size: " .. (G.playing_cards and #G.playing_cards or 'nil'))
+end
 
+function CardUtils.getCardsFromCustomCardList(deck)
+
+    CardUtils.flushGPlayingCards()
     G.playing_cards = {}
-
     local card_protos = {}
 
     for k, v in pairs(deck) do
@@ -69,20 +63,14 @@ function CardUtils.getCardsFromCustomCardList(deck)
         }
     end
 
-    -- CardUtils.CardInstances = {}
     local memoryBefore = collectgarbage("count")
     for k, v in ipairs(card_protos) do
         local _card = Card(999, 999, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
         _card.uuid = v.key
         if v.edition then _card:set_edition({[v.edition] = true}, true, true) end
         if v.seal then _card:set_seal(v.seal, true, true) end
-        -- G.deck:emplace(_card)
         table.insert(G.playing_cards, _card)
         table.insert(CardUtils.allCardsEverMade, _card)
-        -- CardUtils.CardInstances[_card.uuid] = v
-        --[[CardUtils.CardInstances[_card] = {}
-        table.insert(CardUtils.CardInstances[_card], v)]]
-        -- Utils.log("Inserting v into CardInstanceMap(" .. #CardUtils.CardInstances .. "): " .. Utils.tableToString(CardUtils.CardInstances[_card]))
     end
     local memoryAfter = collectgarbage("count")
     local diff = memoryAfter - memoryBefore

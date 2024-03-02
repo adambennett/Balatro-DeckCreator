@@ -8,6 +8,7 @@ local GUI = {}
 
 GUI.DynamicUIManager = {}
 GUI.DeckCreatorOpen = false
+GUI.openTab = nil
 
 function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleOpenGithub = function()
@@ -618,6 +619,11 @@ function GUI.createAddCardsMenu()
     }))
 end
 
+function GUI.setOpenTab(tab)
+    GUI.openTab = tab
+    Utils.log("Switched DeckCreator tab: " .. tab)
+end
+
 function GUI.createDecksMenu(chosen)
     GUI.DeckCreatorOpen = true
     chosen = chosen or "Main Menu"
@@ -639,6 +645,7 @@ function GUI.createDecksMenu(chosen)
                                         label = " Main Menu ",
                                         chosen = chosen == "Main Menu",
                                         tab_definition_function = function()
+                                            GUI.setOpenTab("Main Menu")
                                             local modNodes = {}
 
                                             table.insert(modNodes, {
@@ -837,6 +844,7 @@ function GUI.createDecksMenu(chosen)
                                         label = " General ",
                                         chosen = chosen == "General",
                                         tab_definition_function = function()
+                                            GUI.setOpenTab("General")
                                             return {
                                                 n = G.UIT.ROOT,
                                                 config = {
@@ -870,6 +878,7 @@ function GUI.createDecksMenu(chosen)
                                         label = " Money ",
                                         chosen = chosen == "Money",
                                         tab_definition_function = function()
+                                            GUI.setOpenTab("Money")
                                             return {
                                                 n = G.UIT.ROOT,
                                                 config = {
@@ -999,6 +1008,7 @@ function GUI.createDecksMenu(chosen)
                                         label = " Hands & Discards ",
                                         chosen = chosen == "Hands & Discards",
                                         tab_definition_function = function()
+                                            GUI.setOpenTab("Hands & Discards")
                                             return {
                                                 n = G.UIT.ROOT,
                                                 config = {
@@ -1029,6 +1039,7 @@ function GUI.createDecksMenu(chosen)
                                         label = " Appearance Rates ",
                                         chosen = chosen == "Appearance Rates",
                                         tab_definition_function = function()
+                                            GUI.setOpenTab("Appearance Rates")
                                             return {
                                                 n = G.UIT.ROOT,
                                                 config = {
@@ -1059,16 +1070,66 @@ function GUI.createDecksMenu(chosen)
                                                 }
                                             }
                                         end
-                                    },
+                                    }
                                 }
                             },
                             {
                                 tabs = {
                                     {
 
+                                        label = " Base Deck ",
+                                        chosen = chosen == "Base Deck",
+                                        tab_definition_function = function()
+                                            GUI.setOpenTab("Base Deck")
+                                            return GUI.DynamicUIManager.initTab({
+                                                updateFunctions = {
+                                                    dynamicDeckEditorAreaCards = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaCards,
+                                                    dynamicDeckEditorAreaDeckTables = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaDeckTables
+                                                },
+                                                staticPageDefinition = GUI.deckEditorPageStatic()
+                                            })
+                                        end
+                                    },
+                                    {
+                                        label = " Starting Items ",
+                                        chosen = chosen == "Starting Items",
+                                        tab_definition_function = function()
+                                            GUI.setOpenTab("Starting Items")
+                                            return GUI.DynamicUIManager.initTab({
+                                                updateFunctions = { testDynamicArea = G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage },
+                                                staticPageDefinition = GUI.startingItemsPageStatic()
+                                            })
+                                        end
+                                    },
+                                    {
+
+                                        label = " Banned Items ",
+                                        chosen = chosen == "Banned Items",
+                                        tab_definition_function = function()
+                                            GUI.setOpenTab("Banned Items")
+                                            return {
+                                                n = G.UIT.ROOT,
+                                                config = {
+                                                    emboss = 0.05,
+                                                    minh = 6,
+                                                    r = 0.1,
+                                                    minw = 8,
+                                                    align = "cm",
+                                                    padding = 0.2,
+                                                    colour = G.C.BLACK
+                                                },
+                                                nodes = {
+
+                                                }
+                                            }
+                                        end
+                                    },
+                                    {
+
                                         label = " Static Mods ",
                                         chosen = chosen == "Static Mods",
                                         tab_definition_function = function()
+                                            GUI.setOpenTab("Static Mods")
                                             return {
                                                 n = G.UIT.ROOT,
                                                 config = {
@@ -1142,7 +1203,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Gain $1 per round for each of your Enhanced cards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'one_dollar_for_each_enhanced_card'}),
+                                                                    create_toggle({label = "Gain $1 per round for each\nof your Enhanced cards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'one_dollar_for_each_enhanced_card'}),
                                                                 }
                                                             },
                                                             {
@@ -1239,23 +1300,10 @@ function GUI.createDecksMenu(chosen)
                                     },
                                     {
 
-                                        label = " Base Deck ",
-                                        chosen = chosen == "Base Deck",
-                                        tab_definition_function = function()
-                                            return GUI.DynamicUIManager.initTab({
-                                                updateFunctions = {
-                                                    dynamicDeckEditorAreaCards = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaCards,
-                                                    dynamicDeckEditorAreaDeckTables = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaDeckTables
-                                                },
-                                                staticPageDefinition = GUI.deckEditorPageStatic()
-                                            })
-                                        end
-                                    },
-                                    {
-
                                         label = " Dynamic Mods ",
                                         chosen = chosen == "Dynamic Mods",
                                         tab_definition_function = function()
+                                            GUI.setOpenTab("Dynamic Mods")
                                             return {
                                                 n = G.UIT.ROOT,
                                                 config = {
@@ -1423,38 +1471,6 @@ function GUI.createDecksMenu(chosen)
                                                 }
                                             }
                                         end
-                                    },
-                                    {
-                                        label = " Starting Items ",
-                                        chosen = chosen == "Starting Items",
-                                        tab_definition_function = function()
-                                            return GUI.DynamicUIManager.initTab({
-                                                updateFunctions = { testDynamicArea = G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage },
-                                                staticPageDefinition = GUI.startingItemsPageStatic()
-                                            })
-                                        end
-                                    },
-                                    {
-
-                                        label = " Banned Items ",
-                                        chosen = chosen == "Banned Items",
-                                        tab_definition_function = function()
-                                            return {
-                                                n = G.UIT.ROOT,
-                                                config = {
-                                                    emboss = 0.05,
-                                                    minh = 6,
-                                                    r = 0.1,
-                                                    minw = 8,
-                                                    align = "cm",
-                                                    padding = 0.2,
-                                                    colour = G.C.BLACK
-                                                },
-                                                nodes = {
-
-                                                }
-                                            }
-                                        end
                                     }
                                 }
                             }
@@ -1513,7 +1529,7 @@ function GUI.DynamicUIManager.updateDynamicAreas(uiDefinitions)
 end
 
 function GUI.deckEditorPageStatic()
-    local t = {
+    return {
         n=G.UIT.ROOT,
         config={align = "cm", colour = G.C.CLEAR},
         nodes= {
@@ -1540,7 +1556,7 @@ function GUI.deckEditorPageStatic()
                 n = G.UIT.R,
                 config = { align = "cm", padding = 0.05 },
                 nodes = {
-                    {n=G.UIT.C, config={align = "cm", padding = 0.0}, nodes={
+                    {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
                         UIBox_button({
                             label = {" Add Card "},
                             shadow = true,
@@ -1551,7 +1567,18 @@ function GUI.deckEditorPageStatic()
                             minw = 3
                         })
                     }},
-                    {n=G.UIT.C, config={align = "cm", padding = 0.0}, nodes={
+                    {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+                        UIBox_button({
+                            label = {" Generate Card "},
+                            shadow = true,
+                            scale = 0.75 * 0.4,
+                            colour = G.C.BOOSTER,
+                            button = "DeckCreatorModuleGenerateCard",
+                            minh = 0.8,
+                            minw = 3
+                        })
+                    }},
+                    {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
                         UIBox_button({
                             label = {" Remove All "},
                             shadow = true,
@@ -1565,127 +1592,62 @@ function GUI.deckEditorPageStatic()
                 }
             }
     }}
-    return t
-    --[[return {
-        n=G.UIT.ROOT,
-        config={align = "cm", colour = G.C.CLEAR},
-        nodes= {
-            {
-                n = G.UIT.R,
-                config = { align = "cm", padding = 0.05 },
-                nodes = {}
-            },
-            {
-                n = G.UIT.R,
-                config = { align = "cm" },
-                nodes = {
-                    {
-                        n=G.UIT.O,
-                        config={id = 'dynamicDeckEditorAreaCards', object = Moveable()}
-                    },
-                    {
-                        n=G.UIT.B,
-                        config={w = 0.2, h = 0.1}
-                    },
-                    {
-                        n=G.UIT.O,
-                        config={ align = "cm", padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05,
-                            id = 'dynamicDeckEditorAreaDeckTables', object = Moveable()
-                        }
-                    }
-                }
-            },
-            {
-                n = G.UIT.R,
-                config={align = "cm", minh = 0.4, padding = 0.05},
-                nodes = {
-                    {
-                        n = G.UIT.C,
-                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-                        nodes = {
-                            {
-                                n = G.UIT.R,
-                                config = {
-                                    align = "cm",
-                                    padding = 0.1
-                                },
-                                nodes = {
-                                    UIBox_button({
-                                        label = {" Add Card "},
-                                        shadow = true,
-                                        scale = 0.75 * 0.4,
-                                        colour = G.C.BOOSTER,
-                                        button = "DeckCreatorModuleOpenAddCardToDeck",
-                                        minh = 0.8,
-                                        minw = 3
-                                    })
-                                }
-                            }
-                        }
-                    },
-                    {
-                        n = G.UIT.C,
-                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-                        nodes = {
-                            {
-                                n = G.UIT.R,
-                                config = {
-                                    align = "cm",
-                                    padding = 0.1
-                                },
-                                nodes = {
-                                    UIBox_button({
-                                        label = {" Generate Card "},
-                                        shadow = true,
-                                        scale = 0.75 * 0.4,
-                                        colour = G.C.BOOSTER,
-                                        button = "DeckCreatorModuleGenerateCard",
-                                        minh = 0.8,
-                                        minw = 3
-                                    })
-                                }
-                            }
-                        }
-                    },
-                    {
-                        n = G.UIT.C,
-                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-                        nodes = {
-                            {
-                                n = G.UIT.R,
-                                config = {
-                                    align = "cm",
-                                    padding = 0.1
-                                },
-                                nodes = {
-                                    UIBox_button({
-                                        label = {" Remove All "},
-                                        shadow = true,
-                                        scale = 0.75 * 0.4,
-                                        colour = G.C.BOOSTER,
-                                        button = "DeckCreatorModuleDeleteAllCardsFromBaseDeck",
-                                        minh = 0.8,
-                                        minw = 3
-                                    })
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }]]
 end
 
 function GUI.dynamicDeckEditorAreaCards()
 
+    if GUI.openTab ~= "Base Deck" then
+        return {
+            n=G.UIT.C,
+            config={align = "cm", minw = 1.5, minh = 2, r = 0.1, colour = G.C.BLACK, emboss = 0.05},
+            nodes={}
+        }
+    end
+
     local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
     CardUtils.getCardsFromCustomCardList(deckList)
-    -- Utils.log("Custom card list before view deck init:\n" .. Utils.tableToString(deckList))
 
     remove_nils(G.playing_cards)
     Helper.calculateDeckEditorSums()
+
     local flip_col = G.C.WHITE
+    -- local currentDeckName = Utils.customDeckList[#Utils.customDeckList].name
+
+    local boxText = { "Click any card", "to remove it", "from your deck"}
+    local empty = true
+    local t = {}
+
+    for k,v in ipairs(boxText) do
+        t[#t+1] = {
+            n=G.UIT.R,
+            config={align = "cm", maxw = 0.7*5 },
+            nodes={
+                { n=G.UIT.T, config={text = v, scale = 0.3, colour = G.C.UI.TEXT_DARK } }
+            }
+        }
+    end
+
+    local descFromRows = {
+        n=G.UIT.R,
+        config={align = "cm", colour = empty and G.C.CLEAR or G.C.UI.BACKGROUND_WHITE, r = 0.1, padding = 0.04, minw = 2, minh = 0.6, emboss = not empty and 0.05 or nil, filler = true},
+        nodes={
+            {
+                n=G.UIT.R,
+                config={align = "cm", padding = 0.03},
+                nodes=t
+            }
+        }
+    }
+
+    --[[local backGeneratedUI = {
+        n=G.UIT.ROOT,
+        config={align = "cm", minw = 0.7*5, minh = 0.7*1.5, id = currentDeckName, colour = G.C.CLEAR},
+        nodes={
+            descFromRows
+        }
+    }
+    Utils.log("Base Deck content:\n" .. Utils.tableToString(backGeneratedUI))]]
+
     return {
         n=G.UIT.C,
         config={align = "cm", minw = 1.5, minh = 2, r = 0.1, colour = G.C.BLACK, emboss = 0.05},
@@ -1738,49 +1700,38 @@ function GUI.dynamicDeckEditorAreaCards()
     }
 end
 
-function GUI.dynamicDeckEditorAreaDeckTables()
+function GUI.flushDeckEditorAreas()
 
-    local flushCount = 0
     for k,v in pairs(CardUtils.allCardsEverMade) do
         if v then
-            flushCount = flushCount + 1
             v:remove()
             v = nil
         end
     end
     CardUtils.allCardsEverMade = {}
-    Utils.log("Flushed " .. flushCount .. " cards from CardUtils.allCardsEverMade. Size: " .. #CardUtils.allCardsEverMade)
-    Utils.log("Size of G.I.CARD: " .. #G.I.CARD)
 
-    flushCount = 0
     if Helper.deckEditorAreas and #Helper.deckEditorAreas > 0 then
         for j = 1, #Helper.deckEditorAreas do
             Helper.deckEditorAreas[j]:remove()
-            --[[if Helper.deckEditorAreas[j].cards and #Helper.deckEditorAreas[j].cards > 0 then
-                for i = #Helper.deckEditorAreas[j].cards, 1, -1 do
-                    local c = Helper.deckEditorAreas[j]:remove_card(Helper.deckEditorAreas[j].cards[i])
-                    if c then
-                        flushCount = flushCount + 1
-                        c:remove()
-                        c = nil
-                    end
-                end
-            end]]
         end
     end
-
-    if Helper.deckEditorAreas and #Helper.deckEditorAreas > 0 then
-        for j = 1, #Helper.deckEditorAreas do
-            if Helper.deckEditorAreas[j].cards and #Helper.deckEditorAreas[j].cards > 0 then
-                for i = #Helper.deckEditorAreas[j].cards, 1, -1 do
-                    flushCount = flushCount + 1
-                end
-            end
-        end
-    end
-    Utils.log("Flushed " .. flushCount .. " cards from Helper.deckEditorAreas. Size: " .. #Helper.deckEditorAreas)
-
     Helper.deckEditorAreas = {}
+end
+
+function GUI.dynamicDeckEditorAreaDeckTables()
+
+    GUI.flushDeckEditorAreas()
+    if GUI.openTab ~= "Base Deck" then
+        return {
+            n=G.UIT.ROOT,
+            config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 11.4, minh = 4.2},
+            nodes={}
+        }
+    end
+
+    local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
+    CardUtils.getCardsFromCustomCardList(deckList)
+
     local deck_tables = {}
     local SUITS = {
         S = {},
@@ -1789,11 +1740,6 @@ function GUI.dynamicDeckEditorAreaDeckTables()
         D = {},
     }
     local suit_map = {'S', 'H', 'C', 'D'}
-
-
-    local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
-    CardUtils.getCardsFromCustomCardList(deckList)
-    -- Utils.log("Custom card list before view deck init:\n" .. Utils.tableToString(deckList))
 
     local FakeBlind = {}
     function FakeBlind:debuff_card(arg) end
@@ -1804,29 +1750,16 @@ function GUI.dynamicDeckEditorAreaDeckTables()
     table.sort(G.playing_cards, function (a, b) return a:get_nominal('suit') > b:get_nominal('suit') end )
 
     for k, v in ipairs(G.playing_cards) do
-
-        -- debugging
-        --[[local val = v.base
-        if val ~= nil then
-            local newVal = val.suit
-            if newVal ~= nil then
-                val = newVal
-            else
-                val = Utils.tableToString(v.base)
-            end
-        else
-            val = 'v.base was nil'
-        end
-        Utils.log("Inserting into SUITS[" .. val .. "]")]]
-
         table.insert(SUITS[string.sub(v.base.suit, 1, 1)], v)
     end
+
+    local xy = GUI.openTab == 'Base Deck' and 0 or 9999
 
     for j = 1, 4 do
         if SUITS[suit_map[j]][1] then
             table.sort(SUITS[suit_map[j]], function(a,b) return a:get_nominal() > b:get_nominal() end )
             local view_deck = CardArea(
-                        0,0,
+                        xy,xy,
                         5.5*G.CARD_W,
                         0.42*G.CARD_H,
                         {card_limit = #SUITS[suit_map[j]], type = 'title_2', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
@@ -1855,83 +1788,11 @@ function GUI.dynamicDeckEditorAreaDeckTables()
     end
 
     G.GAME.blind = nil
-    return {n=G.UIT.ROOT, config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 11.4, minh = 4.2}, nodes=deck_tables}
-
-    --[[Helper.deckEditorAreas = {}
-
-    local deck_tables = {}
-    local SUITS = {
-        Spades = {},
-        Hearts = {},
-        Clubs = {},
-        Diamonds = {},
+    return {
+        n=G.UIT.ROOT,
+        config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 11.4, minh = 4.2},
+        nodes=deck_tables
     }
-    local suit_map = {'Spades', 'Hearts', 'Clubs', 'Diamonds'}
-    local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
-    CardUtils.getCardsFromCustomCardList(deckList)
-    Utils.log("Custom card list before view deck init:\n" .. Utils.tableToString(deckList))
-
-    local FakeBlind = {}
-    function FakeBlind:debuff_card(arg) end
-    remove_nils(G.playing_cards)
-    G.VIEWING_DECK = true
-    G.GAME.blind = FakeBlind
-
-    table.sort(G.playing_cards, function (a, b) return a:get_nominal('suit') > b:get_nominal('suit') end )
-
-    for k, v in ipairs(G.playing_cards) do
-
-        -- debugging
-        local val = v.base
-        if val ~= nil then
-            local newVal = val.suit
-            if newVal ~= nil then
-                val = newVal
-            else
-                val = Utils.tableToString(v.base)
-            end
-        else
-            val = 'v.base was nil'
-        end
-        Utils.log("Inserting into SUITS[" .. val .. "]")
-
-        table.insert(SUITS[v.base.suit], v)
-    end
-
-    for j = 1, 4 do
-        if SUITS[suit_map[j]]--[[[1] then
-
-            local deckArea = CardArea(
-                    G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
-                    6.5*G.CARD_W,
-                    0.6*G.CARD_H,
-                    {card_limit = #SUITS[suit_map[j]]--[[, type = 'title', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.7, draw_layers = {'card'}}
-            )
-            table.insert(Helper.deckEditorAreas, deckArea)
-
-            table.insert(deck_tables,{
-                n=G.UIT.R,
-                config={align = "cm", padding = 0},
-                nodes={
-                    {n=G.UIT.O, config={object = deckArea}}
-                }
-            })
-
-            for i = 1, #SUITS[suit_map[j]]--[[ do
-                if SUITS[suit_map[j]]--[[[i] then
-                    local _scale = 0.7
-                    local copy = copy_card(SUITS[suit_map[j]]--[[[i],nil, _scale)
-                    copy.greyed = nil
-                    copy.T.x = deckArea.T.x + deckArea.T.w/2
-                    copy.T.y = deckArea.T.y
-                    copy:hard_set_T()
-                    deckArea:emplace(copy)
-                end
-            end
-        end
-    end
-
-    return deck_tables]]
 end
 
 function GUI.updateAllDeckEditorAreas()
