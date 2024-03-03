@@ -20,9 +20,14 @@ function CustomDeck:blankDeck()
     }
 
     o.config = {
+        copy_deck_config = nil,
         invert_back = true,
         uuid = Utils.uuid(),
         customCardList = CardUtils.standardCardSet(),
+        customJokerList = {},
+        customConsumableList = {},
+        customVoucherList = {},
+        customVoucherList = {},
         customDeck = true,
         custom_cards_set = false,
         dollars = 4,
@@ -75,6 +80,11 @@ function CustomDeck:blankDeck()
         debuff_played_cards = false,
         flipped_cards = false
     }
+
+    --[[for k,v in pairs(Utils.vouchers(true)) do
+        table.insert(o.config.customVoucherList, v.id)
+    end]]
+
     return o
 end
 
@@ -84,12 +94,13 @@ function CustomDeck:new(name, slug, config, spritePos, loc_txt)
     self.__index = self
 
     if slug == nil or slug == "" then
-        slug = "b_" .. name
+        o.slug = "b_" .. name
+    else
+        o.slug = "b_" .. slug
     end
 
     o.loc_txt = loc_txt
     o.name = name
-    o.slug = "b_" .. slug
     o.config = config or {}
     o.spritePos = spritePos or {x = 0, y = 0}
     o.unlocked = true
@@ -100,7 +111,7 @@ end
 
 function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, reRollCost, jokerSlots, anteScaling, consumableSlots, dollarsPerHand, dollarsPerDiscard, jokerRate, tarotRate, planetRate, spectralRate, playingCardRate, randomizeRankSuit, noFaces, interestAmount, interestCap, discountPercent, edition, doubleTag, balanceChips, editionCount, deckBackIndex, winAnte, inflation, shopSlots,
                             allPolychrome, allHolo, allFoil, allBonus, allMult, allWild, allGlass, allSteel, allStone, allGold, allLucky, enableEternalsInShop, boosterAnteScaling, chipsDollarCap, discardCost,
-                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, customCardList, customCardsSet, uuid)
+                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, uuid, copyDeckConfig, customCardList, customCardsSet, customJokerList, customJokersSet, customConsumableList, customConsumablesSet, customVoucherList, customVouchersSet)
     o = {}
     setmetatable(o, self)
     self.__index = self
@@ -124,6 +135,13 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.discovered = true
 
     o.config = {
+        copy_deck_config = copyDeckConfig,
+        customJokerList = customJokerList,
+        customConsumableList = customConsumableList,
+        customVoucherList = customVoucherList,
+        custom_jokers_set = customJokersSet,
+        custom_consumables_set = customConsumablesSet,
+        custom_vouchers_set = customVouchersSet,
         invert_back = true,
         uuid = uuid or Utils.uuid(),
         customCardList = customCardList,
@@ -213,7 +231,7 @@ end
 
 function CustomDeck.getAllDeckBacks()
     return {
-        {x=0,y=0, customDeck = true},
+        {x=0,y=0},
         {x=0,y=2},
         {x=1,y=2},
         {x=2,y=2},
@@ -227,7 +245,15 @@ function CustomDeck.getAllDeckBacks()
         {x=4,y=3},
         {x=2,y=4},
         {x=4,y=2},
-        {x=2,y=3}
+        {x=2,y=3},
+        {x=0,y=4},
+        {x=1,y=4},
+        {x=6,y=0},
+        {x=6,y=1},
+        {x=5,y=1},
+        {x=5,y=0},
+        {x=4,y=0},
+        {x=5,y=2}
     }
 end
 
@@ -248,6 +274,14 @@ function CustomDeck.getAllDeckBackNames()
         "Anaglyph",
         "Plasma",
         "Erratic",
+        "Challenge",
+        "Special",
+        "Gold",
+        "Silver",
+        "Glass",
+        "Stone",
+        "Lock",
+        "Fade",
         "Random"
     }
 end

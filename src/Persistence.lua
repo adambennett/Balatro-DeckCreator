@@ -88,4 +88,18 @@ function Persistence.loadAllDeckLists()
     end
 end
 
+function Persistence.unloadDeckLists()
+    Utils.customDeckList = {}
+
+end
+
+function Persistence.refreshDeckList()
+    if SMODS.injectDecks ~= nil then
+        SMODS.injectDecks()
+        return
+    end
+
+
+end
+
 return Persistence

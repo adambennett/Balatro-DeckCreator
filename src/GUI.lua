@@ -8,17 +8,36 @@ local GUI = {}
 
 GUI.DynamicUIManager = {}
 GUI.DeckCreatorOpen = false
+GUI.StartingItemsOpen = false
 GUI.openTab = nil
+GUI.openItemType = nil
+
+function GUI.CloseAllOpenFlags()
+    GUI.DeckCreatorOpen = false
+    GUI.StartingItemsOpen = false
+    GUI.openItemType = nil
+end
+
+function GUI.setOpenTab(tab)
+    GUI.openTab = tab
+    GUI.CloseAllOpenFlags()
+    Utils.log("Switched DeckCreator tab: " .. tab)
+    if tab == "Base Deck" then
+        GUI.DeckCreatorOpen = true
+    elseif tab == "Starting Items" then
+        GUI.StartingItemsOpen = true
+    end
+end
 
 function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleOpenGithub = function()
         love.system.openURL("https://github.com/adambennett/Balatro-DeckCreator")
     end
 
-    G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage = function(args)
+    G.FUNCS.DeckCreatorModuleUpdateNewMods = function(args)
         if not args or not args.cycle_config then return end
         GUI.DynamicUIManager.updateDynamicAreas({
-            ["testDynamicArea"] = GUI.startingItemsPageDynamic(args.cycle_config.current_option)
+            ["modsList"] = GUI.dynamicNewMods(args.cycle_config.current_option)
         })
     end
 
@@ -31,6 +50,18 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaDeckTables = function(args)
         GUI.DynamicUIManager.updateDynamicAreas({
             ["dynamicDeckEditorAreaDeckTables"] = GUI.dynamicDeckEditorAreaDeckTables()
+        })
+    end
+
+    G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaCards = function(args)
+        GUI.DynamicUIManager.updateDynamicAreas({
+            ["dynamicStartingItemsAreaCards"] = GUI.dynamicStartingItemsAreaCards()
+        })
+    end
+
+    G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaDeckTables = function(args)
+        GUI.DynamicUIManager.updateDynamicAreas({
+            ["dynamicStartingItemsAreaDeckTables"] = GUI.dynamicStartingItemsAreaDeckTables()
         })
     end
 
@@ -50,6 +81,22 @@ function GUI.registerGlobals()
         })
     end
 
+    G.FUNCS.DeckCreatorModuleOpenAddItemToDeck = function ()
+        GUI.openItemType = nil
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu({
+            definition = GUI.createSelectItemTypeMenu()
+        })
+    end
+
+    G.FUNCS.DeckCreatorModuleAddVoucherMenu = function()
+        GUI.openItemType = 'voucher'
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu{
+            definition = GUI.addVoucherMenu()
+        }
+    end
+
     G.FUNCS.DeckCreatorModuleGenerateCard = function()
         local addCard = {
             rank = "Random",
@@ -62,6 +109,12 @@ function GUI.registerGlobals()
         CardUtils.addCardToDeck({ addCard = addCard, deck_list = Utils.customDeckList})
         Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
         GUI.updateAllDeckEditorAreas()
+    end
+
+    G.FUNCS.DeckCreatorModuleGenerateItem = function()
+        CardUtils.addItemToDeck({ isRandomType = true, deck_list = Utils.customDeckList})
+        Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
+        GUI.updateAllStartingItemsAreas()
     end
 
     G.FUNCS.DeckCreatorModuleDeleteAllCardsFromBaseDeck = function()
@@ -85,6 +138,29 @@ function GUI.registerGlobals()
         end
         G.playing_cards = {}
         GUI.updateAllDeckEditorAreas()
+    end
+
+    G.FUNCS.DeckCreatorModuleDeleteAllStartingItemsFromBaseDeck = function()
+        for j = 1, #Helper.deckEditorAreas do
+            for i = #Helper.deckEditorAreas[j].cards,1, -1 do
+                local c = Helper.deckEditorAreas[j]:remove_card(Helper.deckEditorAreas[j].cards[i])
+                c:remove()
+                c = nil
+            end
+        end
+        Utils.customDeckList[#Utils.customDeckList].config.customVoucherList = {}
+        Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set = true
+        if CardUtils.startingItems.vouchers and #CardUtils.startingItems.vouchers > 0 then
+            for j = 1, #CardUtils.startingItems.vouchers do
+                local c = CardUtils.startingItems.vouchers[j]
+                if c then
+                    c:remove()
+                    c = nil
+                end
+            end
+        end
+        CardUtils.startingItems.vouchers = {}
+        GUI.updateAllStartingItemsAreas()
     end
 
     G.FUNCS.DeckCreatorModuleAddCardChangeRank = function(args)
@@ -148,6 +224,10 @@ function GUI.registerGlobals()
         Utils.customDeckList[#Utils.customDeckList].config.edition_count = args.to_val
     end
 
+    G.FUNCS.DeckCreatorModuleChangeCopyFromDeck = function(args)
+        Utils.customDeckList[#Utils.customDeckList].config.copy_deck_config = args.to_val
+    end
+
     G.FUNCS.DeckCreatorModuleChangeJokerSlots = function(args)
         Utils.customDeckList[#Utils.customDeckList].config.joker_slot = args.to_val
     end
@@ -209,7 +289,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
-        GUI.DeckCreatorOpen = false
+        GUI.CloseAllOpenFlags()
         G.FUNCS:exit_overlay_menu()
         G.FUNCS.overlay_menu({
             definition = create_UIBox_mods(arg_736_0)
@@ -232,6 +312,13 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleReopenBaseDeck = function()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
+        })
+    end
+
+    G.FUNCS.DeckCreatorModuleReopenStartingItems = function()
+        GUI.openItemType = nil
+        G.FUNCS.overlay_menu({
+            definition = GUI.createDecksMenu("Starting Items")
         })
     end
 
@@ -304,78 +391,25 @@ function GUI.registerGlobals()
                 Utils.customDeckList[#Utils.customDeckList].config.all_eternal,
                 Utils.customDeckList[#Utils.customDeckList].config.debuff_played_cards,
                 Utils.customDeckList[#Utils.customDeckList].config.flipped_cards,
+                Utils.customDeckList[#Utils.customDeckList].config.uuid,
+                Utils.customDeckList[#Utils.customDeckList].config.copy_deck_config,
                 Utils.customDeckList[#Utils.customDeckList].config.customCardList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set
+                Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set,
+                Utils.customDeckList[#Utils.customDeckList].config.customJokerList,
+                Utils.customDeckList[#Utils.customDeckList].config.custom_jokers_set,
+                Utils.customDeckList[#Utils.customDeckList].config.customConsumableList,
+                Utils.customDeckList[#Utils.customDeckList].config.custom_consumables_set,
+                Utils.customDeckList[#Utils.customDeckList].config.customVoucherList,
+                Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set
         )
         Utils.log("newDeck initialized\n" .. Utils.tableToString(newDeck))
-
         Utils.customDeckList[#Utils.customDeckList] = newDeck
-        -- Utils.customDeckList[#Utils.customDeckList]:register()
-        Utils.log("newDeck registered")
 
-        --[[SMODS.injectDecks()
-        Utils.log("All custom decks injected")]]
-
-        local minId = 17
-        local id = 0
-        local replacedId = ""
-        local replacedName = ""
-
-        for i, deck in ipairs(SMODS.Decks) do
-            -- Prepare some Datas
-            id = i + minId - 1
-
-            local deck_obj = {
-                stake = 1,
-                key = deck.slug,
-                discovered = deck.discovered,
-                alerted = true,
-                name = deck.name,
-                set = "Back",
-                unlocked = deck.unlocked,
-                order = id - 1,
-                pos = deck.spritePos,
-                config = deck.config
-            }
-            -- Now we replace the others
-            G.P_CENTERS[deck.slug] = deck_obj
-            G.P_CENTER_POOLS.Back[id - 1] = deck_obj
-
-            Utils.log("deck_obj: " .. Utils.tableToString(deck_obj))
-
-            -- Setup Localize text
-            G.localization.descriptions["Back"][deck.slug] = deck.loc_txt
-
-            -- Load it
-            for g_k, group in pairs(G.localization) do
-                if g_k == 'descriptions' then
-                    for _, set in pairs(group) do
-                        for _, center in pairs(set) do
-                            center.text_parsed = {}
-                            for _, line in ipairs(center.text) do
-                                center.text_parsed[#center.text_parsed+1] = loc_parse_string(line)
-                            end
-                            center.name_parsed = {}
-                            for _, line in ipairs(type(center.name) == 'table' and center.name or {center.name}) do
-                                center.name_parsed[#center.name_parsed+1] = loc_parse_string(line)
-                            end
-                            if center.unlock then
-                                center.unlock_parsed = {}
-                                for _, line in ipairs(center.unlock) do
-                                    center.unlock_parsed[#center.unlock_parsed+1] = loc_parse_string(line)
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-
-            sendDebugMessage("The Deck named " .. deck.name .. " with the slug " .. deck.slug .. " have been registered at the id " .. id .. ".")
-        end
-
+        Persistence.refreshDeckList()
+        Utils.log("All custom decks re-injected")
 
         Persistence.saveAllDecks()
-        GUI.DeckCreatorOpen = false
+        GUI.CloseAllOpenFlags()
         Utils.log("All custom decks saved successfully. Returning to main menu")
 
         G.FUNCS:exit_overlay_menu()
@@ -419,7 +453,26 @@ function GUI.registerModMenuUI()
                      minw = 8
                  })
              }
-        }
+        },
+
+        --[[{
+            n = G.UIT.R,
+            config = {
+                padding = 0.1,
+                align = "cm"
+            },
+            nodes = {
+                UIBox_button({
+                    label = {" New Mods Menu "},
+                    shadow = true,
+                    scale = 0.75 * 0.5,
+                    colour = G.C.BOOSTER,
+                    button = "DeckCreatorModuleNewModsMenu",
+                    minh = 0.8,
+                    minw = 8
+                })
+            }
+        }]]
     })
 end
 
@@ -440,7 +493,7 @@ GUI.addCard = GUI.resetAddCard()
 
 function GUI.createAddCardsMenu()
     GUI.addCard = GUI.resetAddCard()
-    return (create_UIBox_generic_options({
+    return create_UIBox_generic_options({
         back_func = "DeckCreatorModuleReopenBaseDeck",
         contents = {
             {
@@ -616,18 +669,12 @@ function GUI.createAddCardsMenu()
                 }
             }
         }
-    }))
-end
-
-function GUI.setOpenTab(tab)
-    GUI.openTab = tab
-    Utils.log("Switched DeckCreator tab: " .. tab)
+    })
 end
 
 function GUI.createDecksMenu(chosen)
-    GUI.DeckCreatorOpen = true
     chosen = chosen or "Main Menu"
-    return (create_UIBox_generic_options({
+    return create_UIBox_generic_options({
         back_func = "DeckCreatorModuleBackToModsScreen",
         contents = {
             {
@@ -868,7 +915,10 @@ function GUI.createDecksMenu(chosen)
                                                     )}),
                                                     Helper.createOptionSelector({label = "Shop Slots", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 5), opt_callback = 'DeckCreatorModuleChangeShopSlots', current_option = (
                                                             Utils.customDeckList[#Utils.customDeckList].config.shop_slots
-                                                    )})
+                                                    )}),
+                                                    Helper.createOptionSelector({label = "Copy Deck Properties", scale = 0.8, options = Utils.allDeckNames(), opt_callback = 'DeckCreatorModuleChangeCopyFromDeck', current_option = (
+                                                            Utils.customDeckList[#Utils.customDeckList].config.copy_deck_config
+                                                    ) }),
                                                 }
                                             }
                                         end
@@ -1096,7 +1146,10 @@ function GUI.createDecksMenu(chosen)
                                         tab_definition_function = function()
                                             GUI.setOpenTab("Starting Items")
                                             return GUI.DynamicUIManager.initTab({
-                                                updateFunctions = { testDynamicArea = G.FUNCS.DeckCreatorModuleUpdateStartingItemsPage },
+                                                updateFunctions = {
+                                                    dynamicStartingItemsAreaCards = G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaCards,
+                                                    dynamicStartingItemsAreaDeckTables = G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaDeckTables
+                                                },
                                                 staticPageDefinition = GUI.startingItemsPageStatic()
                                             })
                                         end
@@ -1481,7 +1534,30 @@ function GUI.createDecksMenu(chosen)
                 }
             }
         }
-    }))
+    })
+end
+
+function GUI.createSelectItemTypeMenu()
+    return create_UIBox_generic_options({
+        back_func = 'DeckCreatorModuleReopenStartingItems',
+        contents = {
+            {n=G.UIT.C, config={align = "cm", padding = 0.15}, nodes={
+                UIBox_button({button = 'your_collection_jokers', label = {localize('b_jokers')}, count = G.DISCOVER_TALLIES.jokers,  minw = 5, minh = 1.7, scale = 0.6, id = 'your_collection_jokers'}),
+                UIBox_button({button = 'your_collection_tags', label = {localize('b_tags')}, count = G.DISCOVER_TALLIES.tags, minw = 5, id = 'your_collection_tags'}),
+                UIBox_button({button = 'DeckCreatorModuleAddVoucherMenu', label = {localize('b_vouchers')}, count = G.DISCOVER_TALLIES.vouchers, minw = 5, id = 'your_collection_vouchers'}),
+                {n=G.UIT.R, config={align = "cm", padding = 0.1, r=0.2, colour = G.C.BLACK}, nodes={
+                    {n=G.UIT.C, config={align = "cm", maxh=2.9}, nodes={
+                        {n=G.UIT.T, config={text = localize('k_cap_consumables'), scale = 0.45, colour = G.C.L_BLACK, vert = true, maxh=2.2}},
+                    }},
+                    {n=G.UIT.C, config={align = "cm", padding = 0.15}, nodes={
+                        UIBox_button({button = 'your_collection_tarots', label = {localize('b_tarot_cards')}, count = G.DISCOVER_TALLIES.tarots, minw = 4, id = 'your_collection_tarots', colour = G.C.SECONDARY_SET.Tarot}),
+                        UIBox_button({button = 'your_collection_planets', label = {localize('b_planet_cards')}, count = G.DISCOVER_TALLIES.planets, minw = 4, id = 'your_collection_planets', colour = G.C.SECONDARY_SET.Planet}),
+                        UIBox_button({button = 'your_collection_spectrals', label = {localize('b_spectral_cards')}, count = G.DISCOVER_TALLIES.spectrals, minw = 4, id = 'your_collection_spectrals', colour = G.C.SECONDARY_SET.Spectral}),
+                    }}
+                }}
+            }}
+        }
+    })
 end
 
 function GUI.DynamicUIManager.initTab(args)
@@ -1604,16 +1680,15 @@ function GUI.dynamicDeckEditorAreaCards()
         }
     end
 
+    local flip_col = G.C.WHITE
     local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
     CardUtils.getCardsFromCustomCardList(deckList)
-
     remove_nils(G.playing_cards)
     Helper.calculateDeckEditorSums()
 
-    local flip_col = G.C.WHITE
     -- local currentDeckName = Utils.customDeckList[#Utils.customDeckList].name
 
-    local boxText = { "Click any card", "to remove it", "from your deck"}
+    --[[local boxText = { "Click any card", "to remove it", "from your deck"}
     local empty = true
     local t = {}
 
@@ -1639,7 +1714,7 @@ function GUI.dynamicDeckEditorAreaCards()
         }
     }
 
-    --[[local backGeneratedUI = {
+    local backGeneratedUI = {
         n=G.UIT.ROOT,
         config={align = "cm", minw = 0.7*5, minh = 0.7*1.5, id = currentDeckName, colour = G.C.CLEAR},
         nodes={
@@ -1804,50 +1879,310 @@ function GUI.updateAllDeckEditorAreas()
     })
 end
 
+function GUI.updateAllStartingItemsAreas()
+    GUI.DynamicUIManager.updateDynamicAreas({
+        ["dynamicStartingItemsAreaCards"] = GUI.dynamicStartingItemsAreaCards()
+    })
+    GUI.DynamicUIManager.updateDynamicAreas({
+        ["dynamicStartingItemsAreaDeckTables"] = GUI.dynamicStartingItemsAreaDeckTables()
+    })
+end
+
 function GUI.startingItemsPageStatic()
     return {
+        n=G.UIT.ROOT,
+        config={align = "cm", colour = G.C.CLEAR},
+        nodes= {
+            {
+                n = G.UIT.R,
+                config = { align = "cm", padding = 0.05 },
+                nodes = {
+                    {n=G.UIT.C, config={align = "cm", padding = 0.0}, nodes={
+                        {
+                            n = G.UIT.R,
+                            config = { align = "cm", padding = 0.05 },
+                            nodes = {}
+                        },
+                        {n=G.UIT.R, config={align = "cm", padding = 0.1, minh = 5.5, minw = 4.5}, nodes={
+                            {n=G.UIT.O, config={id = 'dynamicStartingItemsAreaCards', object = Moveable()}},
+                        }},
+                    }},
+                    {n=G.UIT.C, config={align = "cm", minh = 5.5, minw = 12}, nodes={
+                        {n=G.UIT.O, config={id = 'dynamicStartingItemsAreaDeckTables', object = Moveable()}},
+                    }},
+                }
+            },
+            {
+                n = G.UIT.R,
+                config = { align = "cm", padding = 0.05 },
+                nodes = {
+                    {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+                        UIBox_button({
+                            label = {" Add Item "},
+                            shadow = true,
+                            scale = 0.75 * 0.4,
+                            colour = G.C.BOOSTER,
+                            button = "DeckCreatorModuleOpenAddItemToDeck",
+                            minh = 0.8,
+                            minw = 3
+                        })
+                    }},
+                    {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+                        UIBox_button({
+                            label = {" Generate Item "},
+                            shadow = true,
+                            scale = 0.75 * 0.4,
+                            colour = G.C.BOOSTER,
+                            button = "DeckCreatorModuleGenerateItem",
+                            minh = 0.8,
+                            minw = 3
+                        })
+                    }},
+                    {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+                        UIBox_button({
+                            label = {" Remove All "},
+                            shadow = true,
+                            scale = 0.75 * 0.4,
+                            colour = G.C.BOOSTER,
+                            button = "DeckCreatorModuleDeleteAllStartingItemsFromBaseDeck",
+                            minh = 0.8,
+                            minw = 3
+                        })
+                    }},
+                }
+            }
+        }}
+end
+
+function GUI.dynamicStartingItemsAreaCards()
+    if GUI.openTab ~= "Starting Items" then
+        return {
+            n=G.UIT.C,
+            config={align = "cm", minw = 1.5, minh = 2, r = 0.1, colour = G.C.BLACK, emboss = 0.05},
+            nodes={}
+        }
+    end
+
+    local flip_col = G.C.WHITE
+    local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
+    local consumableList = Utils.customDeckList[#Utils.customDeckList].config.customConsumableList
+    local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
+    CardUtils.getJokersFromCustomJokerList(jokerList)
+    CardUtils.getConsumablesFromCustomConsumableList(consumableList)
+    CardUtils.getVouchersFromCustomVoucherList(voucherList)
+    remove_nils(CardUtils.startingItems.jokers)
+    remove_nils(CardUtils.startingItems.consumables)
+    remove_nils(CardUtils.startingItems.vouchers)
+    Helper.calculateStartingItemsSums()
+
+    return {
         n=G.UIT.C,
-        config={align = "cm", padding = 0.0},
-        nodes = {
-            {n=G.UIT.R, config={align = "cm", padding = 0.1, minh = 7, minw = 4.2}, nodes={
-                {n=G.UIT.O, config={id = 'testDynamicArea', object = Moveable()}},
-            }},
-            {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
-                create_option_cycle({id = 'starting_items_page',scale = 0.9, h = 0.3, w = 3.5, options = {1, 2}, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleUpdateStartingItemsPage', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true}})
-            }},
+        config={align = "cm", minw = 1.5, minh = 2, r = 0.1, colour = G.C.BLACK, emboss = 0.05},
+        nodes={
+            {
+                n=G.UIT.C,
+                config={align = "cm", padding = 0.1},
+                nodes={
+                    --[[{ n = G.UIT.R, config = { align = "cm", r = 0.1, colour = G.C.L_BLACK, emboss = 0.05, padding = 0.15 }, nodes = {
+                        { n = G.UIT.R, config = { align = "cm" }, nodes = {
+                            { n = G.UIT.O, config = { object = DynaText({ string = currentDeckName, colours = { G.C.WHITE }, bump = true, rotate = true, shadow = true, scale = 0.6 - string.len(currentDeckName) * 0.01 }) } },
+                        } },
+                        { n = G.UIT.R, config = { align = "cm", r = 0.1, padding = 0.1, minw = 2.5, minh = 1.3, colour = G.C.WHITE, emboss = 0.05 }, nodes = {
+                            { n = G.UIT.O, config = { object = UIBox {
+                                definition = backGeneratedUI,
+                                config = { offset = { x = 0, y = 0 } }
+                            } } }
+                        } }
+                    } },]]
+                    { n = G.UIT.R, config = { align = "cm", r = 0.1, outline_colour = G.C.L_BLACK, line_emboss = 0.05, outline = 1.5 }, nodes = {
+                        --[[{ n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.07 }, nodes = {
+                            { n = G.UIT.O, config = { object = DynaText({ string = { { string = "Starting Items", colour = G.C.RED }, Helper.sums.moddedItems and { string = localize('k_effective'), colour = G.C.BLUE } or nil }, colours = { G.C.RED }, silent = true, scale = 0.4, pop_in_rate = 10, pop_delay = 4 }) } }
+                        } },]]
+                        { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
+                            Helper.tally_item_sprite({ x = 1, y = 0 }, { { string = Helper.sums.item_tallies['Joker'], colour = flip_col }, { string = Helper.sums.item_tallies['Joker'], colour = G.C.BLUE } }, { "Jokers" }), --Aces
+                            Helper.tally_item_sprite({ x = 2, y = 0 }, { { string = (Helper.sums.item_tallies['Planet'] or 0) + (Helper.sums.item_tallies['Tarot'] or 0), colour = flip_col }, { string = Helper.sums.item_tallies['Joker'], colour = G.C.BLUE } }, { "Consumable" }), --Face
+                            Helper.tally_item_sprite({ x = 3, y = 0 }, { { string = Helper.sums.item_tallies['Voucher'], colour = flip_col }, { string = Helper.sums.item_tallies['Voucher'], colour = G.C.BLUE } }, { "Vouchers" }), --Numbers
+                        } },
+                        { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
+                            Helper.tally_item_sprite({ x = 3, y = 1 }, { { string = Helper.sums.item_tallies['Joker'], colour = flip_col }, { string = Helper.sums.item_tallies['Joker'], colour = G.C.BLUE } }, { "Jokers" }),
+                            Helper.tally_item_sprite({ x = 0, y = 1 }, { { string = Helper.sums.item_tallies['Planet'], colour = flip_col }, { string = Helper.sums.item_tallies['Planet'], colour = G.C.BLUE } }, { "Planets" }),
+                        } },
+                        { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
+                            Helper.tally_item_sprite({ x = 2, y = 1 }, { { string = Helper.sums.item_tallies['Tarot'], colour = flip_col }, { string = Helper.sums.item_tallies['Tarot'], colour = G.C.BLUE } }, { "Tarots" }),
+                            Helper.tally_item_sprite({ x = 1, y = 1 }, { { string = Helper.sums.item_tallies['Voucher'], colour = flip_col }, { string = Helper.sums.item_tallies['Voucher'], colour = G.C.BLUE } }, { "Vouchers" }),
+                        } },
+                    } }
+                }
+            },
+            {
+                n=G.UIT.C,
+                config={align = "cm"},
+                nodes = Helper.sums.start_item_cols
+            },
+            {
+                n=G.UIT.B,
+                config={w = 0.1, h = 0.1}
+            },
         }
     }
 end
 
-function GUI.startingItemsPageDynamic(page)
-    return {n=G.UIT.ROOT, config={align = "cm", padding = 0.1, colour = G.C.CLEAR}, nodes={
-        {
-            n = G.UIT.C,
-            config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-            nodes = {
-                {
-                    n = G.UIT.R,
-                    config = {
-                        align = "cm",
-                        padding = 0.1
-                    },
-                    nodes = {
-                        {n=G.UIT.T, config={text = "Page " .. tostring(page), scale = 0.5, colour = G.C.UI.TEXT_LIGHT}},
-                    }
-                },
-                {
-                    n = G.UIT.R,
-                    config = {
-                        align = "cm",
-                        padding = 0.1
-                    },
-                    nodes = {
-                        {n=G.UIT.T, config={text = "Page " .. tostring(page), scale = 0.5, colour = G.C.UI.TEXT_DARK}},
-                    }
-                },
-            }
-        },
-    }}
+function GUI.dynamicStartingItemsAreaDeckTables()
+    GUI.flushDeckEditorAreas()
+    if GUI.openTab ~= "Starting Items" then
+        return {
+            n=G.UIT.ROOT,
+            config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 11.4, minh = 4.2},
+            nodes={}
+        }
+    end
+
+    local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
+    local consumableList = Utils.customDeckList[#Utils.customDeckList].config.customConsumableList
+    local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
+    CardUtils.getJokersFromCustomJokerList(jokerList)
+    CardUtils.getConsumablesFromCustomConsumableList(consumableList)
+    CardUtils.getVouchersFromCustomVoucherList(voucherList)
+
+    local deck_tables = {}
+    local FakeBlind = {}
+    function FakeBlind:debuff_card(arg) end
+    remove_nils(CardUtils.startingItems.jokers)
+    remove_nils(CardUtils.startingItems.consumables)
+    remove_nils(CardUtils.startingItems.vouchers)
+    G.VIEWING_DECK = true
+    G.GAME.blind = FakeBlind
+
+    local xy = GUI.openTab == 'Starting Items' and 0 or 9999
+
+    -- jokers
+    local jokerArea = CardArea(
+            xy,xy,
+            5.5*G.CARD_W,
+            0.42*G.CARD_H,
+            {card_limit = 1, type = 'title', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
+    table.insert(Helper.deckEditorAreas, jokerArea)
+    table.insert(deck_tables,
+            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                {n=G.UIT.O, config={object = jokerArea}}
+            }}
+    )
+    for i = 1, #CardUtils.startingItems.jokers do
+        if CardUtils.startingItems.jokers[i] then
+            local base = CardUtils.startingItems.jokers[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = jokerArea.T.x + jokerArea.T.w/2
+            copy.T.y = jokerArea.T.y
+            copy:hard_set_T()
+            jokerArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
+
+    -- consumables
+    local consumableArea = CardArea(
+            xy,xy,
+            5.5*G.CARD_W,
+            0.42*G.CARD_H,
+            {card_limit = 1, type = 'title', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
+    table.insert(Helper.deckEditorAreas, consumableArea)
+    table.insert(deck_tables,
+            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                {n=G.UIT.O, config={object = consumableArea}}
+            }}
+    )
+    for i = 1, #CardUtils.startingItems.consumables do
+        if CardUtils.startingItems.consumables[i] then
+            local base = CardUtils.startingItems.consumables[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = consumableArea.T.x + consumableArea.T.w/2
+            copy.T.y = consumableArea.T.y
+            copy:hard_set_T()
+            consumableArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
+
+    -- vouchers
+    local voucherArea = CardArea(
+            xy,xy,
+            5.5*G.CARD_W,
+            0.42*G.CARD_H,
+            {card_limit = #CardUtils.startingItems.vouchers, type = 'title_2', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
+    table.insert(Helper.deckEditorAreas, voucherArea)
+    table.insert(deck_tables,
+            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                {n=G.UIT.O, config={object = voucherArea}}
+            }}
+    )
+    for i = 1, #CardUtils.startingItems.vouchers do
+        if CardUtils.startingItems.vouchers[i] then
+            local base = CardUtils.startingItems.vouchers[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = voucherArea.T.x + voucherArea.T.w/2
+            copy.T.y = voucherArea.T.y
+            copy:hard_set_T()
+            voucherArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
+
+    -- output
+    G.GAME.blind = nil
+    return {
+        n=G.UIT.ROOT,
+        config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 11.4, minh = 4.2},
+        nodes=deck_tables
+    }
+end
+
+function GUI.addVoucherMenu()
+    local deck_tables = {}
+
+    G.your_collection = {}
+    for j = 1, 2 do
+        G.your_collection[j] = CardArea(
+                G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
+                4.25*G.CARD_W,
+                1*G.CARD_H,
+                {card_limit = 4, type = 'voucher', highlight_limit = 0, collection = true})
+        table.insert(deck_tables,
+                {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true}, nodes={
+                    {n=G.UIT.O, config={object = G.your_collection[j]}}
+                }}
+        )
+    end
+
+    local voucher_options = {}
+    for i = 1, math.ceil(#G.P_CENTER_POOLS.Voucher/(4*#G.your_collection)) do
+        table.insert(voucher_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.ceil(#G.P_CENTER_POOLS.Voucher/(4*#G.your_collection))))
+    end
+
+    for i = 1, 4 do
+        for j = 1, #G.your_collection do
+            local center = G.P_CENTER_POOLS["Voucher"][i+(j-1)*4]
+            local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
+            card.ability.order = i+(j-1)*4
+            card:start_materialize(nil, i>1 or j>1)
+            G.your_collection[j]:emplace(card)
+        end
+    end
+
+    return create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
+        {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
+        {n=G.UIT.R, config={align = "cm"}, nodes={
+            create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_voucher_page', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
+        }}
+    }})
 end
 
 return GUI

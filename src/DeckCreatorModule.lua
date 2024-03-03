@@ -26,9 +26,29 @@ local function customLoader(moduleName)
     return "\nNo module found: " .. moduleName
 end
 
+-- Steamodded
 function SMODS.INIT.DeckCreatorModule()
     table.insert(package.loaders, 1, customLoader)
     require "DeckCreator".Initialize()
+end
+
+-- Balamod
+if mods ~= nil then
+    table.insert(mods,
+            {
+                mod_id = "DeckCreatorModule",
+                name = "Deck Creator",
+                menu = "DeckCreatorModuleOpenCreateDeck",
+                enabled = true,
+                on_enable = function()
+                    table.insert(package.loaders, 1, customLoader)
+                    require "DeckCreator".Initialize()
+                end,
+                on_disable = function()
+
+                end
+            }
+    )
 end
 
 ----------------------------------------------

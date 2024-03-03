@@ -1,6 +1,7 @@
 local Utils = {}
 
 Utils.customDeckList = {}
+Utils.runMemoryChecks = false
 
 function Utils.addDeckToList(newDeck)
     table.insert(Utils.customDeckList , newDeck)
@@ -16,6 +17,26 @@ end
 
 function Utils.generateBigIntegerList()
     return Utils.generateBoundedIntegerList(0, 9999)
+end
+
+function Utils.allDeckNames()
+    local output = {
+        "None"
+    }
+    for k,v in pairs(G.P_CENTER_POOLS.Back) do
+        local foundMatch = false
+        for x,y in pairs(output) do
+            if y == v.name then
+                foundMatch = true
+                break
+            end
+        end
+
+        if foundMatch == false then
+            table.insert(output, v.name)
+        end
+    end
+    return output
 end
 
 function Utils.generateBoundedIntegerList(min, max)
@@ -99,6 +120,51 @@ function Utils.seals(includeRandom)
     }
     if includeRandom then
         table.insert(output, "Random")
+    end
+    return output
+end
+
+function Utils.vouchers(includeLevelTwo)
+    local output = {
+        { id = "v_overstock_norm", name = "Overstock", pos = {x=0,y=0}, },
+        { id = "v_clearance_sale", name = "Clearance Sale", pos = {x=3,y=0}},
+        { id = "v_hone", name = "Hone", pos = {x=4,y=0}},
+        { id = "v_reroll_surplus", name = "Reroll Surplus", pos = {x=0,y=2}},
+        { id = "v_crystal_ball", name = "Crystal Ball", pos = {x=2,y=2}},
+        { id = "v_telescope", name = "Telescope", pos = {x=3,y=2}},
+        { id = "v_grabber", name = "Grabber", pos = {x=5,y=0}},
+        { id = "v_wasteful", name = "Wasteful", pos = {x=6,y=0}},
+        { id = "v_tarot_merchant", name = "Tarot Merchant", pos = {x=1,y=0}},
+        { id = "v_planet_merchant", name = "Planet Merchant", pos = {x=2,y=0}},
+        { id = "v_seed_money", name = "Seed Money", pos = {x=1,y=2}},
+        { id = "v_blank", name = "Blank", pos = {x=7,y=0}},
+        { id = "v_magic_trick", name = "Magic Trick", pos = {x=4,y=2}},
+        { id = "v_hieroglyph", name = "Hieroglyph", pos = {x=5,y=2}},
+        { id = "v_directors_cut", name = "Director's Cut", pos = {x=6,y=2}},
+        { id = "v_paint_brush", name = "Paint Brush", pos = {x=7,y=2}}
+    }
+    if includeLevelTwo then
+        local levelTwos = {
+            { id = "v_overstock_plus", name = "Overstock Plus", pos = {x=0,y=1}},
+            { id = "v_liquidation", name = "Liquidation", pos = {x=3,y=1}},
+            { id = "v_glow_up", name = "Glow Up", pos = {x=4,y=1}},
+            { id = "v_reroll_glut", name = "Reroll Glut", pos = {x=0,y=3}},
+            { id = "v_omen_globe", name = "Omen Globe", pos = {x=2,y=3}},
+            { id = "v_observatory", name = "Observatory", pos = {x=3,y=3}},
+            { id = "v_nacho_tong", name = "Nacho Tong", pos = {x=5,y=1}},
+            { id = "v_recyclomancy", name = "Recyclomancy", pos = {x=6,y=1}},
+            { id = "v_tarot_tycoon", name = "Tarot Tycoon", pos = {x=1,y=1}},
+            { id = "v_planet_tycoon", name = "Planet Tycoon", pos = {x=2,y=1}},
+            { id = "v_money_tree", name = "Money Tree", pos = {x=1,y=3}},
+            { id = "v_antimatter", name = "Antimatter", pos = {x=7,y=1}},
+            { id = "v_illusion", name = "Illusion", pos = {x=4,y=3}},
+            { id = "v_petroglyph", name = "Petroglyph", pos = {x=5,y=3}},
+            { id = "v_retcon", name = "Retcon", pos = {x=6,y=3}},
+            { id = "v_palette", name = "Palette", pos = {x=7,y=3}}
+        }
+        for k,v in pairs(levelTwos) do
+            table.insert(output, v)
+        end
     end
     return output
 end

@@ -7,6 +7,11 @@ local CardUtils = require "CardUtils"
 local DeckCreator = {}
 
 function DeckCreator.Initialize()
+
+    if SMODS ~= nil then
+        SMODS.Sprite:new("itemIcons", SMODS.findModByID("DeckCreatorModule").path, "ItemIcons.png", 18, 18, "asset_atli"):register()
+    end
+
     GUI.registerGlobals()
     GUI.registerModMenuUI()
     Helper.registerGlobals()
@@ -50,18 +55,88 @@ function DeckCreator.Initialize()
             GUI.updateAllDeckEditorAreas()
             local memoryAfter = collectgarbage("count")
             local diff = memoryAfter - memoryBefore
-            Utils.log("MEMORY CHECK (UpdateDynamicAreas): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+            if Utils.runMemoryChecks then
+                Utils.log("MEMORY CHECK (UpdateDynamicAreas - Deck Editor): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+            end
             return
+        elseif GUI.StartingItemsOpen then
+
+            -- Adding item by clicking
+            if GUI.openItemType ~= nil then
+                Utils.log("Clicked voucher: " .. self.config.center.key)
+                if GUI.openItemType == 'voucher' then
+                    local added = CardUtils.addItemToDeck({ voucher = true, ref = 'customVoucherList', addCard = self.config.center.key, deck_list = Utils.customDeckList})
+                    if added then
+                        self:start_materialize(nil, true)
+                    end
+                end
+
+            -- Removing from Starting Items by clicking
+            else
+                if self.uuid and self.uuid.type == 'voucher' then
+                    local removeIndex
+                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customVoucherList) do
+                        if v == self.uuid.key then
+                            removeIndex = k
+                            break
+                        end
+                    end
+
+                    if removeIndex then
+                        Utils.customDeckList[#Utils.customDeckList].config.customVoucherList[removeIndex] = nil
+                    end
+
+                    self:remove()
+
+                    local memoryBefore = collectgarbage("count")
+                    GUI.updateAllStartingItemsAreas()
+
+                    if Utils.runMemoryChecks then
+                        local memoryAfter = collectgarbage("count")
+                        local diff = memoryAfter - memoryBefore
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Vouchers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                    end
+                end
+            end
+
+
         end
-        Utils.log("Deck Creator was not open")
+
         CardClick(self)
     end
 
     local BackApply_to_runRef = Back.apply_to_run
     function Back.apply_to_run(arg)
+        if arg.effect.config.customDeck and arg.effect.config.copy_deck_config ~= nil and arg.effect.config.copy_deck_config ~= "None" then
+            local copyConfig
+            for k,v in pairs(G.P_CENTER_POOLS.Back) do
+                if v.name == arg.effect.config.copy_deck_config then
+                    copyConfig = v.config
+                    break
+                end
+            end
+
+            if copyConfig then
+                for k,v in pairs(copyConfig) do
+                    arg.effect.config[k] = v
+                end
+            end
+        end
+
+        if arg.effect.config.customDeck then
+            arg.effect.config.vouchers = arg.effect.config.vouchers or {}
+            for k,v in pairs(arg.effect.config.customVoucherList) do
+                table.insert(arg.effect.config.vouchers, v)
+            end
+
+            if #arg.effect.config.vouchers == 0 then arg.effect.config.vouchers = nil end
+        end
+
         BackApply_to_runRef(arg)
 
         if arg.effect.config.customDeck then
+
+            Utils.log("Custom deck config at run start:\n" .. Utils.tableToString(arg.effect.config.customDeck))
 
             if arg.effect.config.joker_rate == 0 and arg.effect.config.tarot_rate == 0 and arg.effect.config.planet_rate == 0 and arg.effect.config.spectral_rate == 0 and arg.effect.config.playing_card_rate == 0 then
                 local rateNames = {"joker_rate", "tarot_rate", "planet_rate", "spectral_rate"}
@@ -206,9 +281,18 @@ function DeckCreator.Initialize()
 
         if deck.effect.config.customDeck then
 
+
+
             if deck.effect.config.custom_cards_set then
                 CardUtils.initializeCustomCardList(deck.effect.config.customCardList)
             end
+
+            --[[if deck.effect.config.custom_vouchers_set then
+                G.GAME.starting_voucher_count = #deck.effect.config.customVoucherList
+                for k,v in pairs(deck.effect.config.customVoucherList) do
+                    Card.apply_to_run(nil, G.P_CENTERS[v])
+                end
+            end]]
         end
 
         return originalResult
@@ -219,7 +303,7 @@ function DeckCreator.Initialize()
         KeyPress(self, key)
         -- Utils.log("Key pressed: " .. key)
         if key == 'escape' then
-            GUI.DeckCreatorOpen = false
+            GUI.CloseAllOpenFlags()
         end
         if key == '`' and G.DEBUG then
             G.DEBUG = false
@@ -228,7 +312,6 @@ function DeckCreator.Initialize()
         end
     end
 
-    -- SMODS.Sprite:new("testCenters", SMODS.findModByID("DeckCreatorModule").path, "InvertEnhancers.png", 71, 95, "asset_atli"):register()
     --[[local RunSetupCheckBackName = G.FUNCS.RUN_SETUP_check_back_name
     G.FUNCS.RUN_SETUP_check_back_name = function(e)
         RunSetupCheckBackName(e)

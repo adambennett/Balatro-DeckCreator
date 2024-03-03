@@ -1,3 +1,5 @@
+local CardUtils = require "CardUtils"
+
 local Helper = {}
 
 Helper.deckEditorAreas = {}
@@ -425,6 +427,29 @@ function Helper.createMultiRowTabs(args)
     return output
 end
 
+function Helper.tally_item_sprite(pos, value, tooltip, atlas)
+    local text_colour = G.C.BLACK
+    atlas = atlas or "itemIcons"
+    if type(value) == "table" and value[1].string==value[2].string then
+        text_colour = value[1].colour or G.C.WHITE
+        value = value[1].string
+    end
+    local t_s = Sprite(0,0,0.5,0.5,G.ASSET_ATLAS[atlas], {x=pos.x or 0, y=pos.y or 0})
+    t_s.states.drag.can = false
+    t_s.states.hover.can = false
+    t_s.states.collide.can = false
+    return
+    {n=G.UIT.C, config={align = "cm", padding = 0.07,force_focus = true,  focus_args = {type = 'tally_sprite'}, tooltip = {text = tooltip}}, nodes={
+        {n=G.UIT.R, config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.05, colour = G.C.JOKER_GREY}, nodes={
+            {n=G.UIT.O, config={w=0.5,h=0.5 ,can_collide = false, object = t_s, tooltip = {text = tooltip}}}
+        }},
+        {n=G.UIT.R, config={align = "cm"}, nodes={
+            type(value) == "table" and {n=G.UIT.O, config={object = DynaText({string = value, colours = {G.C.RED}, scale = 0.4, silent = true, shadow = true, pop_in_rate = 10, pop_delay = 4})}} or
+                    {n=G.UIT.T, config={text = value or 'NIL',colour = text_colour, scale = 0.4, shadow = true}},
+        }},
+    }}
+end
+
 function Helper.calculateDeckEditorSums()
     local unplayed_only = false
     local flip_col = G.C.WHITE
@@ -509,6 +534,54 @@ function Helper.calculateDeckEditorSums()
     end
 
     -- Utils.log("rank tallies after recalculate:\n" .. Utils.tableToString(Helper.sums.rank_tallies))
+end
+
+function Helper.calculateStartingItemsSums()
+
+    Helper.sums.item_tallies = {
+        ['Joker']  = 0,
+        ['Tarot'] = 0,
+        ['Planet'] = 0,
+        ['Voucher'] = 0
+    }
+
+    for k,v in pairs(CardUtils.startingItems.jokers) do
+        Helper.sums.item_tallies["Joker"] = (Helper.sums.item_tallies["Joker"] or 0) + 1
+    end
+    for k,v in pairs(CardUtils.startingItems.consumables) do
+        if v.type == 'Planet' then
+            Helper.sums.item_tallies["Planet"] = (Helper.sums.item_tallies["Planet"] or 0) + 1
+        elseif v.type == 'Tarot' then
+            Helper.sums.item_tallies["Tarot"] = (Helper.sums.item_tallies["Tarot"] or 0) + 1
+        end
+    end
+    for k,v in pairs(CardUtils.startingItems.vouchers) do
+        Helper.sums.item_tallies["Voucher"] = (Helper.sums.item_tallies["Voucher"] or 0) + 1
+    end
+
+    Helper.sums.start_item_cols = {}
+    for k,v in pairs(Helper.sums.item_tallies) do
+        Helper.sums.start_item_cols[#Helper.sums.start_item_cols+1] = {
+            n=G.UIT.R,
+            config={align = "cm", padding = 0.07},
+            nodes={
+                {
+                    n=G.UIT.C,
+                    config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
+                    nodes={
+                        {n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                    }
+                },
+                {
+                    n=G.UIT.C,
+                    config={align = "cr", minw = 0.4},
+                    nodes={
+                        {n=G.UIT.T, config={text = tostring(v) or 'NIL',colour = G.C.WHITE, scale = 0.45, shadow = true}},
+                    }
+                }
+            }
+        }
+    end
 end
 
 return Helper
