@@ -417,63 +417,65 @@ function GUI.registerGlobals()
 end
 
 function GUI.registerModMenuUI()
-    SMODS.registerUIElement("DeckCreatorModule", {
-        {
-             n = G.UIT.R,
-             config = {
-                 padding = 0.5,
-                 align = "cm"
-             },
-             nodes = {
-                 UIBox_button({
-                     label = {" Create Deck "},
-                     shadow = true,
-                     scale = 0.75 * 0.5,
-                     colour = G.C.BOOSTER,
-                     button = "DeckCreatorModuleOpenCreateDeck",
-                     minh = 0.8,
-                     minw = 8
-                 })
-             }
-        },
-        {
-             n = G.UIT.R,
-             config = {
-                 padding = 0.1,
-                 align = "cm"
-             },
-             nodes = {
-                 UIBox_button({
-                     label = {" Source Code "},
-                     shadow = true,
-                     scale = 0.75 * 0.5,
-                     colour = G.C.BOOSTER,
-                     button = "DeckCreatorModuleOpenGithub",
-                     minh = 0.8,
-                     minw = 8
-                 })
-             }
-        },
-
-        --[[{
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+    if not SMODS.BalamodMode then
+        SMODS.registerUIElement("ADeckCreatorModule", {
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.5,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Create Deck "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.BOOSTER,
+                        button = "DeckCreatorModuleOpenCreateDeck",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             },
-            nodes = {
-                UIBox_button({
-                    label = {" New Mods Menu "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.BOOSTER,
-                    button = "DeckCreatorModuleNewModsMenu",
-                    minh = 0.8,
-                    minw = 8
-                })
-            }
-        }]]
-    })
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Source Code "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.BOOSTER,
+                        button = "DeckCreatorModuleOpenGithub",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
+            },
+
+            --[[{
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" New Mods Menu "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.BOOSTER,
+                        button = "DeckCreatorModuleNewModsMenu",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
+            }]]
+        })
+    end
 end
 
 function GUI.resetAddCard()

@@ -5,24 +5,26 @@ local Utils = require "Utils"
 local CardUtils = require "CardUtils"
 
 local DeckCreator = {}
+DeckCreator.Unloaded = false
 
-function DeckCreator.Initialize()
+function DeckCreator.Enable()
 
-    if SMODS ~= nil then
-        SMODS.Sprite:new("itemIcons", SMODS.findModByID("DeckCreatorModule").path, "ItemIcons.png", 18, 18, "asset_atli"):register()
-    end
+    Utils.registerGlobals()
 
     GUI.registerGlobals()
     GUI.registerModMenuUI()
     Helper.registerGlobals()
     Persistence.loadAllDeckLists()
+    Persistence.setUnloadedLists()
 
-    G.FUNCS.LogDebug = function(message)
-        Utils.log(message)
+    if DeckCreator == nil then
+        DeckCreator = {}
+        DeckCreator.Unloaded = true
     end
 
-    G.FUNCS.LogTableToString = function(table)
-        Utils.log(Utils.tableToString(table))
+    if DeckCreator.Unloaded then
+        DeckCreator.Unloaded = false
+        Persistence.refreshDeckList()
     end
 
     local CardClick = Card.click
@@ -277,11 +279,7 @@ function DeckCreator.Initialize()
 
         local deck = self.GAME.selected_back
 
-        G.FUNCS.LogTableToString(deck.effect.config)
-
         if deck.effect.config.customDeck then
-
-
 
             if deck.effect.config.custom_cards_set then
                 CardUtils.initializeCustomCardList(deck.effect.config.customCardList)
@@ -310,6 +308,10 @@ function DeckCreator.Initialize()
         elseif key == '`' and G.DEBUG == false then
             G.DEBUG = true
         end
+    end
+
+    if not SMODS.BalamodMode then
+        SMODS.Sprite:new("itemIcons", SMODS.findModByID("ADeckCreatorModule").path, "ItemIcons.png", 18, 18, "asset_atli"):register()
     end
 
     --[[local RunSetupCheckBackName = G.FUNCS.RUN_SETUP_check_back_name
@@ -553,6 +555,12 @@ function DeckCreator.Initialize()
         }}
         return t
     end]]
+end
+
+function DeckCreator.Disable()
+    G.P_CENTERS = Persistence.UnloadedCenters
+    G.P_CENTER_POOLS.Back = Persistence.UnloadedDeckList
+    DeckCreator.Unloaded = true
 end
 
 return DeckCreator

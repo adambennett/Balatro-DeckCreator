@@ -3,12 +3,24 @@ local Utils = {}
 Utils.customDeckList = {}
 Utils.runMemoryChecks = false
 
+function Utils.registerGlobals()
+    G.FUNCS.LogDebug = function(message)
+        Utils.log(message)
+    end
+
+    G.FUNCS.LogTableToString = function(table)
+        Utils.log(Utils.tableToString(table))
+    end
+end
+
 function Utils.addDeckToList(newDeck)
     table.insert(Utils.customDeckList , newDeck)
 end
 
 function Utils.log(message)
-    sendDebugMessage("DeckCreatorMod: " .. message)
+    if sendDebugMessage ~= nil then
+        sendDebugMessage("DeckCreatorMod: " .. message)
+    end
 end
 
 function Utils.generateIntegerList()

@@ -1,6 +1,6 @@
 --- STEAMODDED HEADER
 --- MOD_NAME: Deck Creator
---- MOD_ID: DeckCreatorModule
+--- MOD_ID: ADeckCreatorModule
 --- MOD_AUTHOR: [Nyoxide]
 --- MOD_DESCRIPTION: GUI mod for creating, saving, loading, and sharing your own customizable decks!
 
@@ -27,29 +27,44 @@ local function customLoader(moduleName)
 end
 
 -- Steamodded
+if SMODS == nil or SMODS.INIT == nil then
+    SMODS = {}
+    SMODS.BalamodMode = true
+    SMODS.INIT = {}
+end
 function SMODS.INIT.DeckCreatorModule()
     table.insert(package.loaders, 1, customLoader)
-    require "DeckCreator".Initialize()
+    require "DeckCreator".Enable()
 end
+
+--[[if mods == nil then
+    mods = {}
+end]]
 
 -- Balamod
 if mods ~= nil then
-    table.insert(mods,
-            {
-                mod_id = "DeckCreatorModule",
-                name = "Deck Creator",
-                menu = "DeckCreatorModuleOpenCreateDeck",
-                enabled = true,
-                on_enable = function()
-                    table.insert(package.loaders, 1, customLoader)
-                    require "DeckCreator".Initialize()
-                end,
-                on_disable = function()
+    table.insert(package.loaders, 1, customLoader)
 
-                end
-            }
-    )
+    local mod = require "DeckCreator"
+    table.insert(mods, {
+        mod_id = "ADeckCreatorModule",
+        name = "Deck Creator",
+        version = "1.0.0",
+        author = "Nyoxide",
+        menu = "DeckCreatorModuleOpenCreateDeck",
+        description = "GUI mod for creating, saving, loading, and sharing your own customizable decks!\nUse the Menu button below to create or manage your custom decks.",
+        enabled = true,
+        on_enable = function()
+            mod.Enable()
+        end,
+        on_disable = function()
+            mod.Disable()
+        end
+    })
+
 end
+
+
 
 ----------------------------------------------
 ------------MOD CODE END----------------------

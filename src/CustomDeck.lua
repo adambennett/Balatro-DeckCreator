@@ -2,6 +2,7 @@ local Utils = require "Utils"
 local CardUtils = require "CardUtils"
 
 local CustomDeck = {name = "", slug = "", config = {}, spritePos = {}, loc_txt = {}, unlocked = true, discovered = true}
+CustomDeck.BalamodDeckList = {}
 
 function CustomDeck:blankDeck()
     o = {}
@@ -218,7 +219,9 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
 end
 
 function CustomDeck:register()
-    if not SMODS.Decks[self] then
+    if SMODS.BalamodMode then
+        table.insert(CustomDeck.BalamodDeckList, self)
+    else
         table.insert(SMODS.Decks, self)
     end
 end
