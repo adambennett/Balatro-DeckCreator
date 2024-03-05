@@ -545,14 +545,26 @@ function Helper.calculateStartingItemsSums()
         ['Joker']  = 0,
         ['Consumable'] = 0,
         ['Tag'] = 0,
-        ['Voucher'] = 0
+        ['Voucher'] = 0,
+        ['Tarot'] = 0,
+        ['Planet'] = 0,
+        ['Spectral'] = 0
     }
 
     for k,v in pairs(CardUtils.startingItems.jokers) do
         Helper.sums.item_tallies["Joker"] = (Helper.sums.item_tallies["Joker"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.consumables) do
+    for k,v in pairs(CardUtils.startingItems.tarots) do
         Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
+        Helper.sums.item_tallies["Tarot"] = (Helper.sums.item_tallies["Tarot"] or 0) + 1
+    end
+    for k,v in pairs(CardUtils.startingItems.planets) do
+        Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
+        Helper.sums.item_tallies["Planet"] = (Helper.sums.item_tallies["Planet"] or 0) + 1
+    end
+    for k,v in pairs(CardUtils.startingItems.spectrals) do
+        Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
+        Helper.sums.item_tallies["Spectral"] = (Helper.sums.item_tallies["Spectral"] or 0) + 1
     end
     for k,v in pairs(CardUtils.startingItems.vouchers) do
         Helper.sums.item_tallies["Voucher"] = (Helper.sums.item_tallies["Voucher"] or 0) + 1
@@ -571,7 +583,7 @@ function Helper.calculateStartingItemsSums()
                     n=G.UIT.C,
                     config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
                     nodes={
-                        {n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                        {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
                     }
                 },
                 {

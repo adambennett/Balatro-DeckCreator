@@ -26,7 +26,9 @@ function CustomDeck:blankDeck()
         uuid = Utils.uuid(),
         customCardList = CardUtils.standardCardSet(),
         customJokerList = {},
-        customConsumableList = {},
+        customTarotList = {},
+        customPlanetList = {},
+        customSpectralList = {},
         customVoucherList = {},
         customDeck = true,
         custom_cards_set = false,
@@ -107,7 +109,7 @@ end
 
 function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, reRollCost, jokerSlots, anteScaling, consumableSlots, dollarsPerHand, dollarsPerDiscard, jokerRate, tarotRate, planetRate, spectralRate, playingCardRate, randomizeRankSuit, noFaces, interestAmount, interestCap, discountPercent, edition, doubleTag, balanceChips, editionCount, deckBackIndex, winAnte, inflation, shopSlots,
                             allPolychrome, allHolo, allFoil, allBonus, allMult, allWild, allGlass, allSteel, allStone, allGold, allLucky, enableEternalsInShop, boosterAnteScaling, chipsDollarCap, discardCost,
-                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, uuid, copyDeckConfig, customCardList, customCardsSet, customJokerList, customJokersSet, customConsumableList, customConsumablesSet, customVoucherList, customVouchersSet)
+                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, uuid, copyDeckConfig, customCardList, customCardsSet, customJokerList, customJokersSet, customTarotList, customTarotsSet, customPlanetList, customPlanetsSet, customSpectralList, customSpectralsSet, customVoucherList, customVouchersSet)
     o = {}
     setmetatable(o, self)
     self.__index = self
@@ -133,10 +135,14 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.config = {
         copy_deck_config = copyDeckConfig,
         customJokerList = customJokerList,
-        customConsumableList = customConsumableList,
+        customTarotList = customTarotList,
+        customPlanetList = customPlanetList,
+        customSpectralList = customSpectralList,
         customVoucherList = customVoucherList,
         custom_jokers_set = customJokersSet,
-        custom_consumables_set = customConsumablesSet,
+        custom_tarots_set = customTarotsSet,
+        custom_planets_set = customPlanetsSet,
+        custom_spectrals_set = customSpectralsSet,
         custom_vouchers_set = customVouchersSet,
         invert_back = true,
         uuid = uuid or Utils.uuid(),

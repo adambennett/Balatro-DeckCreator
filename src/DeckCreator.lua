@@ -58,9 +58,13 @@ function DeckCreator.Enable()
                 if GUI.openItemType == 'voucher' then
                     added = CardUtils.addItemToDeck({ voucher = true, ref = 'customVoucherList', addCard = self.config.center.key, deck_list = Utils.customDeckList})
                 elseif GUI.openItemType == 'joker' then
-                    added = CardUtils.addItemToDeck({ joker = true, ref = 'customJokerList', addCard = { key = self.config.center.key, isEternal = false, isPinned = false, edition = nil }, deck_list = Utils.customDeckList})
-                elseif GUI.openItemType == 'consumable' then
-                    added = CardUtils.addItemToDeck({ consumable = true, ref = 'customConsumableList', addCard = self.config.center.key, deck_list = Utils.customDeckList})
+                    added = CardUtils.addItemToDeck({ joker = true, ref = 'customJokerList', addCard = { id = self.config.center.key, key = self.config.center.key, isEternal = false, isPinned = false, edition = nil }, deck_list = Utils.customDeckList})
+                elseif GUI.openItemType == 'tarot' then
+                    added = CardUtils.addItemToDeck({ tarot = true, ref = 'customTarotList', addCard = { key = self.config.center.key, edition = nil }, deck_list = Utils.customDeckList})
+                elseif GUI.openItemType == 'planet' then
+                    added = CardUtils.addItemToDeck({ planet = true, ref = 'customPlanetList', addCard = { key = self.config.center.key, edition = nil }, deck_list = Utils.customDeckList})
+                elseif GUI.openItemType == 'spectral' then
+                    added = CardUtils.addItemToDeck({ spectral = true, ref = 'customSpectralList', addCard = { key = self.config.center.key, edition = nil }, deck_list = Utils.customDeckList})
                 end
 
                 if added then
@@ -93,13 +97,97 @@ function DeckCreator.Enable()
                         Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Vouchers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
                     end
                 elseif self.uuid and self.uuid.type == 'joker' then
-                    Utils.log("Joker remove - " .. self.uuid.key)
+                    local removeIndex
+                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customJokerList) do
+                        if v.key == self.uuid.key then
+                            removeIndex = k
+                            break
+                        end
+                    end
+
+                    if removeIndex then
+                        Utils.customDeckList[#Utils.customDeckList].config.customJokerList[removeIndex] = nil
+                    end
+
+                    self:remove()
+
+                    local memoryBefore = collectgarbage("count")
+                    GUI.updateAllStartingItemsAreas()
+
+                    if Utils.runMemoryChecks then
+                        local memoryAfter = collectgarbage("count")
+                        local diff = memoryAfter - memoryBefore
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Jokers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                    end
                 elseif self.uuid and self.uuid.type == 'tarot' then
-                    Utils.log("Tarot remove - " .. self.uuid.key)
+                    local removeIndex
+                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customTarotList) do
+                        if v.key == self.uuid.key then
+                            removeIndex = k
+                            break
+                        end
+                    end
+
+                    if removeIndex then
+                        Utils.customDeckList[#Utils.customDeckList].config.customTarotList[removeIndex] = nil
+                    end
+
+                    self:remove()
+
+                    local memoryBefore = collectgarbage("count")
+                    GUI.updateAllStartingItemsAreas()
+
+                    if Utils.runMemoryChecks then
+                        local memoryAfter = collectgarbage("count")
+                        local diff = memoryAfter - memoryBefore
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Tarots]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                    end
                 elseif self.uuid and self.uuid.type == 'planet' then
-                    Utils.log("Planet remove - " .. self.uuid.key)
+                    local removeIndex
+                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customPlanetList) do
+                        if v.key == self.uuid.key then
+                            removeIndex = k
+                            break
+                        end
+                    end
+
+                    if removeIndex then
+                        Utils.customDeckList[#Utils.customDeckList].config.customPlanetList[removeIndex] = nil
+                    end
+
+                    self:remove()
+
+                    local memoryBefore = collectgarbage("count")
+                    GUI.updateAllStartingItemsAreas()
+
+                    if Utils.runMemoryChecks then
+                        local memoryAfter = collectgarbage("count")
+                        local diff = memoryAfter - memoryBefore
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Planets]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                    end
                 elseif self.uuid and self.uuid.type == 'spectral' then
-                    Utils.log("Spectral remove - " .. self.uuid.key)
+                    local removeIndex
+                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customSpectralList) do
+                        if v.key == self.uuid.key then
+                            removeIndex = k
+                            break
+                        end
+                    end
+
+                    if removeIndex then
+                        Utils.customDeckList[#Utils.customDeckList].config.customSpectralList[removeIndex] = nil
+                    end
+
+                    self:remove()
+
+                    local memoryBefore = collectgarbage("count")
+                    GUI.updateAllStartingItemsAreas()
+
+                    if Utils.runMemoryChecks then
+                        local memoryAfter = collectgarbage("count")
+                        local diff = memoryAfter - memoryBefore
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Spectrals]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                    end
                 end
             end
 
@@ -309,7 +397,7 @@ function DeckCreator.Enable()
 
     local GameStartRun = Game.start_run
     function Game:start_run(args)
-        local deck = self.GAME.selected_back
+        local deck = self.GAME.viewed_back
 
         if deck.effect.config.customDeck then
             args = args or {}
@@ -319,13 +407,21 @@ function DeckCreator.Enable()
             for k,v in pairs(deck.effect.config.customJokerList) do
                 table.insert(args.challenge.jokers, v)
             end
-            for k,v in pairs(deck.effect.config.customConsumableList) do
-                table.insert(args.challenge.consumeables, {id = v})
+            for k,v in pairs(deck.effect.config.customTarotList) do
+                table.insert(args.challenge.consumeables, {id = v.key})
+            end
+            for k,v in pairs(deck.effect.config.customPlanetList) do
+                table.insert(args.challenge.consumeables, {id = v.key})
+            end
+            for k,v in pairs(deck.effect.config.customSpectralList) do
+                table.insert(args.challenge.consumeables, {id = v.key})
             end
         end
 
-
         local originalResult = GameStartRun(self, args)
+
+        -- re-set deck var after original function modifies
+        deck = self.GAME.selected_back
 
         if deck.effect.config.customDeck then
 

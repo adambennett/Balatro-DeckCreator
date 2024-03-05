@@ -33,6 +33,7 @@ if SMODS == nil or SMODS.INIT == nil then
     SMODS.INIT = {}
 end
 function SMODS.INIT.DeckCreatorModule()
+    SMODS.BalamodMode = false
     table.insert(package.loaders, 1, customLoader)
     require "DeckCreator".Enable()
 end

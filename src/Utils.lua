@@ -154,10 +154,30 @@ function Utils.jokerKeys()
     return output
 end
 
-function Utils.consumableKeys()
+function Utils.tarotKeys()
     local output = {}
     for k,v in pairs(G.P_CENTERS) do
-        if v.set == 'Tarot' or v.set == 'Planet' or v.set == 'Spectral' then
+        if v.set == 'Tarot' then
+            table.insert(output, k)
+        end
+    end
+    return output
+end
+
+function Utils.planetKeys()
+    local output = {}
+    for k,v in pairs(G.P_CENTERS) do
+        if v.set == 'Planet' then
+            table.insert(output, k)
+        end
+    end
+    return output
+end
+
+function Utils.spectralKeys()
+    local output = {}
+    for k,v in pairs(G.P_CENTERS) do
+        if v.set == 'Spectral' then
             table.insert(output, k)
         end
     end

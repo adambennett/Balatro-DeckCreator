@@ -4,7 +4,9 @@ local CardUtils = {}
 CardUtils.allCardsEverMade = {}
 CardUtils.startingItems = {
     jokers = {},
-    consumables = {},
+    tarots = {},
+    planets = {},
+    spectrals = {},
     vouchers = {},
     tags = {}
 }
@@ -145,10 +147,9 @@ function CardUtils.getJokersFromCustomJokerList(deck)
     end
 end
 
--- valid subtypes: Tarot, Spectral, Planet
-function CardUtils.getConsumablesFromCustomConsumableList(deck, subtype)
-    CardUtils.flushStartingItems('consumables')
-    CardUtils.startingItems.consumables = {}
+function CardUtils.getTarotsFromCustomTarotList(deck)
+    CardUtils.flushStartingItems('tarots')
+    CardUtils.startingItems.tarots = {}
 
     local memoryBefore = collectgarbage("count")
 
@@ -156,8 +157,7 @@ function CardUtils.getConsumablesFromCustomConsumableList(deck, subtype)
         local center
         local index
         local edition
-        for k,v in pairs(G.P_CENTER_POOLS[subtype]) do
-            Utils.log("checking " .. subtype .. " keys, k=" .. k .. ", deck[j].key=" .. Utils.tableToString(deck[j]) .. ', v=' .. Utils.tableToString(v))
+        for k,v in pairs(G.P_CENTER_POOLS['Tarot']) do
             if v.key == deck[j].key then
                 center = v
                 index = k
@@ -167,10 +167,10 @@ function CardUtils.getConsumablesFromCustomConsumableList(deck, subtype)
         end
         if center then
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
-            card.uuid = { key = center.key, type = string.lower(subtype) }
+            card.uuid = { key = center.key, type = 'tarot' }
             card.ability.order = (j-1)*4
             if edition then card:set_edition{[edition] = true} end
-            table.insert(CardUtils.startingItems.consumables, card)
+            table.insert(CardUtils.startingItems.tarots, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
     end
@@ -178,7 +178,77 @@ function CardUtils.getConsumablesFromCustomConsumableList(deck, subtype)
     if Utils.runMemoryChecks then
         local memoryAfter = collectgarbage("count")
         local diff = memoryAfter - memoryBefore
-        Utils.log("MEMORY CHECK (ConsumableCreation-" .. subtype .. "): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+        Utils.log("MEMORY CHECK (TarotCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getPlanetsFromCustomPlanetList(deck)
+    CardUtils.flushStartingItems('planets')
+    CardUtils.startingItems.planets = {}
+
+    local memoryBefore = collectgarbage("count")
+
+    for j = 1, #deck do
+        local center
+        local index
+        local edition
+        for k,v in pairs(G.P_CENTER_POOLS['Planet']) do
+            if v.key == deck[j].key then
+                center = v
+                index = k
+                edition = deck[j].edition
+                break
+            end
+        end
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = 'planet' }
+            card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            table.insert(CardUtils.startingItems.planets, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (PlanetCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getSpectralsFromCustomSpectralList(deck)
+    CardUtils.flushStartingItems('spectrals')
+    CardUtils.startingItems.spectrals = {}
+
+    local memoryBefore = collectgarbage("count")
+
+    for j = 1, #deck do
+        local center
+        local index
+        local edition
+        for k,v in pairs(G.P_CENTER_POOLS['Spectral']) do
+            if v.key == deck[j].key then
+                center = v
+                index = k
+                edition = deck[j].edition
+                break
+            end
+        end
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = 'spectral' }
+            card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            table.insert(CardUtils.startingItems.spectrals, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (SpectralCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
     end
 end
 
@@ -336,15 +406,15 @@ function CardUtils.addItemToDeck(args)
                 end
             end
 
-            local typeRollMax = #unObtainedVouchers > 0 and 4 or 3
+            local typeRollMax = #unObtainedVouchers > 0 and 9 or 8
             local typeRoll = math.random(1, typeRollMax)
 
             -- temporary line to prevent random tag
-            if typeRoll == 3 then typeRoll = 2 end
+            if typeRoll == 8 then typeRoll = 2 end
 
-            if typeRollMax < typeRoll then return end
+            if typeRollMax < typeRoll then typeRoll = 1 end
 
-            if typeRoll == 1 then
+            if typeRoll <= 4 then
                 local edition
                 local editionRoll = math.random(1, 100)
                 if editionRoll < 40 then
@@ -360,6 +430,7 @@ function CardUtils.addItemToDeck(args)
                 local list = Utils.jokerKeys()
                 local keyRoll = list[math.random(1, #list)]
                 args.addCard = {
+                    id = keyRoll,
                     key = keyRoll,
                     edition = edition,
                     isEternal = false,
@@ -368,17 +439,29 @@ function CardUtils.addItemToDeck(args)
                 args.joker = true
                 args.ref = 'customJokerList'
             end
-            if typeRoll == 2 then
-                local list = Utils.consumableKeys()
-                args.addCard = list[math.random(1, #list)]
-                args.consumable = true
-                args.ref = 'customConsumableList'
+            if typeRoll == 5 then
+                local list = Utils.tarotKeys()
+                args.addCard = { key = list[math.random(1, #list)], edition = nil }
+                args.tarot = true
+                args.ref = 'customTarotList'
             end
-            if typeRoll == 3 then
+            if typeRoll == 6 then
+                local list = Utils.planetKeys()
+                args.addCard = { key = list[math.random(1, #list)], edition = nil }
+                args.planet = true
+                args.ref = 'customPlanetList'
+            end
+            if typeRoll == 7 then
+                local list = Utils.spectralKeys()
+                args.addCard = { key = list[math.random(1, #list)], edition = nil }
+                args.spectral = true
+                args.ref = 'customSpectralList'
+            end
+            if typeRoll == 8 then
                 args.tag = true
                 args.ref = 'customTagList'
             end
-            if typeRoll == 4 then
+            if typeRoll == 9 then
                 args.addCard = unObtainedVouchers[math.random(1, #unObtainedVouchers)].id
                 args.voucher = true
                 args.ref = 'customVoucherList'
@@ -389,8 +472,12 @@ function CardUtils.addItemToDeck(args)
         local newCard = args.addCard
         if args.joker then
             type = 'jokers'
-        elseif args.consumable then
-            type = 'consumables'
+        elseif args.tarot then
+            type = 'tarots'
+        elseif args.planet then
+            type = 'planets'
+        elseif args.spectral then
+            type = 'spectrals'
         elseif args.tag then
             type = 'tags'
         elseif args.voucher then

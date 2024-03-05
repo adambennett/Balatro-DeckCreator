@@ -106,7 +106,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddTarotMenu = function()
-        GUI.openItemType = 'consumable'
+        GUI.openItemType = 'tarot'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addTarotMenu()
@@ -114,7 +114,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddPlanetMenu = function()
-        GUI.openItemType = 'consumable'
+        GUI.openItemType = 'planet'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addPlanetMenu()
@@ -122,7 +122,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddSpectralMenu = function()
-        GUI.openItemType = 'consumable'
+        GUI.openItemType = 'spectral'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addSpectralMenu()
@@ -190,10 +190,14 @@ function GUI.registerGlobals()
         end
         Utils.customDeckList[#Utils.customDeckList].config.customVoucherList = {}
         Utils.customDeckList[#Utils.customDeckList].config.customJokerList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.customConsumableList = {}
+        Utils.customDeckList[#Utils.customDeckList].config.customTarotList = {}
+        Utils.customDeckList[#Utils.customDeckList].config.customPlanetList = {}
+        Utils.customDeckList[#Utils.customDeckList].config.customSpectralList = {}
         Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set = false
         Utils.customDeckList[#Utils.customDeckList].config.custom_jokers_set = false
-        Utils.customDeckList[#Utils.customDeckList].config.custom_consumables_set = false
+        Utils.customDeckList[#Utils.customDeckList].config.custom_tarots_set = false
+        Utils.customDeckList[#Utils.customDeckList].config.custom_planets_set = false
+        Utils.customDeckList[#Utils.customDeckList].config.custom_spectrals_set = false
         if CardUtils.startingItems.vouchers and #CardUtils.startingItems.vouchers > 0 then
             for j = 1, #CardUtils.startingItems.vouchers do
                 local c = CardUtils.startingItems.vouchers[j]
@@ -212,9 +216,27 @@ function GUI.registerGlobals()
                 end
             end
         end
-        if CardUtils.startingItems.consumables and #CardUtils.startingItems.consumables > 0 then
-            for j = 1, #CardUtils.startingItems.consumables do
-                local c = CardUtils.startingItems.consumables[j]
+        if CardUtils.startingItems.tarots and #CardUtils.startingItems.tarots > 0 then
+            for j = 1, #CardUtils.startingItems.tarots do
+                local c = CardUtils.startingItems.tarots[j]
+                if c then
+                    c:remove()
+                    c = nil
+                end
+            end
+        end
+        if CardUtils.startingItems.planets and #CardUtils.startingItems.planets > 0 then
+            for j = 1, #CardUtils.startingItems.planets do
+                local c = CardUtils.startingItems.planets[j]
+                if c then
+                    c:remove()
+                    c = nil
+                end
+            end
+        end
+        if CardUtils.startingItems.spectrals and #CardUtils.startingItems.spectrals > 0 then
+            for j = 1, #CardUtils.startingItems.spectrals do
+                local c = CardUtils.startingItems.spectrals[j]
                 if c then
                     c:remove()
                     c = nil
@@ -232,7 +254,9 @@ function GUI.registerGlobals()
         end
         CardUtils.startingItems.vouchers = {}
         CardUtils.startingItems.jokers = {}
-        CardUtils.startingItems.consumables = {}
+        CardUtils.startingItems.tarots = {}
+        CardUtils.startingItems.planets = {}
+        CardUtils.startingItems.spectrals = {}
         CardUtils.startingItems.tags = {}
         GUI.updateAllStartingItemsAreas()
     end
@@ -480,8 +504,12 @@ function GUI.registerGlobals()
                 Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set,
                 Utils.customDeckList[#Utils.customDeckList].config.customJokerList,
                 Utils.customDeckList[#Utils.customDeckList].config.custom_jokers_set,
-                Utils.customDeckList[#Utils.customDeckList].config.customConsumableList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_consumables_set,
+                Utils.customDeckList[#Utils.customDeckList].config.customTarotList,
+                Utils.customDeckList[#Utils.customDeckList].config.custom_tarots_set,
+                Utils.customDeckList[#Utils.customDeckList].config.customPlanetList,
+                Utils.customDeckList[#Utils.customDeckList].config.custom_planets_set,
+                Utils.customDeckList[#Utils.customDeckList].config.customSpectralList,
+                Utils.customDeckList[#Utils.customDeckList].config.custom_spectrals_set,
                 Utils.customDeckList[#Utils.customDeckList].config.customVoucherList,
                 Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set
         )
@@ -2050,13 +2078,19 @@ function GUI.dynamicStartingItemsAreaCards()
 
     local flip_col = G.C.WHITE
     local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
-    local consumableList = Utils.customDeckList[#Utils.customDeckList].config.customConsumableList
+    local tarotList = Utils.customDeckList[#Utils.customDeckList].config.customTarotList
+    local planetList = Utils.customDeckList[#Utils.customDeckList].config.customPlanetList
+    local spectralList = Utils.customDeckList[#Utils.customDeckList].config.customSpectralList
     local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
     CardUtils.getJokersFromCustomJokerList(jokerList)
-    CardUtils.getConsumablesFromCustomConsumableList(consumableList)
+    CardUtils.getTarotsFromCustomTarotList(tarotList)
+    CardUtils.getPlanetsFromCustomPlanetList(planetList)
+    CardUtils.getSpectralsFromCustomSpectralList(spectralList)
     CardUtils.getVouchersFromCustomVoucherList(voucherList)
     remove_nils(CardUtils.startingItems.jokers)
-    remove_nils(CardUtils.startingItems.consumables)
+    remove_nils(CardUtils.startingItems.tarots)
+    remove_nils(CardUtils.startingItems.planets)
+    remove_nils(CardUtils.startingItems.spectrals)
     remove_nils(CardUtils.startingItems.vouchers)
     remove_nils(CardUtils.startingItems.tags)
     Helper.calculateStartingItemsSums()
@@ -2085,9 +2119,9 @@ function GUI.dynamicStartingItemsAreaCards()
                             { n = G.UIT.O, config = { object = DynaText({ string = { { string = "Starting Items", colour = G.C.RED }, Helper.sums.moddedItems and { string = localize('k_effective'), colour = G.C.BLUE } or nil }, colours = { G.C.RED }, silent = true, scale = 0.4, pop_in_rate = 10, pop_delay = 4 }) } }
                         } },]]
                         { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
-                            Helper.tally_item_sprite({ x = 1, y = 0 }, { { string = Helper.sums.item_tallies['Joker'], colour = flip_col }, { string = Helper.sums.item_tallies['Joker'], colour = G.C.BLUE } }, { "Jokers" }), --Aces
-                            Helper.tally_item_sprite({ x = 2, y = 0 }, { { string = (Helper.sums.item_tallies['Planet'] or 0) + (Helper.sums.item_tallies['Tarot'] or 0), colour = flip_col }, { string = Helper.sums.item_tallies['Joker'], colour = G.C.BLUE } }, { "Consumable" }), --Face
-                            Helper.tally_item_sprite({ x = 3, y = 0 }, { { string = Helper.sums.item_tallies['Voucher'], colour = flip_col }, { string = Helper.sums.item_tallies['Voucher'], colour = G.C.BLUE } }, { "Vouchers" }), --Numbers
+                            Helper.tally_item_sprite({ x = 1, y = 0 }, { { string = Helper.sums.item_tallies['Joker'], colour = flip_col }, { string = Helper.sums.item_tallies['Joker'], colour = G.C.BLUE } }, { "Jokers" }),
+                            Helper.tally_item_sprite({ x = 2, y = 0 }, { { string = (Helper.sums.item_tallies['Planet'] or 0) + (Helper.sums.item_tallies['Tarot'] or 0) + (Helper.sums.item_tallies['Spectral'] or 0), colour = flip_col }, { string = (Helper.sums.item_tallies['Planet'] or 0) + (Helper.sums.item_tallies['Tarot'] or 0) + (Helper.sums.item_tallies['Spectral'] or 0), colour = G.C.BLUE } }, { "Consumable" }),
+                            Helper.tally_item_sprite({ x = 3, y = 0 }, { { string = Helper.sums.item_tallies['Voucher'], colour = flip_col }, { string = Helper.sums.item_tallies['Voucher'], colour = G.C.BLUE } }, { "Vouchers" }),
                         } },
                         { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
                             Helper.tally_item_sprite({ x = 3, y = 1 }, { { string = Helper.sums.item_tallies['Joker'], colour = flip_col }, { string = Helper.sums.item_tallies['Joker'], colour = G.C.BLUE } }, { "Jokers" }),
@@ -2096,6 +2130,9 @@ function GUI.dynamicStartingItemsAreaCards()
                         { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
                             Helper.tally_item_sprite({ x = 2, y = 1 }, { { string = Helper.sums.item_tallies['Tarot'], colour = flip_col }, { string = Helper.sums.item_tallies['Tarot'], colour = G.C.BLUE } }, { "Tarots" }),
                             Helper.tally_item_sprite({ x = 1, y = 1 }, { { string = Helper.sums.item_tallies['Voucher'], colour = flip_col }, { string = Helper.sums.item_tallies['Voucher'], colour = G.C.BLUE } }, { "Vouchers" }),
+                        } },
+                        { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
+                            Helper.tally_item_sprite({ x = 2, y = 1 }, { { string = Helper.sums.item_tallies['Spectral'], colour = flip_col }, { string = Helper.sums.item_tallies['Spectral'], colour = G.C.BLUE } }, { "Spectrals" }),
                         } },
                     } }
                 }
@@ -2124,77 +2161,29 @@ function GUI.dynamicStartingItemsAreaDeckTables()
     end
 
     local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
-    local consumableList = Utils.customDeckList[#Utils.customDeckList].config.customConsumableList
+    local tarotList = Utils.customDeckList[#Utils.customDeckList].config.customTarotList
+    local planetList = Utils.customDeckList[#Utils.customDeckList].config.customPlanetList
+    local spectralList = Utils.customDeckList[#Utils.customDeckList].config.customSpectralList
     local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
     CardUtils.getJokersFromCustomJokerList(jokerList)
-    CardUtils.getConsumablesFromCustomConsumableList(consumableList)
+    CardUtils.getTarotsFromCustomTarotList(tarotList)
+    CardUtils.getPlanetsFromCustomPlanetList(planetList)
+    CardUtils.getSpectralsFromCustomSpectralList(spectralList)
     CardUtils.getVouchersFromCustomVoucherList(voucherList)
 
     local deck_tables = {}
     local FakeBlind = {}
     function FakeBlind:debuff_card(arg) end
     remove_nils(CardUtils.startingItems.jokers)
-    remove_nils(CardUtils.startingItems.consumables)
+    remove_nils(CardUtils.startingItems.tarots)
+    remove_nils(CardUtils.startingItems.planets)
+    remove_nils(CardUtils.startingItems.spectrals)
     remove_nils(CardUtils.startingItems.vouchers)
     remove_nils(CardUtils.startingItems.tags)
     G.VIEWING_DECK = true
     G.GAME.blind = FakeBlind
 
     local xy = GUI.openTab == 'Starting Items' and 0 or 9999
-
-    -- jokers
-    local jokerArea = CardArea(
-            xy,xy,
-            5.5*G.CARD_W,
-            0.42*G.CARD_H,
-            {card_limit = 1, type = 'title', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
-    table.insert(Helper.deckEditorAreas, jokerArea)
-    table.insert(deck_tables,
-            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
-                {n=G.UIT.O, config={object = jokerArea}}
-            }}
-    )
-    for i = 1, #CardUtils.startingItems.jokers do
-        if CardUtils.startingItems.jokers[i] then
-            local base = CardUtils.startingItems.jokers[i]
-            local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
-            copy.uuid = base.uuid
-            copy.greyed = nil
-            copy.T.x = jokerArea.T.x + jokerArea.T.w/2
-            copy.T.y = jokerArea.T.y
-            copy:hard_set_T()
-            jokerArea:emplace(copy)
-            table.insert(CardUtils.allCardsEverMade, copy)
-        end
-    end
-
-    -- consumables
-    local consumableArea = CardArea(
-            xy,xy,
-            5.5*G.CARD_W,
-            0.42*G.CARD_H,
-            {card_limit = 1, type = 'title', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
-    table.insert(Helper.deckEditorAreas, consumableArea)
-    table.insert(deck_tables,
-            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
-                {n=G.UIT.O, config={object = consumableArea}}
-            }}
-    )
-    for i = 1, #CardUtils.startingItems.consumables do
-        if CardUtils.startingItems.consumables[i] then
-            local base = CardUtils.startingItems.consumables[i]
-            local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
-            copy.uuid = base.uuid
-            copy.greyed = nil
-            copy.T.x = consumableArea.T.x + consumableArea.T.w/2
-            copy.T.y = consumableArea.T.y
-            copy:hard_set_T()
-            consumableArea:emplace(copy)
-            table.insert(CardUtils.allCardsEverMade, copy)
-        end
-    end
 
     -- vouchers
     local voucherArea = CardArea(
@@ -2219,6 +2208,88 @@ function GUI.dynamicStartingItemsAreaDeckTables()
             copy.T.y = voucherArea.T.y
             copy:hard_set_T()
             voucherArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
+
+    -- consumables
+    local consumableArea = CardArea(
+            xy,xy,
+            5.5*G.CARD_W,
+            0.42*G.CARD_H,
+            {card_limit = 1, type = 'title', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
+    table.insert(Helper.deckEditorAreas, consumableArea)
+    table.insert(deck_tables,
+            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                {n=G.UIT.O, config={object = consumableArea}}
+            }}
+    )
+    for i = 1, #CardUtils.startingItems.tarots do
+        if CardUtils.startingItems.tarots[i] then
+            local base = CardUtils.startingItems.tarots[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = consumableArea.T.x + consumableArea.T.w/2
+            copy.T.y = consumableArea.T.y
+            copy:hard_set_T()
+            consumableArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
+    for i = 1, #CardUtils.startingItems.planets do
+        if CardUtils.startingItems.planets[i] then
+            local base = CardUtils.startingItems.planets[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = consumableArea.T.x + consumableArea.T.w/2
+            copy.T.y = consumableArea.T.y
+            copy:hard_set_T()
+            consumableArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
+    for i = 1, #CardUtils.startingItems.spectrals do
+        if CardUtils.startingItems.spectrals[i] then
+            local base = CardUtils.startingItems.spectrals[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = consumableArea.T.x + consumableArea.T.w/2
+            copy.T.y = consumableArea.T.y
+            copy:hard_set_T()
+            consumableArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
+
+    -- jokers
+    local jokerArea = CardArea(
+            xy,xy,
+            5.5*G.CARD_W,
+            0.42*G.CARD_H,
+            {card_limit = 1, type = 'title', view_deck = true, highlight_limit = 0, card_w = G.CARD_W*0.5, draw_layers = {'card'}})
+    table.insert(Helper.deckEditorAreas, jokerArea)
+    table.insert(deck_tables,
+            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                {n=G.UIT.O, config={object = jokerArea}}
+            }}
+    )
+    for i = 1, #CardUtils.startingItems.jokers do
+        if CardUtils.startingItems.jokers[i] then
+            local base = CardUtils.startingItems.jokers[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = jokerArea.T.x + jokerArea.T.w/2
+            copy.T.y = jokerArea.T.y
+            copy:hard_set_T()
+            jokerArea:emplace(copy)
             table.insert(CardUtils.allCardsEverMade, copy)
         end
     end
