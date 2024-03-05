@@ -28,7 +28,6 @@ function CustomDeck:blankDeck()
         customJokerList = {},
         customConsumableList = {},
         customVoucherList = {},
-        customVoucherList = {},
         customDeck = true,
         custom_cards_set = false,
         dollars = 4,
@@ -46,7 +45,7 @@ function CustomDeck:blankDeck()
         randomize_rank_suit = false,
         edition = false,
         interest_amount = 1,
-        interest_cap = 25,
+        interest_cap = 5,
         discount_percent = 0,
         double_tag = false,
         balance_chips = false,
@@ -81,10 +80,6 @@ function CustomDeck:blankDeck()
         debuff_played_cards = false,
         flipped_cards = false
     }
-
-    --[[for k,v in pairs(Utils.vouchers(true)) do
-        table.insert(o.config.customVoucherList, v.id)
-    end]]
 
     return o
 end
@@ -163,7 +158,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         randomize_rank_suit = randomizeRankSuit or false,
         edition = edition or false,
         interest_amount = interestAmount or 1,
-        interest_cap = interestCap or 25,
+        interest_cap = (interestCap and interestCap * 5) or 25,
         discount_percent = discountPercent or 0,
         double_tag = doubleTag or false,
         balance_chips = balanceChips or false,

@@ -10,22 +10,11 @@ DeckCreator.Unloaded = false
 function DeckCreator.Enable()
 
     Utils.registerGlobals()
-
     GUI.registerGlobals()
     GUI.registerModMenuUI()
     Helper.registerGlobals()
     Persistence.loadAllDeckLists()
     Persistence.setUnloadedLists()
-
-    if DeckCreator == nil then
-        DeckCreator = {}
-        DeckCreator.Unloaded = true
-    end
-
-    if DeckCreator.Unloaded then
-        DeckCreator.Unloaded = false
-        Persistence.refreshDeckList()
-    end
 
     local CardClick = Card.click
     function Card:click()
@@ -65,12 +54,17 @@ function DeckCreator.Enable()
 
             -- Adding item by clicking
             if GUI.openItemType ~= nil then
-                Utils.log("Clicked voucher: " .. self.config.center.key)
+                local added = false
                 if GUI.openItemType == 'voucher' then
-                    local added = CardUtils.addItemToDeck({ voucher = true, ref = 'customVoucherList', addCard = self.config.center.key, deck_list = Utils.customDeckList})
-                    if added then
-                        self:start_materialize(nil, true)
-                    end
+                    added = CardUtils.addItemToDeck({ voucher = true, ref = 'customVoucherList', addCard = self.config.center.key, deck_list = Utils.customDeckList})
+                elseif GUI.openItemType == 'joker' then
+                    added = CardUtils.addItemToDeck({ joker = true, ref = 'customJokerList', addCard = { key = self.config.center.key, isEternal = false, isPinned = false, edition = nil }, deck_list = Utils.customDeckList})
+                elseif GUI.openItemType == 'consumable' then
+                    added = CardUtils.addItemToDeck({ consumable = true, ref = 'customConsumableList', addCard = self.config.center.key, deck_list = Utils.customDeckList})
+                end
+
+                if added then
+                    self:start_materialize(nil, true)
                 end
 
             -- Removing from Starting Items by clicking
@@ -98,6 +92,14 @@ function DeckCreator.Enable()
                         local diff = memoryAfter - memoryBefore
                         Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Vouchers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
                     end
+                elseif self.uuid and self.uuid.type == 'joker' then
+                    Utils.log("Joker remove - " .. self.uuid.key)
+                elseif self.uuid and self.uuid.type == 'tarot' then
+                    Utils.log("Tarot remove - " .. self.uuid.key)
+                elseif self.uuid and self.uuid.type == 'planet' then
+                    Utils.log("Planet remove - " .. self.uuid.key)
+                elseif self.uuid and self.uuid.type == 'spectral' then
+                    Utils.log("Spectral remove - " .. self.uuid.key)
                 end
             end
 
@@ -108,11 +110,11 @@ function DeckCreator.Enable()
     end
 
     local BackApply_to_runRef = Back.apply_to_run
-    function Back.apply_to_run(arg)
-        if arg.effect.config.customDeck and arg.effect.config.copy_deck_config ~= nil and arg.effect.config.copy_deck_config ~= "None" then
+    function Back:apply_to_run()
+        if self.effect.config.customDeck and self.effect.config.copy_deck_config ~= nil and self.effect.config.copy_deck_config ~= "None" then
             local copyConfig
             for k,v in pairs(G.P_CENTER_POOLS.Back) do
-                if v.name == arg.effect.config.copy_deck_config then
+                if v.name == self.effect.config.copy_deck_config then
                     copyConfig = v.config
                     break
                 end
@@ -120,84 +122,108 @@ function DeckCreator.Enable()
 
             if copyConfig then
                 for k,v in pairs(copyConfig) do
-                    arg.effect.config[k] = v
+                    self.effect.config[k] = v
                 end
             end
         end
 
-        if arg.effect.config.customDeck then
-            arg.effect.config.vouchers = arg.effect.config.vouchers or {}
-            for k,v in pairs(arg.effect.config.customVoucherList) do
-                table.insert(arg.effect.config.vouchers, v)
+        local hadRerollSurplus = false
+        local hadRerollGlut = false
+        if self.effect.config.customDeck then
+            self.effect.config.vouchers = self.effect.config.vouchers or {}
+            for k,v in pairs(self.effect.config.customVoucherList) do
+                if v ~= 'v_reroll_surplus' and v ~= 'v_reroll_glut' then
+                    table.insert(self.effect.config.vouchers, v)
+                elseif v == 'v_reroll_surplus' then
+                    hadRerollSurplus = true
+                elseif v == 'v_reroll_glut' then
+                    hadRerollGlut = true
+                end
             end
 
-            if #arg.effect.config.vouchers == 0 then arg.effect.config.vouchers = nil end
+            if #self.effect.config.vouchers == 0 and not hadRerollGlut and not hadRerollSurplus then self.effect.config.vouchers = nil end
         end
 
-        BackApply_to_runRef(arg)
+        BackApply_to_runRef(self)
 
-        if arg.effect.config.customDeck then
+        if self.effect.config.customDeck then
 
-            Utils.log("Custom deck config at run start:\n" .. Utils.tableToString(arg.effect.config.customDeck))
-
-            if arg.effect.config.joker_rate == 0 and arg.effect.config.tarot_rate == 0 and arg.effect.config.planet_rate == 0 and arg.effect.config.spectral_rate == 0 and arg.effect.config.playing_card_rate == 0 then
+            if self.effect.config.joker_rate == 0 and self.effect.config.tarot_rate == 0 and self.effect.config.planet_rate == 0 and self.effect.config.spectral_rate == 0 and self.effect.config.playing_card_rate == 0 then
                 local rateNames = {"joker_rate", "tarot_rate", "planet_rate", "spectral_rate"}
                 local randomIndex = math.random(1, #rateNames)
                 local selectedRateName = rateNames[randomIndex]
-                arg.effect.config[selectedRateName] = 100
+                self.effect.config[selectedRateName] = 100
             end
 
-            G.GAME.shop.joker_max = arg.effect.config.shop_slots
-            G.GAME.modifiers.inflation = arg.effect.config.inflation
-            G.GAME.joker_rate = arg.effect.config.joker_rate
-            G.GAME.tarot_rate = arg.effect.config.tarot_rate
-            G.GAME.planet_rate = arg.effect.config.planet_rate
-            G.GAME.playing_card_rate = arg.effect.config.playing_card_rate
-            G.GAME.interest_cap = arg.effect.config.interest_cap
-            G.GAME.discount_percent = arg.effect.config.discount_percent
-            G.GAME.modifiers.chips_dollar_cap = arg.effect.config.chips_dollar_cap
-            G.GAME.modifiers.discard_cost = arg.effect.config.discard_cost
-            G.GAME.modifiers.all_eternal = arg.effect.config.all_eternal
-            G.GAME.modifiers.debuff_played_cards = arg.effect.config.debuff_played_cards
+            G.GAME.shop.joker_max = self.effect.config.shop_slots
+            G.GAME.modifiers.inflation = self.effect.config.inflation
+            G.GAME.joker_rate = self.effect.config.joker_rate
+            G.GAME.tarot_rate = self.effect.config.tarot_rate
+            G.GAME.planet_rate = self.effect.config.planet_rate
+            G.GAME.playing_card_rate = self.effect.config.playing_card_rate
+            G.GAME.interest_cap = self.effect.config.interest_cap
+            G.GAME.discount_percent = self.effect.config.discount_percent
+            G.GAME.modifiers.chips_dollar_cap = self.effect.config.chips_dollar_cap
+            G.GAME.modifiers.discard_cost = self.effect.config.discard_cost
+            G.GAME.modifiers.all_eternal = self.effect.config.all_eternal
+            G.GAME.modifiers.debuff_played_cards = self.effect.config.debuff_played_cards
 
-            if arg.effect.config.flipped_cards then
+            if self.effect.config.flipped_cards then
                 G.GAME.modifiers.flipped_cards = 4
             else
                 G.GAME.modifiers.flipped_cards = nil
             end
 
-            if arg.effect.config.minus_hand_size_per_X_dollar then
+            if self.effect.config.minus_hand_size_per_X_dollar then
                 G.GAME.modifiers.minus_hand_size_per_X_dollar = 5
             else
                 G.GAME.modifiers.minus_hand_size_per_X_dollar = nil
             end
 
-            if G.GAME.stake >= 4 or (G.GAME.stake < 4 and arg.effect.config.enable_eternals_in_shop) then
+            if G.GAME.stake >= 4 or (G.GAME.stake < 4 and self.effect.config.enable_eternals_in_shop) then
                 G.GAME.modifiers.enable_eternals_in_shop = true
             else
                 G.GAME.modifiers.enable_eternals_in_shop = false
             end
 
-            if G.GAME.stake >= 7 or (G.GAME.stake < 7 and arg.effect.config.booster_ante_scaling) then
+            if G.GAME.stake >= 7 or (G.GAME.stake < 7 and self.effect.config.booster_ante_scaling) then
                 G.GAME.modifiers.booster_ante_scaling = true
             else
                 G.GAME.modifiers.booster_ante_scaling = false
             end
 
-            if arg.effect.config.reroll_cost then
-                G.GAME.starting_params.reroll_cost = arg.effect.config.reroll_cost
-                G.GAME.base_reroll_cost = arg.effect.config.reroll_cost
+            if self.effect.config.reroll_cost then
+                G.GAME.starting_params.reroll_cost = self.effect.config.reroll_cost
+                G.GAME.base_reroll_cost = self.effect.config.reroll_cost
             end
 
-            if arg.effect.config.win_ante ~= nil and arg.effect.config.win_ante > 0 then
-                G.GAME.win_ante = arg.effect.config.win_ante
+            if self.effect.config.win_ante ~= nil and self.effect.config.win_ante > 0 then
+                G.GAME.win_ante = self.effect.config.win_ante
             end
 
-            if arg.effect.config.extra_hand_bonus == 0 then
+            if self.effect.config.extra_hand_bonus == 0 then
                 G.GAME.modifiers.no_extra_hand_money = true
             end
 
-            Utils.fullDeckConversionFunctions(arg)
+            if hadRerollSurplus then
+                local v = 'v_reroll_surplus'
+                table.insert(self.effect.config.vouchers, v)
+                G.GAME.used_vouchers[v] = true
+                G.GAME.starting_voucher_count = (G.GAME.starting_voucher_count or 0) + 1
+                G.GAME.round_resets.reroll_cost = G.GAME.round_resets.reroll_cost - 2
+                G.GAME.current_round.reroll_cost = math.max(0, G.GAME.current_round.reroll_cost - 2)
+            end
+
+            if hadRerollGlut then
+                local v = 'v_reroll_glut'
+                table.insert(self.effect.config.vouchers, v)
+                G.GAME.used_vouchers[v] = true
+                G.GAME.starting_voucher_count = (G.GAME.starting_voucher_count or 0) + 1
+                G.GAME.round_resets.reroll_cost = G.GAME.round_resets.reroll_cost - 2
+                G.GAME.current_round.reroll_cost = math.max(0, G.GAME.current_round.reroll_cost - 2)
+            end
+
+            Utils.fullDeckConversionFunctions(self)
         end
 
     end
@@ -273,11 +299,33 @@ function DeckCreator.Enable()
         return origReturn1, origReturn2
     end
 
+    if SMODS.BalamodMode then
+        local RunSetup = G.UIDEF.run_setup
+        G.UIDEF.run_setup = function(from_game_over)
+            Persistence.refreshDeckList()
+            return RunSetup(from_game_over)
+        end
+    end
+
     local GameStartRun = Game.start_run
     function Game:start_run(args)
-        local originalResult = GameStartRun(self, args)
-
         local deck = self.GAME.selected_back
+
+        if deck.effect.config.customDeck then
+            args = args or {}
+            args.challenge = {}
+            args.challenge.jokers = {}
+            args.challenge.consumeables = {}
+            for k,v in pairs(deck.effect.config.customJokerList) do
+                table.insert(args.challenge.jokers, v)
+            end
+            for k,v in pairs(deck.effect.config.customConsumableList) do
+                table.insert(args.challenge.consumeables, {id = v})
+            end
+        end
+
+
+        local originalResult = GameStartRun(self, args)
 
         if deck.effect.config.customDeck then
 
@@ -285,12 +333,6 @@ function DeckCreator.Enable()
                 CardUtils.initializeCustomCardList(deck.effect.config.customCardList)
             end
 
-            --[[if deck.effect.config.custom_vouchers_set then
-                G.GAME.starting_voucher_count = #deck.effect.config.customVoucherList
-                for k,v in pairs(deck.effect.config.customVoucherList) do
-                    Card.apply_to_run(nil, G.P_CENTERS[v])
-                end
-            end]]
         end
 
         return originalResult

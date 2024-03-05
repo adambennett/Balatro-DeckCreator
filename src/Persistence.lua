@@ -87,6 +87,9 @@ function Persistence.loadAllDeckLists()
         Utils.log("No decks loaded from any files")
     else
         Utils.log(Utils.tableLength(Utils.customDeckList) .. " custom decks loaded")
+        if SMODS.BalamodMode then
+            Persistence.refreshDeckList()
+        end
     end
 end
 

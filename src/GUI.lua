@@ -97,6 +97,46 @@ function GUI.registerGlobals()
         }
     end
 
+    G.FUNCS.DeckCreatorModuleAddJokerMenu = function()
+        GUI.openItemType = 'joker'
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu{
+            definition = GUI.addJokerMenu()
+        }
+    end
+
+    G.FUNCS.DeckCreatorModuleAddTarotMenu = function()
+        GUI.openItemType = 'consumable'
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu{
+            definition = GUI.addTarotMenu()
+        }
+    end
+
+    G.FUNCS.DeckCreatorModuleAddPlanetMenu = function()
+        GUI.openItemType = 'consumable'
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu{
+            definition = GUI.addPlanetMenu()
+        }
+    end
+
+    G.FUNCS.DeckCreatorModuleAddSpectralMenu = function()
+        GUI.openItemType = 'consumable'
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu{
+            definition = GUI.addSpectralMenu()
+        }
+    end
+
+    G.FUNCS.DeckCreatorModuleAddTagMenu = function()
+        GUI.openItemType = 'tag'
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu{
+            definition = GUI.addTagMenu()
+        }
+    end
+
     G.FUNCS.DeckCreatorModuleGenerateCard = function()
         local addCard = {
             rank = "Random",
@@ -149,7 +189,11 @@ function GUI.registerGlobals()
             end
         end
         Utils.customDeckList[#Utils.customDeckList].config.customVoucherList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set = true
+        Utils.customDeckList[#Utils.customDeckList].config.customJokerList = {}
+        Utils.customDeckList[#Utils.customDeckList].config.customConsumableList = {}
+        Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set = false
+        Utils.customDeckList[#Utils.customDeckList].config.custom_jokers_set = false
+        Utils.customDeckList[#Utils.customDeckList].config.custom_consumables_set = false
         if CardUtils.startingItems.vouchers and #CardUtils.startingItems.vouchers > 0 then
             for j = 1, #CardUtils.startingItems.vouchers do
                 local c = CardUtils.startingItems.vouchers[j]
@@ -159,7 +203,37 @@ function GUI.registerGlobals()
                 end
             end
         end
+        if CardUtils.startingItems.jokers and #CardUtils.startingItems.jokers > 0 then
+            for j = 1, #CardUtils.startingItems.jokers do
+                local c = CardUtils.startingItems.jokers[j]
+                if c then
+                    c:remove()
+                    c = nil
+                end
+            end
+        end
+        if CardUtils.startingItems.consumables and #CardUtils.startingItems.consumables > 0 then
+            for j = 1, #CardUtils.startingItems.consumables do
+                local c = CardUtils.startingItems.consumables[j]
+                if c then
+                    c:remove()
+                    c = nil
+                end
+            end
+        end
+        if CardUtils.startingItems.tags and #CardUtils.startingItems.tags > 0 then
+            for j = 1, #CardUtils.startingItems.tags do
+                local c = CardUtils.startingItems.tags[j]
+                if c then
+                    c:remove()
+                    c = nil
+                end
+            end
+        end
         CardUtils.startingItems.vouchers = {}
+        CardUtils.startingItems.jokers = {}
+        CardUtils.startingItems.consumables = {}
+        CardUtils.startingItems.tags = {}
         GUI.updateAllStartingItemsAreas()
     end
 
@@ -291,9 +365,18 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
         GUI.CloseAllOpenFlags()
         G.FUNCS:exit_overlay_menu()
-        G.FUNCS.overlay_menu({
-            definition = create_UIBox_mods(arg_736_0)
-        })
+
+        if SMODS.BalamodMode then
+            G.FUNCS.overlay_menu({
+                definition = G.UIDEF.mods()
+            })
+        else
+            G.FUNCS.overlay_menu({
+                definition = create_UIBox_mods()
+            })
+        end
+
+
     end
 
     G.FUNCS.DeckCreatorModuleOpenCreateDeck = function()
@@ -1544,17 +1627,17 @@ function GUI.createSelectItemTypeMenu()
         back_func = 'DeckCreatorModuleReopenStartingItems',
         contents = {
             {n=G.UIT.C, config={align = "cm", padding = 0.15}, nodes={
-                UIBox_button({button = 'your_collection_jokers', label = {localize('b_jokers')}, count = G.DISCOVER_TALLIES.jokers,  minw = 5, minh = 1.7, scale = 0.6, id = 'your_collection_jokers'}),
-                UIBox_button({button = 'your_collection_tags', label = {localize('b_tags')}, count = G.DISCOVER_TALLIES.tags, minw = 5, id = 'your_collection_tags'}),
+                UIBox_button({button = 'DeckCreatorModuleAddJokerMenu', label = {localize('b_jokers')}, count = G.DISCOVER_TALLIES.jokers,  minw = 5, minh = 1.7, scale = 0.6, id = 'your_collection_jokers'}),
+                UIBox_button({button = 'DeckCreatorModuleAddTagMenu', label = {localize('b_tags')}, count = G.DISCOVER_TALLIES.tags, minw = 5, id = 'your_collection_tags'}),
                 UIBox_button({button = 'DeckCreatorModuleAddVoucherMenu', label = {localize('b_vouchers')}, count = G.DISCOVER_TALLIES.vouchers, minw = 5, id = 'your_collection_vouchers'}),
                 {n=G.UIT.R, config={align = "cm", padding = 0.1, r=0.2, colour = G.C.BLACK}, nodes={
                     {n=G.UIT.C, config={align = "cm", maxh=2.9}, nodes={
                         {n=G.UIT.T, config={text = localize('k_cap_consumables'), scale = 0.45, colour = G.C.L_BLACK, vert = true, maxh=2.2}},
                     }},
                     {n=G.UIT.C, config={align = "cm", padding = 0.15}, nodes={
-                        UIBox_button({button = 'your_collection_tarots', label = {localize('b_tarot_cards')}, count = G.DISCOVER_TALLIES.tarots, minw = 4, id = 'your_collection_tarots', colour = G.C.SECONDARY_SET.Tarot}),
-                        UIBox_button({button = 'your_collection_planets', label = {localize('b_planet_cards')}, count = G.DISCOVER_TALLIES.planets, minw = 4, id = 'your_collection_planets', colour = G.C.SECONDARY_SET.Planet}),
-                        UIBox_button({button = 'your_collection_spectrals', label = {localize('b_spectral_cards')}, count = G.DISCOVER_TALLIES.spectrals, minw = 4, id = 'your_collection_spectrals', colour = G.C.SECONDARY_SET.Spectral}),
+                        UIBox_button({button = 'DeckCreatorModuleAddTarotMenu', label = {localize('b_tarot_cards')}, count = G.DISCOVER_TALLIES.tarots, minw = 4, id = 'your_collection_tarots', colour = G.C.SECONDARY_SET.Tarot}),
+                        UIBox_button({button = 'DeckCreatorModuleAddPlanetMenu', label = {localize('b_planet_cards')}, count = G.DISCOVER_TALLIES.planets, minw = 4, id = 'your_collection_planets', colour = G.C.SECONDARY_SET.Planet}),
+                        UIBox_button({button = 'DeckCreatorModuleAddSpectralMenu', label = {localize('b_spectral_cards')}, count = G.DISCOVER_TALLIES.spectrals, minw = 4, id = 'your_collection_spectrals', colour = G.C.SECONDARY_SET.Spectral}),
                     }}
                 }}
             }}
@@ -1975,6 +2058,7 @@ function GUI.dynamicStartingItemsAreaCards()
     remove_nils(CardUtils.startingItems.jokers)
     remove_nils(CardUtils.startingItems.consumables)
     remove_nils(CardUtils.startingItems.vouchers)
+    remove_nils(CardUtils.startingItems.tags)
     Helper.calculateStartingItemsSums()
 
     return {
@@ -2052,6 +2136,7 @@ function GUI.dynamicStartingItemsAreaDeckTables()
     remove_nils(CardUtils.startingItems.jokers)
     remove_nils(CardUtils.startingItems.consumables)
     remove_nils(CardUtils.startingItems.vouchers)
+    remove_nils(CardUtils.startingItems.tags)
     G.VIEWING_DECK = true
     G.GAME.blind = FakeBlind
 
@@ -2185,6 +2270,215 @@ function GUI.addVoucherMenu()
             create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_voucher_page', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
         }}
     }})
+end
+
+function GUI.addJokerMenu()
+    local deck_tables = {}
+
+    G.your_collection = {}
+    for j = 1, 3 do
+        G.your_collection[j] = CardArea(
+                G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
+                5*G.CARD_W,
+                0.95*G.CARD_H,
+                {card_limit = 5, type = 'title', highlight_limit = 0, collection = true})
+        table.insert(deck_tables,
+                {n=G.UIT.R, config={align = "cm", padding = 0.07, no_fill = true}, nodes={
+                    {n=G.UIT.O, config={object = G.your_collection[j]}}
+                }}
+        )
+    end
+
+    local joker_options = {}
+    for i = 1, math.ceil(#G.P_CENTER_POOLS.Joker/(5*#G.your_collection)) do
+        table.insert(joker_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.ceil(#G.P_CENTER_POOLS.Joker/(5*#G.your_collection))))
+    end
+
+    for i = 1, 5 do
+        for j = 1, #G.your_collection do
+            local center = G.P_CENTER_POOLS["Joker"][i+(j-1)*5]
+            local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
+            card.sticker = get_joker_win_sticker(center)
+            G.your_collection[j]:emplace(card)
+        end
+    end
+
+    local t =  create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
+        {n=G.UIT.R, config={align = "cm", r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
+        {n=G.UIT.R, config={align = "cm"}, nodes={
+            create_option_cycle({options = joker_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_joker_page', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true, nav = 'wide'}})
+        }}
+    }})
+    return t
+end
+
+function GUI.addTarotMenu()
+    local deck_tables = {}
+
+    G.your_collection = {}
+    for j = 1, 2 do
+        G.your_collection[j] = CardArea(
+                G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
+                (4.25+j)*G.CARD_W,
+                1*G.CARD_H,
+                {card_limit = 4 + j, type = 'title', highlight_limit = 0, collection = true})
+        table.insert(deck_tables,
+                {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true}, nodes={
+                    {n=G.UIT.O, config={object = G.your_collection[j]}}
+                }}
+        )
+    end
+
+    local tarot_options = {}
+    for i = 1, math.floor(#G.P_CENTER_POOLS.Tarot/11) do
+        table.insert(tarot_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.floor(#G.P_CENTER_POOLS.Tarot/11)))
+    end
+
+    for j = 1, #G.your_collection do
+        for i = 1, 4+j do
+            local center = G.P_CENTER_POOLS["Tarot"][i+(j-1)*(5)]
+            local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
+            card:start_materialize(nil, i>1 or j>1)
+            G.your_collection[j]:emplace(card)
+        end
+    end
+
+    local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
+        {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
+        {n=G.UIT.R, config={align = "cm"}, nodes={
+            create_option_cycle({options = tarot_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_tarot_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+        }}
+    }})
+    return t
+end
+
+function GUI.addPlanetMenu()
+    local deck_tables = {}
+
+    G.your_collection = {}
+    for j = 1, 2 do
+        G.your_collection[j] = CardArea(
+                G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
+                (6.25)*G.CARD_W,
+                1*G.CARD_H,
+                {card_limit = 6, type = 'title', highlight_limit = 0, collection = true})
+        table.insert(deck_tables,
+                {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true}, nodes={
+                    {n=G.UIT.O, config={object = G.your_collection[j]}}
+                }}
+        )
+    end
+
+    for j = 1, #G.your_collection do
+        for i = 1, 6 do
+            local center = G.P_CENTER_POOLS["Planet"][i+(j-1)*(6)]
+            local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
+            card:start_materialize(nil, i>1 or j>1)
+            G.your_collection[j]:emplace(card)
+        end
+    end
+
+    local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
+        {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
+        {n=G.UIT.R, config={align = "cm", padding = 0.7}, nodes={}},
+    }})
+    return t
+end
+
+function GUI.addSpectralMenu()
+    local deck_tables = {}
+
+    G.your_collection = {}
+    for j = 1, 2 do
+        G.your_collection[j] = CardArea(
+                G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
+                (3.25+j)*G.CARD_W,
+                1*G.CARD_H,
+                {card_limit = 3+j, type = 'title', highlight_limit = 0, collection = true})
+        table.insert(deck_tables,
+                {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true}, nodes={
+                    {n=G.UIT.O, config={object = G.your_collection[j]}}
+                }}
+        )
+    end
+
+    for j = 1, #G.your_collection do
+        for i = 1, 3+j do
+            local center = G.P_CENTER_POOLS["Spectral"][i+(j-1)*3 + j - 1]
+
+            local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
+            card:start_materialize(nil, i>1 or j>1)
+            G.your_collection[j]:emplace(card)
+        end
+    end
+
+    local spectral_options = {}
+    for i = 1, math.floor(#G.P_CENTER_POOLS.Tarot/9) do
+        table.insert(spectral_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.floor(#G.P_CENTER_POOLS.Spectral/9)))
+    end
+
+    local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
+        {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
+        {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+            create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_spectral_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+        }},
+    }})
+    return t
+end
+
+function GUI.addTagMenu()
+    local tag_matrix = {
+        {},{},{},{},
+    }
+    local tag_tab = {}
+    for k, v in pairs(G.P_TAGS) do
+        tag_tab[#tag_tab+1] = v
+    end
+
+    table.sort(tag_tab, function (a, b) return a.order < b.order end)
+
+    local tags_to_be_alerted = {}
+    for k, v in ipairs(tag_tab) do
+        local discovered = v.discovered
+        local temp_tag = Tag(v.key, true)
+        if not v.discovered then temp_tag.hide_ability = true end
+        local temp_tag_ui, temp_tag_sprite = temp_tag:generate_UI()
+        tag_matrix[math.ceil((k-1)/6+0.001)][1+((k-1)%6)] = {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+            temp_tag_ui,
+        }}
+        if discovered and not v.alerted then
+            tags_to_be_alerted[#tags_to_be_alerted+1] = temp_tag_sprite
+        end
+    end
+
+    G.E_MANAGER:add_event(Event({
+        trigger = 'immediate',
+        func = (function()
+            for _, v in ipairs(tags_to_be_alerted) do
+                v.children.alert = UIBox{
+                    definition = create_UIBox_card_alert(),
+                    config = { align="tri", offset = {x = 0.1, y = 0.1}, parent = v}
+                }
+                v.children.alert.states.collide.can = false
+            end
+            return true
+        end)
+    }))
+
+
+    local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
+        {n=G.UIT.C, config={align = "cm", r = 0.1, colour = G.C.BLACK, padding = 0.1, emboss = 0.05}, nodes={
+            {n=G.UIT.C, config={align = "cm"}, nodes={
+                {n=G.UIT.R, config={align = "cm"}, nodes={
+                    {n=G.UIT.R, config={align = "cm"}, nodes=tag_matrix[1]},
+                    {n=G.UIT.R, config={align = "cm"}, nodes=tag_matrix[2]},
+                    {n=G.UIT.R, config={align = "cm"}, nodes=tag_matrix[3]},
+                    {n=G.UIT.R, config={align = "cm"}, nodes=tag_matrix[4]},
+                }}
+            }}
+        }}
+    }})
+    return t
 end
 
 return GUI

@@ -5,7 +5,8 @@ CardUtils.allCardsEverMade = {}
 CardUtils.startingItems = {
     jokers = {},
     consumables = {},
-    vouchers = {}
+    vouchers = {},
+    tags = {}
 }
 
 function CardUtils.initializeCustomCardList(deck)
@@ -109,21 +110,33 @@ function CardUtils.getJokersFromCustomJokerList(deck)
     for j = 1, #deck do
         local center
         local index
+        local isEternal = false
+        local isPinned = false
+        local edition
         for k,v in pairs(G.P_CENTER_POOLS["Joker"]) do
-            if v.key == deck[j] then
+            if v.key == deck[j].key then
                 center = v
                 index = k
+                isEternal = deck[j].isEternal
+                isPinned = deck[j].isPinned
+                edition = deck[j].edition
                 break
             end
         end
         if center then
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
-            card.uuid = { key = center.key, type = 'joker'}
+            card.uuid = { key = center.key, type = 'joker' }
             card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            if isEternal then card:set_eternal(true) end
+            if isPinned then card.pinned = true end
             table.insert(CardUtils.startingItems.jokers, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
     end
+
+    Utils.log("StartingItems.jokers size: " .. #CardUtils.startingItems.jokers)
+    Utils.log("CardUtils.allCardsEverMade size: " .. #CardUtils.allCardsEverMade)
 
     if Utils.runMemoryChecks then
         local memoryAfter = collectgarbage("count")
@@ -132,8 +145,41 @@ function CardUtils.getJokersFromCustomJokerList(deck)
     end
 end
 
-function CardUtils.getConsumablesFromCustomConsumableList(deck)
+-- valid subtypes: Tarot, Spectral, Planet
+function CardUtils.getConsumablesFromCustomConsumableList(deck, subtype)
+    CardUtils.flushStartingItems('consumables')
+    CardUtils.startingItems.consumables = {}
 
+    local memoryBefore = collectgarbage("count")
+
+    for j = 1, #deck do
+        local center
+        local index
+        local edition
+        for k,v in pairs(G.P_CENTER_POOLS[subtype]) do
+            Utils.log("checking " .. subtype .. " keys, k=" .. k .. ", deck[j].key=" .. Utils.tableToString(deck[j]) .. ', v=' .. Utils.tableToString(v))
+            if v.key == deck[j].key then
+                center = v
+                index = k
+                edition = deck[j].edition
+                break
+            end
+        end
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = string.lower(subtype) }
+            card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            table.insert(CardUtils.startingItems.consumables, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (ConsumableCreation-" .. subtype .. "): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
 end
 
 function CardUtils.getVouchersFromCustomVoucherList(deck)
@@ -157,6 +203,9 @@ function CardUtils.getVouchersFromCustomVoucherList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'voucher'}
             card.ability.order = (j-1)*4
+            if center.key == 'v_reroll_surplus' or center.key == 'v_reroll_glut' then
+                card.ability.extra = G.P_CENTERS[center.key].config.extra
+            end
             table.insert(CardUtils.startingItems.vouchers, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -267,6 +316,7 @@ function CardUtils.addItemToDeck(args)
     local deckList = args.deck_list or {}
     args.copies = args.copies or 1
 
+    local counter = 1
     for i = 1, args.copies do
 
         if args.isRandomType then
@@ -276,7 +326,6 @@ function CardUtils.addItemToDeck(args)
             for x, y in pairs(allVouchers) do
                 local foundMatch = false
                 for k,v in pairs(deckList[#deckList].config.customVoucherList) do
-                    Utils.log("Checking k [" .. tostring(v) .. "] against y.id [" .. tostring(y.id) .. "]")
                     if v == y.id then
                         foundMatch = true
                         break
@@ -287,31 +336,49 @@ function CardUtils.addItemToDeck(args)
                 end
             end
 
-            local typeRollMax = #unObtainedVouchers > 0 and 6 or 5
-            local typeRoll = 6 --math.random(1, typeRollMax)
+            local typeRollMax = #unObtainedVouchers > 0 and 4 or 3
+            local typeRoll = math.random(1, typeRollMax)
+
+            -- temporary line to prevent random tag
+            if typeRoll == 3 then typeRoll = 2 end
+
             if typeRollMax < typeRoll then return end
 
             if typeRoll == 1 then
+                local edition
+                local editionRoll = math.random(1, 100)
+                if editionRoll < 40 then
+                    edition = 'foil'
+                elseif editionRoll < 30 then
+                    edition = 'holo'
+                elseif editionRoll < 20 then
+                    edition = 'polychrome'
+                elseif editionRoll < 10 then
+                    edition = 'negative'
+                end
+
+                local list = Utils.jokerKeys()
+                local keyRoll = list[math.random(1, #list)]
+                args.addCard = {
+                    key = keyRoll,
+                    edition = edition,
+                    isEternal = false,
+                    isPinned = false
+                }
                 args.joker = true
                 args.ref = 'customJokerList'
             end
             if typeRoll == 2 then
-                args.planet = true
+                local list = Utils.consumableKeys()
+                args.addCard = list[math.random(1, #list)]
+                args.consumable = true
                 args.ref = 'customConsumableList'
             end
             if typeRoll == 3 then
-                args.tarot = true
-                args.ref = 'customConsumableList'
-            end
-            if typeRoll == 4 then
-                args.spectral = true
-                args.ref = 'customConsumableList'
-            end
-            if typeRoll == 5 then
                 args.tag = true
                 args.ref = 'customTagList'
             end
-            if typeRoll == 6 then
+            if typeRoll == 4 then
                 args.addCard = unObtainedVouchers[math.random(1, #unObtainedVouchers)].id
                 args.voucher = true
                 args.ref = 'customVoucherList'
@@ -319,24 +386,14 @@ function CardUtils.addItemToDeck(args)
         end
 
         local type
-        local newCard
+        local newCard = args.addCard
         if args.joker then
-            newCard = {}
             type = 'jokers'
-        elseif args.planet then
-            newCard = {}
-            type = 'consumables'
-        elseif args.tarot then
-            newCard = {}
-            type = 'consumables'
-        elseif args.spectral then
-            newCard = {}
+        elseif args.consumable then
             type = 'consumables'
         elseif args.tag then
-            newCard = {}
             type = 'tags'
         elseif args.voucher then
-            newCard = args.addCard
             type = 'vouchers'
 
             -- return early if duplicated voucher to prevent crashes
@@ -349,17 +406,20 @@ function CardUtils.addItemToDeck(args)
 
         if newCard then
             table.insert(deckList[#deckList].config[args.ref], newCard)
-            --[[if deckList[#deckList].config[args.ref][newCard] == nil then
-                deckList[#deckList].config[args.ref][key] = newCard
+            --[[if type == 'vouchers' then
+                table.insert(deckList[#deckList].config[args.ref], newCard)
             else
-                while deckList[#deckList].config[args.ref][key .. "_" .. counter] ~= nil do
-                    counter = counter + 1
+                local key = type == 'jokers' and newCard.key or newCard
+                if deckList[#deckList].config.customCardList[key] == nil then
+                    deckList[#deckList].config[args.ref][key] = newCard
+                else
+                    while deckList[#deckList].config.customCardList[key .. "_" .. counter] ~= nil do
+                        counter = counter + 1
+                    end
+                    local extraKey = key .. "_" .. counter
+                    deckList[#deckList].config[args.ref][extraKey] = newCard
                 end
-                local extraKey = key .. "_" .. counter
-                newCard.key = extraKey
-                deckList[#deckList].config[args.ref][extraKey] = newCard
             end]]
-
 
             local key = 'custom_' .. type .. '_set'
             Utils.customDeckList[#Utils.customDeckList].config[key] = true

@@ -31,6 +31,22 @@ function Utils.generateBigIntegerList()
     return Utils.generateBoundedIntegerList(0, 9999)
 end
 
+function Utils.generateBoundedIntegerListWithIncrements(min, max, step)
+    local list = {}
+    for i = min, max, step do
+        table.insert(list, i)
+    end
+    return list
+end
+
+function Utils.generateBoundedIntegerList(min, max)
+    local list = {}
+    for i = min, max do
+        table.insert(list, i)
+    end
+    return list
+end
+
 function Utils.allDeckNames()
     local output = {
         "None"
@@ -49,14 +65,6 @@ function Utils.allDeckNames()
         end
     end
     return output
-end
-
-function Utils.generateBoundedIntegerList(min, max)
-    local list = {}
-    for i = min, max do
-        table.insert(list, i)
-    end
-    return list
 end
 
 function Utils.suits(includeRandom)
@@ -132,6 +140,26 @@ function Utils.seals(includeRandom)
     }
     if includeRandom then
         table.insert(output, "Random")
+    end
+    return output
+end
+
+function Utils.jokerKeys()
+    local output = {}
+    for k,v in pairs(G.P_CENTERS) do
+        if v.set == 'Joker' then
+            table.insert(output, k)
+        end
+    end
+    return output
+end
+
+function Utils.consumableKeys()
+    local output = {}
+    for k,v in pairs(G.P_CENTERS) do
+        if v.set == 'Tarot' or v.set == 'Planet' or v.set == 'Spectral' then
+            table.insert(output, k)
+        end
     end
     return output
 end

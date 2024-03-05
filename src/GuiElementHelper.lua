@@ -543,8 +543,8 @@ function Helper.calculateStartingItemsSums()
 
     Helper.sums.item_tallies = {
         ['Joker']  = 0,
-        ['Tarot'] = 0,
-        ['Planet'] = 0,
+        ['Consumable'] = 0,
+        ['Tag'] = 0,
         ['Voucher'] = 0
     }
 
@@ -552,14 +552,13 @@ function Helper.calculateStartingItemsSums()
         Helper.sums.item_tallies["Joker"] = (Helper.sums.item_tallies["Joker"] or 0) + 1
     end
     for k,v in pairs(CardUtils.startingItems.consumables) do
-        if v.type == 'Planet' then
-            Helper.sums.item_tallies["Planet"] = (Helper.sums.item_tallies["Planet"] or 0) + 1
-        elseif v.type == 'Tarot' then
-            Helper.sums.item_tallies["Tarot"] = (Helper.sums.item_tallies["Tarot"] or 0) + 1
-        end
+        Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
     end
     for k,v in pairs(CardUtils.startingItems.vouchers) do
         Helper.sums.item_tallies["Voucher"] = (Helper.sums.item_tallies["Voucher"] or 0) + 1
+    end
+    for k,v in pairs(CardUtils.startingItems.tags) do
+        Helper.sums.item_tallies["Tag"] = (Helper.sums.item_tallies["Tag"] or 0) + 1
     end
 
     Helper.sums.start_item_cols = {}
