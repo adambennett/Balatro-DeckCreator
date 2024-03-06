@@ -10,6 +10,10 @@ GUI.DynamicUIManager = {}
 GUI.DeckCreatorOpen = false
 GUI.StartingItemsOpen = false
 GUI.openTab = nil
+GUI.ManageDecksConfig = {
+    allCustomBacks = {},
+    currentIndex = 1
+}
 
 function GUI.CloseAllOpenFlags()
     GUI.DeckCreatorOpen = false
@@ -41,6 +45,24 @@ GUI.resetOpenStartingItemConfig()
 function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleOpenGithub = function()
         love.system.openURL("https://github.com/adambennett/Balatro-DeckCreator")
+    end
+
+    G.FUNCS.DeckCreatorModuleCopyDeck = function(args)
+        Utils.log("Copying deck: " .. Utils.tableToString(G.GAME.viewed_back))
+    end
+
+    G.FUNCS.DeckCreatorModuleEditDeck = function(args)
+        Utils.log("Editing deck: " .. Utils.tableToString(G.GAME.viewed_back))
+    end
+
+    G.FUNCS.DeckCreatorModuleDeleteDeck = function(args)
+        Utils.log("Deleting deck: " .. Utils.tableToString(G.GAME.viewed_back))
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeManageDeckViewedDeck = function(args)
+        Utils.log("Changing viewed manage decks back, to_key=" .. args.to_key .. ", to_val=" .. args.to_val)
+        G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[args.to_key])
+        G.PROFILES[G.SETTINGS.profile].MEMORY.deck = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleUpdateNewMods = function(args)
@@ -431,6 +453,13 @@ function GUI.registerGlobals()
         })
     end
 
+    G.FUNCS.DeckCreatorModuleOpenManageDecks = function()
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu({
+            definition = GUI.createManageDecksMenu()
+        })
+    end
+
     G.FUNCS.DeckCreatorModuleReopenBaseDeck = function()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
@@ -552,12 +581,40 @@ function GUI.registerModMenuUI()
                     align = "cm"
                 },
                 nodes = {
+
+                }
+            },
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
                     UIBox_button({
                         label = {" Create Deck "},
                         shadow = true,
                         scale = 0.75 * 0.5,
                         colour = G.C.BOOSTER,
                         button = "DeckCreatorModuleOpenCreateDeck",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
+            },
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Manage Decks "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.BOOSTER,
+                        button = "DeckCreatorModuleOpenManageDecks",
                         minh = 0.8,
                         minw = 8
                     })
@@ -581,25 +638,6 @@ function GUI.registerModMenuUI()
                     })
                 }
             },
-
-            --[[{
-                n = G.UIT.R,
-                config = {
-                    padding = 0.1,
-                    align = "cm"
-                },
-                nodes = {
-                    UIBox_button({
-                        label = {" New Mods Menu "},
-                        shadow = true,
-                        scale = 0.75 * 0.5,
-                        colour = G.C.BOOSTER,
-                        button = "DeckCreatorModuleNewModsMenu",
-                        minh = 0.8,
-                        minw = 8
-                    })
-                }
-            }]]
         })
     end
 end
@@ -1032,21 +1070,105 @@ function GUI.createDecksMenu(chosen)
                                                     colour = G.C.BLACK
                                                 },
                                                 nodes = {
-                                                    Helper.createOptionSelector({label = "Joker Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeJokerSlots', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.joker_slot
-                                                    ), multiArrows = true }),
-                                                    Helper.createOptionSelector({label = "Consumable Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeConsumableSlots', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.consumable_slot
-                                                    ), multiArrows = true }),
-                                                    Helper.createOptionSelector({label = "Ante Scaling", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 3), opt_callback = 'DeckCreatorModuleChangeAnteScaling', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.ante_scaling
-                                                    )}),
-                                                    Helper.createOptionSelector({label = "Shop Slots", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 5), opt_callback = 'DeckCreatorModuleChangeShopSlots', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.shop_slots
-                                                    )}),
-                                                    Helper.createOptionSelector({label = "Copy Deck Properties", scale = 0.8, options = Utils.allDeckNames(), opt_callback = 'DeckCreatorModuleChangeCopyFromDeck', current_option = (
+                                                    {
+                                                        n = G.UIT.R,
+                                                        config = { align = "cm", padding = 0.1 },
+                                                        nodes = {
+                                                            {
+                                                                n = G.UIT.R,
+                                                                config = {
+                                                                    align = "cm",
+                                                                    padding = 0.05,
+                                                                    minw = 4  -- Adjust the width as needed
+                                                                },
+                                                                nodes = {
+                                                                    {
+                                                                        n=G.UIT.R,
+                                                                        config={align = "cm"},
+                                                                        nodes={{n=G.UIT.T, config={text = "Deck Description", scale = 0.5, colour = G.C.UI.TEXT_LIGHT}}}
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                n = G.UIT.R,
+                                                                config = {
+                                                                    align = "cm",
+                                                                    padding = 0.1,
+                                                                    minw = 4  -- Adjust the width as needed
+                                                                },
+                                                                nodes = {
+                                                                    create_text_input({
+                                                                        -- id = "deckName",
+                                                                        w = 4,  -- Width of the text input
+                                                                        max_length = 25,  -- Max length of deck name
+                                                                        prompt_text = "Custom Description",  -- Prompt text for input
+                                                                        ref_table = Utils.customDeckList[#Utils.customDeckList],  -- Table to store the inputted value
+                                                                        ref_value = 'descLine1',  -- Key in ref_table where input is stored
+                                                                        extended_corpus = true,
+                                                                        keyboard_offset = 1,
+                                                                        callback = function(val) end
+                                                                    }),
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        n = G.UIT.R,
+                                                        config = { align = "cm", padding = 0.1 },
+                                                        nodes = {
+                                                            {
+                                                                n = G.UIT.C,
+                                                                config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
+                                                                nodes = {
+                                                                    {
+                                                                        n = G.UIT.R,
+                                                                        config = { align = "cm", padding = 0.1 },
+                                                                        nodes = {
+                                                                            Helper.createOptionSelector({label = "Joker Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeJokerSlots', current_option = (
+                                                                                    Utils.customDeckList[#Utils.customDeckList].config.joker_slot
+                                                                            ), multiArrows = true }),
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        n = G.UIT.R,
+                                                                        config = { align = "cm", padding = 0.1 },
+                                                                        nodes = {
+                                                                            Helper.createOptionSelector({label = "Shop Slots", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 5), opt_callback = 'DeckCreatorModuleChangeShopSlots', current_option = (
+                                                                                    Utils.customDeckList[#Utils.customDeckList].config.shop_slots
+                                                                            )}),
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                n = G.UIT.C,
+                                                                config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
+                                                                nodes = {
+                                                                    {
+                                                                        n = G.UIT.R,
+                                                                        config = { align = "cm", padding = 0.1 },
+                                                                        nodes = {
+                                                                            Helper.createOptionSelector({label = "Consumable Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeConsumableSlots', current_option = (
+                                                                                    Utils.customDeckList[#Utils.customDeckList].config.consumable_slot
+                                                                            ), multiArrows = true }),
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        n = G.UIT.R,
+                                                                        config = { align = "cm", padding = 0.1 },
+                                                                        nodes = {
+                                                                            Helper.createOptionSelector({label = "Ante Scaling", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 3), opt_callback = 'DeckCreatorModuleChangeAnteScaling', current_option = (
+                                                                                    Utils.customDeckList[#Utils.customDeckList].config.ante_scaling
+                                                                            )}),
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                        }
+                                                    }
+                                                   --[[ Helper.createOptionSelector({label = "Copy Deck Properties", scale = 0.8, options = Utils.allDeckNames(), opt_callback = 'DeckCreatorModuleChangeCopyFromDeck', current_option = (
                                                             Utils.customDeckList[#Utils.customDeckList].config.copy_deck_config
-                                                    ) }),
+                                                    ) }),]]
                                                 }
                                             }
                                         end
@@ -1694,6 +1816,153 @@ function GUI.createSelectItemTypeMenu()
     })
 end
 
+function GUI.createManageDecksMenu()
+
+    G.PROFILES[G.SETTINGS.profile].MEMORY.stake = G.PROFILES[G.SETTINGS.profile].MEMORY.stake or 1
+
+    local customDecks = 0
+    local curIndex = 1
+    for k,v in ipairs(G.P_CENTER_POOLS.Back) do
+        if v.config.customDeck then
+            local back = Back(v)
+            if G.GAME.viewed_back == nil then
+                G.GAME.viewed_back = back
+                GUI.ManageDecksConfig.currentIndex = curIndex
+            end
+            customDecks = customDecks + 1
+            curIndex = curIndex + 1
+            table.insert(GUI.ManageDecksConfig.allCustomBacks, back)
+        end
+    end
+
+    local area = CardArea(
+            G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
+            G.CARD_W,
+            G.CARD_H,
+            {card_limit = 5, type = 'deck', highlight_limit = 0, deck_height = 0.75, thin_draw = 1})
+
+    for i = 1, customDecks do
+        local card = Card(G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h, G.CARD_W, G.CARD_H, pseudorandom_element(G.P_CARDS), G.P_CENTERS.c_base, {playing_card = i, viewed_back = true})
+        card.sprite_facing = 'back'
+        card.facing = 'back'
+        area:emplace(card)
+        -- if i == customDecks then G.sticker_card = card; card.sticker = get_deck_win_sticker(G.GAME.viewed_back.effect.center) end
+    end
+
+    local ordered_names, viewed_deck = {}, 1
+    for k, v in ipairs(G.P_CENTER_POOLS.Back) do
+        if v.config.customDeck then
+            ordered_names[#ordered_names+1] = v.name
+            if v.name == G.GAME.viewed_back.name then viewed_deck = k end
+        end
+    end
+
+    local t = {
+        n=G.UIT.ROOT,
+        config={align = "cm", colour = G.C.CLEAR, minh = 5, minw = 6, padding = 1 },
+        nodes={
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 0.1, padding = 1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {}
+            },
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 3, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm", minh = 3.8}, nodes={
+                        create_option_cycle({options =  ordered_names, opt_callback = 'DeckCreatorModuleChangeManageDeckViewedDeck', current_option = viewed_deck, colour = G.C.RED, w = 6, mid =
+                        {n=G.UIT.R, config={align = "cm", minh = 3.3, minw = 6}, nodes={
+                            {n=G.UIT.C, config={align = "cm", colour = G.C.BLACK, padding = 0.15, r = 0.1, emboss = 0.05}, nodes={
+                                {n=G.UIT.C, config={align = "cm"}, nodes={
+                                    {n=G.UIT.R, config={align = "cm", shadow = false}, nodes={
+                                        {n=G.UIT.O, config={object = area}}
+                                    }},
+                                }},{n=G.UIT.C, config={align = "cm", minh = 1.7, r = 0.1, colour = G.C.L_BLACK, padding = 0.1}, nodes={
+                                    {n=G.UIT.R, config={align = "cm", r = 0.1, minw = 4, maxw = 4, minh = 0.6}, nodes={
+                                        {n=G.UIT.O, config={id = nil, func = 'RUN_SETUP_check_back_name', object = Moveable()}},
+                                    }},
+                                    {n=G.UIT.R, config={align = "cm", colour = G.C.WHITE, minh = 1.7, r = 0.1}, nodes={
+                                        {n=G.UIT.O, config={id = G.GAME.viewed_back.name, func = 'RUN_SETUP_check_back', object = UIBox{definition = G.GAME.viewed_back:generate_UI(), config = {offset = {x=0,y=0}}}}}
+                                    }}
+                                }}
+                            }}
+                        }}
+                        })
+                    }},
+                    {n=G.UIT.R, config={align = "cm", padding = 0.1 }, nodes={}},
+                    {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                        {
+                            n = G.UIT.C,
+                            config = { align = "cm", minw = 0.2, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                            nodes = {
+                                {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                                    UIBox_button({
+                                        label = {" Edit "},
+                                        shadow = true,
+                                        scale = 0.75 * 0.5,
+                                        colour = G.C.GREEN,
+                                        button = "DeckCreatorModuleEditDeck",
+                                        minh = 0.8,
+                                        minw = 3
+                                    })
+                                }}
+                            }
+                        },
+                        {
+                            n = G.UIT.C,
+                            config = { align = "cm", minw = 0.2, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                            nodes = {
+                                {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                                    UIBox_button({
+                                        label = {" Copy "},
+                                        shadow = true,
+                                        scale = 0.75 * 0.5,
+                                        colour = G.C.BOOSTER,
+                                        button = "DeckCreatorModuleCopyDeck",
+                                        minh = 0.8,
+                                        minw = 3
+                                    })
+                                }}
+                            }
+                        },
+                        {
+                            n = G.UIT.C,
+                            config = { align = "cm", minw = 0.2, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                            nodes = {
+                                {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
+                                    UIBox_button({
+                                        label = {" Delete "},
+                                        shadow = true,
+                                        scale = 0.75 * 0.5,
+                                        colour = G.C.RED,
+                                        button = "DeckCreatorModuleDeleteDeck",
+                                        minh = 0.8,
+                                        minw = 3
+                                    })
+                                }}
+                            }
+                        }
+                    }}
+                }
+            },
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 0.1, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {}
+            },
+        }
+    }
+    return create_UIBox_generic_options({
+        back_func = "DeckCreatorModuleBackToModsScreen",
+        contents = {
+            {n=G.UIT.R, config={align = "cm", padding = 0, draw_layer = 1 }, nodes={
+                t
+            }}
+        }
+    })
+end
+
 function GUI.DynamicUIManager.initTab(args)
     local updateFunctions = args.updateFunctions
     local staticPageDefinition = args.staticPageDefinition
@@ -1823,7 +2092,7 @@ function GUI.deckEditorPageStatic()
                             label = {" Add Card "},
                             shadow = true,
                             scale = 0.75 * 0.4,
-                            colour = G.C.BOOSTER,
+                            colour = G.C.GREEN,
                             button = "DeckCreatorModuleOpenAddCardToDeck",
                             minh = 0.8,
                             minw = 3
@@ -1845,7 +2114,7 @@ function GUI.deckEditorPageStatic()
                             label = {" Remove All "},
                             shadow = true,
                             scale = 0.75 * 0.4,
-                            colour = G.C.BOOSTER,
+                            colour = G.C.RED,
                             button = "DeckCreatorModuleDeleteAllCardsFromBaseDeck",
                             minh = 0.8,
                             minw = 3
@@ -1893,6 +2162,13 @@ function GUI.dynamicDeckEditorAreaCards()
                         { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
                             tally_sprite({ x = 2, y = 1 }, { { string = Helper.sums.suit_tallies['Clubs'], colour = flip_col }, { string = Helper.sums.mod_suit_tallies['Clubs'], colour = G.C.BLUE } }, { localize('Clubs', 'suits_plural') }),
                             tally_sprite({ x = 1, y = 1 }, { { string = Helper.sums.suit_tallies['Diamonds'], colour = flip_col }, { string = Helper.sums.mod_suit_tallies['Diamonds'], colour = G.C.BLUE } }, { localize('Diamonds', 'suits_plural') }),
+                        } },
+                        { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
+                            {n=G.UIT.C, config={align = "cm", padding = 0.07,force_focus = true,  focus_args = {type = 'tally_sprite'}, tooltip = {text = "All cards"}}, nodes={
+                                {n=G.UIT.R, config={align = "cm"}, nodes={
+                                    {n=G.UIT.T, config={text = "Total: " .. Helper.sums.total_cards,colour = flip_col, scale = 0.4, shadow = true}},
+                                }},
+                            }}
                         } },
                     } }
                 }
@@ -2043,6 +2319,11 @@ function GUI.startingItemsPageStatic()
             },
             {
                 n = G.UIT.R,
+                config = { align = "cm", padding = 0.2 },
+                nodes = {}
+            },
+            {
+                n = G.UIT.R,
                 config = { align = "cm", padding = 0.05 },
                 nodes = {
                     {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
@@ -2050,7 +2331,7 @@ function GUI.startingItemsPageStatic()
                             label = {" Add Item "},
                             shadow = true,
                             scale = 0.75 * 0.4,
-                            colour = G.C.BOOSTER,
+                            colour = G.C.GREEN,
                             button = "DeckCreatorModuleOpenAddItemToDeck",
                             minh = 0.8,
                             minw = 3
@@ -2072,7 +2353,7 @@ function GUI.startingItemsPageStatic()
                             label = {" Remove All "},
                             shadow = true,
                             scale = 0.75 * 0.4,
-                            colour = G.C.BOOSTER,
+                            colour = G.C.RED,
                             button = "DeckCreatorModuleDeleteAllStartingItemsFromBaseDeck",
                             minh = 0.8,
                             minw = 3

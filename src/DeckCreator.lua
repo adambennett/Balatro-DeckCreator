@@ -199,7 +199,7 @@ function DeckCreator.Enable()
 
     local BackApply_to_runRef = Back.apply_to_run
     function Back:apply_to_run()
-        if self.effect.config.customDeck and self.effect.config.copy_deck_config ~= nil and self.effect.config.copy_deck_config ~= "None" then
+        --[[if self.effect.config.customDeck and self.effect.config.copy_deck_config ~= nil and self.effect.config.copy_deck_config ~= "None" then
             local copyConfig
             for k,v in pairs(G.P_CENTER_POOLS.Back) do
                 if v.name == self.effect.config.copy_deck_config then
@@ -213,7 +213,7 @@ function DeckCreator.Enable()
                     self.effect.config[k] = v
                 end
             end
-        end
+        end]]
 
         local hadRerollSurplus = false
         local hadRerollGlut = false

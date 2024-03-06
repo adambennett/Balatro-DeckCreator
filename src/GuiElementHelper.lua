@@ -456,6 +456,7 @@ end
 function Helper.calculateDeckEditorSums()
     local unplayed_only = false
     local flip_col = G.C.WHITE
+    Helper.sums.total_cards = 0
     Helper.sums.suit_tallies = {['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0}
     Helper.sums.mod_suit_tallies = {['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0}
     Helper.sums.rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -470,6 +471,7 @@ function Helper.calculateDeckEditorSums()
     Helper.sums.wheel_flipped = 0
 
     for k, v in ipairs(G.playing_cards) do
+        Helper.sums.total_cards = Helper.sums.total_cards + 1
         if v.ability.name ~= 'Stone Card' and (not unplayed_only or ((v.area and v.area == G.deck) or v.ability.wheel_flipped)) then
             if v.ability.wheel_flipped and unplayed_only then Helper.wheel_flipped = Helper.wheel_flipped + 1 end
             --For the suits
@@ -575,26 +577,28 @@ function Helper.calculateStartingItemsSums()
 
     Helper.sums.start_item_cols = {}
     for k,v in pairs(Helper.sums.item_tallies) do
-        Helper.sums.start_item_cols[#Helper.sums.start_item_cols+1] = {
-            n=G.UIT.R,
-            config={align = "cm", padding = 0.07},
-            nodes={
-                {
-                    n=G.UIT.C,
-                    config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
-                    nodes={
-                        {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
-                    }
-                },
-                {
-                    n=G.UIT.C,
-                    config={align = "cr", minw = 0.4},
-                    nodes={
-                        {n=G.UIT.T, config={text = tostring(v) or 'NIL',colour = G.C.WHITE, scale = 0.45, shadow = true}},
+        if k ~= 'Consumable' then
+            Helper.sums.start_item_cols[#Helper.sums.start_item_cols+1] = {
+                n=G.UIT.R,
+                config={align = "cm", padding = 0.07},
+                nodes={
+                    {
+                        n=G.UIT.C,
+                        config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
+                        nodes={
+                            {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                        }
+                    },
+                    {
+                        n=G.UIT.C,
+                        config={align = "cr", minw = 0.4},
+                        nodes={
+                            {n=G.UIT.T, config={text = tostring(v) or 'NIL',colour = G.C.WHITE, scale = 0.45, shadow = true}},
+                        }
                     }
                 }
             }
-        }
+        end
     end
 end
 

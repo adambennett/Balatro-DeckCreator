@@ -396,7 +396,8 @@ end
 
 function CardUtils.addItemToDeck(args)
     local deckList = args.deck_list or {}
-    args.copies = args.copies or 1
+    args.addCard = args.addCard or {}
+    args.addCard.copies = args.addCard.copies or 1
 
     local randomEdition = false
     for i = 1, args.addCard.copies do
@@ -418,15 +419,15 @@ function CardUtils.addItemToDeck(args)
                 end
             end
 
-            local typeRollMax = #unObtainedVouchers > 0 and 9 or 8
+            local typeRollMax = #unObtainedVouchers > 0 and 7 or 6
             local typeRoll = math.random(1, typeRollMax)
 
             -- temporary line to prevent random tag
-            if typeRoll == 8 then typeRoll = 2 end
+            if typeRoll == 6 then typeRoll = 2 end
 
             if typeRollMax < typeRoll then typeRoll = 1 end
 
-            if typeRoll <= 4 then
+            if typeRoll <= 2 then
                 local edition
                 local editionRoll = math.random(1, 100)
                 if editionRoll < 45 then
@@ -451,29 +452,29 @@ function CardUtils.addItemToDeck(args)
                 args.joker = true
                 args.ref = 'customJokerList'
             end
-            if typeRoll == 5 then
+            if typeRoll == 3 then
                 local list = Utils.tarotKeys()
                 args.addCard = { key = list[math.random(1, #list)], edition = nil }
                 args.tarot = true
                 args.ref = 'customTarotList'
             end
-            if typeRoll == 6 then
+            if typeRoll == 4 then
                 local list = Utils.planetKeys()
                 args.addCard = { key = list[math.random(1, #list)], edition = nil }
                 args.planet = true
                 args.ref = 'customPlanetList'
             end
-            if typeRoll == 7 then
+            if typeRoll == 5 then
                 local list = Utils.spectralKeys()
                 args.addCard = { key = list[math.random(1, #list)], edition = nil }
                 args.spectral = true
                 args.ref = 'customSpectralList'
             end
-            if typeRoll == 8 then
+            if typeRoll == 6 then
                 args.tag = true
                 args.ref = 'customTagList'
             end
-            if typeRoll == 9 then
+            if typeRoll == 7 then
                 args.addCard = unObtainedVouchers[math.random(1, #unObtainedVouchers)].id
                 args.voucher = true
                 args.ref = 'customVoucherList'
