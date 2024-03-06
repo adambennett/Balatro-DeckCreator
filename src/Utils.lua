@@ -31,14 +31,6 @@ function Utils.generateBigIntegerList()
     return Utils.generateBoundedIntegerList(0, 9999)
 end
 
-function Utils.generateBoundedIntegerListWithIncrements(min, max, step)
-    local list = {}
-    for i = min, max, step do
-        table.insert(list, i)
-    end
-    return list
-end
-
 function Utils.generateBoundedIntegerList(min, max)
     local list = {}
     for i = min, max do

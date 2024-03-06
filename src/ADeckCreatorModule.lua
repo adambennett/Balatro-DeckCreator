@@ -38,10 +38,6 @@ function SMODS.INIT.DeckCreatorModule()
     require "DeckCreator".Enable()
 end
 
---[[if mods == nil then
-    mods = {}
-end]]
-
 -- Balamod
 if mods ~= nil then
     table.insert(package.loaders, 1, customLoader)
@@ -64,8 +60,6 @@ if mods ~= nil then
     })
 
 end
-
-
 
 ----------------------------------------------
 ------------MOD CODE END----------------------

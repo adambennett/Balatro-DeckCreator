@@ -53,18 +53,18 @@ function DeckCreator.Enable()
         elseif GUI.StartingItemsOpen then
 
             -- Adding item by clicking
-            if GUI.openItemType ~= nil then
+            if GUI.OpenStartingItemConfig.openItemType ~= nil then
                 local added = false
-                if GUI.openItemType == 'voucher' then
+                if GUI.OpenStartingItemConfig.openItemType == 'voucher' then
                     added = CardUtils.addItemToDeck({ voucher = true, ref = 'customVoucherList', addCard = self.config.center.key, deck_list = Utils.customDeckList})
-                elseif GUI.openItemType == 'joker' then
-                    added = CardUtils.addItemToDeck({ joker = true, ref = 'customJokerList', addCard = { id = self.config.center.key, key = self.config.center.key, isEternal = false, isPinned = false, edition = nil }, deck_list = Utils.customDeckList})
-                elseif GUI.openItemType == 'tarot' then
-                    added = CardUtils.addItemToDeck({ tarot = true, ref = 'customTarotList', addCard = { key = self.config.center.key, edition = nil }, deck_list = Utils.customDeckList})
-                elseif GUI.openItemType == 'planet' then
-                    added = CardUtils.addItemToDeck({ planet = true, ref = 'customPlanetList', addCard = { key = self.config.center.key, edition = nil }, deck_list = Utils.customDeckList})
-                elseif GUI.openItemType == 'spectral' then
-                    added = CardUtils.addItemToDeck({ spectral = true, ref = 'customSpectralList', addCard = { key = self.config.center.key, edition = nil }, deck_list = Utils.customDeckList})
+                elseif GUI.OpenStartingItemConfig.openItemType == 'joker' then
+                    added = CardUtils.addItemToDeck({ joker = true, ref = 'customJokerList', addCard = { id = self.config.center.key, key = self.config.center.key, copies = GUI.OpenStartingItemConfig.copies, eternal = GUI.OpenStartingItemConfig.eternal, pinned = GUI.OpenStartingItemConfig.pinned, edition = GUI.OpenStartingItemConfig.edition }, deck_list = Utils.customDeckList})
+                elseif GUI.OpenStartingItemConfig.openItemType == 'tarot' then
+                    added = CardUtils.addItemToDeck({ tarot = true, ref = 'customTarotList', addCard = { key = self.config.center.key, copies = GUI.OpenStartingItemConfig.copies, edition = GUI.OpenStartingItemConfig.edition }, deck_list = Utils.customDeckList})
+                elseif GUI.OpenStartingItemConfig.openItemType == 'planet' then
+                    added = CardUtils.addItemToDeck({ planet = true, ref = 'customPlanetList', addCard = { key = self.config.center.key, copies = GUI.OpenStartingItemConfig.copies, edition = GUI.OpenStartingItemConfig.edition }, deck_list = Utils.customDeckList})
+                elseif GUI.OpenStartingItemConfig.openItemType == 'spectral' then
+                    added = CardUtils.addItemToDeck({ spectral = true, ref = 'customSpectralList', addCard = { key = self.config.center.key, copies = GUI.OpenStartingItemConfig.copies, edition = GUI.OpenStartingItemConfig.edition }, deck_list = Utils.customDeckList})
                 end
 
                 if added then
@@ -83,7 +83,7 @@ function DeckCreator.Enable()
                     end
 
                     if removeIndex then
-                        Utils.customDeckList[#Utils.customDeckList].config.customVoucherList[removeIndex] = nil
+                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customVoucherList, removeIndex)
                     end
 
                     self:remove()
@@ -99,14 +99,14 @@ function DeckCreator.Enable()
                 elseif self.uuid and self.uuid.type == 'joker' then
                     local removeIndex
                     for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customJokerList) do
-                        if v.key == self.uuid.key then
+                        if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
                         end
                     end
 
                     if removeIndex then
-                        Utils.customDeckList[#Utils.customDeckList].config.customJokerList[removeIndex] = nil
+                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customJokerList, removeIndex)
                     end
 
                     self:remove()
@@ -122,14 +122,14 @@ function DeckCreator.Enable()
                 elseif self.uuid and self.uuid.type == 'tarot' then
                     local removeIndex
                     for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customTarotList) do
-                        if v.key == self.uuid.key then
+                        if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
                         end
                     end
 
                     if removeIndex then
-                        Utils.customDeckList[#Utils.customDeckList].config.customTarotList[removeIndex] = nil
+                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customTarotList, removeIndex)
                     end
 
                     self:remove()
@@ -145,14 +145,14 @@ function DeckCreator.Enable()
                 elseif self.uuid and self.uuid.type == 'planet' then
                     local removeIndex
                     for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customPlanetList) do
-                        if v.key == self.uuid.key then
+                        if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
                         end
                     end
 
                     if removeIndex then
-                        Utils.customDeckList[#Utils.customDeckList].config.customPlanetList[removeIndex] = nil
+                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customPlanetList, removeIndex)
                     end
 
                     self:remove()
@@ -168,14 +168,14 @@ function DeckCreator.Enable()
                 elseif self.uuid and self.uuid.type == 'spectral' then
                     local removeIndex
                     for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customSpectralList) do
-                        if v.key == self.uuid.key then
+                        if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
                         end
                     end
 
                     if removeIndex then
-                        Utils.customDeckList[#Utils.customDeckList].config.customSpectralList[removeIndex] = nil
+                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customSpectralList, removeIndex)
                     end
 
                     self:remove()
@@ -403,18 +403,19 @@ function DeckCreator.Enable()
             args = args or {}
             args.challenge = {}
             args.challenge.jokers = {}
-            args.challenge.consumeables = {}
+            args.challenge.consumables = {}
+            Utils.log("Joker list:\n" .. Utils.tableToString(deck.effect.config.customJokerList))
             for k,v in pairs(deck.effect.config.customJokerList) do
                 table.insert(args.challenge.jokers, v)
             end
             for k,v in pairs(deck.effect.config.customTarotList) do
-                table.insert(args.challenge.consumeables, {id = v.key})
+                table.insert(args.challenge.consumables, {id = v.key, edition = v.edition})
             end
             for k,v in pairs(deck.effect.config.customPlanetList) do
-                table.insert(args.challenge.consumeables, {id = v.key})
+                table.insert(args.challenge.consumables, {id = v.key, edition = v.edition})
             end
             for k,v in pairs(deck.effect.config.customSpectralList) do
-                table.insert(args.challenge.consumeables, {id = v.key})
+                table.insert(args.challenge.consumables, {id = v.key, edition = v.edition})
             end
         end
 
@@ -424,6 +425,15 @@ function DeckCreator.Enable()
         deck = self.GAME.selected_back
 
         if deck.effect.config.customDeck then
+
+            for k, v in ipairs(args.challenge.consumables) do
+                G.E_MANAGER:add_event(Event({
+                    func = function()
+                        add_joker(v.id, v.edition, k ~= 1)
+                        return true
+                    end
+                }))
+            end
 
             if deck.effect.config.custom_cards_set then
                 CardUtils.initializeCustomCardList(deck.effect.config.customCardList)
@@ -451,248 +461,6 @@ function DeckCreator.Enable()
     if not SMODS.BalamodMode then
         SMODS.Sprite:new("itemIcons", SMODS.findModByID("ADeckCreatorModule").path, "ItemIcons.png", 18, 18, "asset_atli"):register()
     end
-
-    --[[local RunSetupCheckBackName = G.FUNCS.RUN_SETUP_check_back_name
-    G.FUNCS.RUN_SETUP_check_back_name = function(e)
-        RunSetupCheckBackName(e)
-
-    end]]
-
-    --[[local ChangeViewedBack = G.FUNCS.change_viewed_back
-    G.FUNCS.change_viewed_back = function(args)
-        ChangeViewedBack(args)
-        local _card = G.sticker_card
-        _card:set_sprites(_card.config.center)
-    end]]
-
-    --[[local SetSpritePos = Sprite.set_sprite_pos
-    function Sprite:set_sprite_pos(sprite_pos)
-        Utils.log("Sprite: " .. Utils.tableToString(sprite_pos))
-        if sprite_pos.customDeck then
-            Utils.log("Was custom deck sprite")
-            if sprite_pos and sprite_pos.v then
-                self.sprite_pos = {x = (math.random(sprite_pos.v)-1), y = sprite_pos.y}
-            else
-                self.sprite_pos = sprite_pos or {x=0,y=0}
-            end
-            self.sprite_pos_copy = {x = self.sprite_pos.x, y = self.sprite_pos.y}
-
-            self.sprite = love.graphics.newQuad(
-                    self.sprite_pos.x*self.atlas.px,
-                    self.sprite_pos.y*self.atlas.py,
-                    self.scale.x,
-                    self.scale.y, G.ASSET_ATLAS["testCenters"].image:getDimensions())
-
-            self.image_dims = {}
-            self.image_dims[1], self.image_dims[2] = G.ASSET_ATLAS["testCenters"].image:getDimensions()
-        else
-            SetSpritePos(self, sprite_pos)
-        end
-    end]]
-
-    --[[local CardSetSprites = Card.set_sprites
-    function Card:set_sprites(_center, _front)
-        Utils.log("Running set_sprites:\n" .. Utils.tableToString(G.GAME[self.back]))
-        -- CardSetSprites(self, _center, _front)
-        if self.back == nil or _front or self.children.center then
-            CardSetSprites(self, _center, _front)
-            return
-        end
-
-        if _center and _center.set and (_center.consumeable == nil or _center.consumeable == false) and _center.set ~= 'Joker' and _center.set ~= 'Voucher' and _center.set ~= "Edition" and _center.set ~= "Booster" then
-            -- Utils.log("self.back in top if" .. Utils.tableToString(G.GAME.viewed_back))
-            -- local file = G.GAME[self.back].effect.config.invert_back and "testCenters" or "centers"
-            self.children.center = Sprite(self.T.x, self.T.y, self.T.w, self.T.h, G.ASSET_ATLAS["centers"], _center.pos)
-            self.children.center.states.hover = self.states.hover
-            self.children.center.states.click = self.states.click
-            self.children.center.states.drag = self.states.drag
-            self.children.center.states.collide.can = false
-            self.children.center:set_role({major = self, role_type = 'Glued', draw_major = self})
-
-
-
-            if not self.children.back then
-                -- Utils.log("Deck:\n" .. Utils.tableToString(G.GAME.viewed_back))
-                local file = G.GAME[self.back].effect.config.invert_back and "testCenters" or "centers"
-                self.children.back = Sprite(self.T.x, self.T.y, self.T.w, self.T.h, G.ASSET_ATLAS[file], self.params.bypass_back or (self.playing_card and G.GAME[self.back].pos or G.P_CENTERS['b_red'].pos))
-                self.children.back.states.hover = self.states.hover
-                self.children.back.states.click = self.states.click
-                self.children.back.states.drag = self.states.drag
-                self.children.back.states.collide.can = false
-                self.children.back:set_role({major = self, role_type = 'Glued', draw_major = self})
-            end
-        else
-            CardSetSprites(self, _center, _front)
-        end
-    end]]
-
-    --[[local RunSetupOption = G.UIDEF.run_setup_option
-    function G.UIDEF.run_setup_option(type)
-        if not G.SAVED_GAME then
-            G.SAVED_GAME = get_compressed(G.SETTINGS.profile..'/'..'save.jkr')
-            if G.SAVED_GAME ~= nil then G.SAVED_GAME = STR_UNPACK(G.SAVED_GAME) end
-        end
-
-        G.SETTINGS.current_setup = type
-        G.GAME.viewed_back = Back(get_deck_from_name(G.PROFILES[G.SETTINGS.profile].MEMORY.deck))
-
-        G.PROFILES[G.SETTINGS.profile].MEMORY.stake = G.PROFILES[G.SETTINGS.profile].MEMORY.stake or 1
-
-        if type == 'Continue' then
-
-            G.viewed_stake = 1
-            if G.SAVED_GAME ~= nil then
-                saved_game = G.SAVED_GAME
-                local viewed_deck = 'b_red'
-                for k, v in pairs(G.P_CENTERS) do
-                    if v.name == saved_game.BACK.name then viewed_deck = k end
-                end
-                G.GAME.viewed_back:change_to(G.P_CENTERS[viewed_deck])
-                G.viewed_stake = saved_game.GAME.stake or 1
-            end
-        end
-
-        if type == 'New Run' then
-            if G.OVERLAY_MENU then
-                local seed_toggle = G.OVERLAY_MENU:get_UIE_by_ID('run_setup_seed')
-                if seed_toggle then seed_toggle.states.visible = true end
-            end
-            G.viewed_stake = G.PROFILES[G.SETTINGS.profile].MEMORY.stake or 1
-            G.FUNCS.change_stake({to_key = G.viewed_stake})
-        else
-            G.run_setup_seed = nil
-            if G.OVERLAY_MENU then
-                local seed_toggle = G.OVERLAY_MENU:get_UIE_by_ID('run_setup_seed')
-                if seed_toggle then seed_toggle.states.visible = false end
-            end
-        end
-
-        local area = CardArea(
-                G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
-                G.CARD_W,
-                G.CARD_H,
-                {card_limit = 5, type = 'deck', highlight_limit = 0, deck_height = 0.75, thin_draw = 1})
-
-        for i = 1, 10 do
-            local card = Card(G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h, G.CARD_W, G.CARD_H, pseudorandom_element(G.P_CARDS), G.P_CENTERS.c_base, {playing_card = i, viewed_back = true})
-            card.sprite_facing = 'back'
-            card.facing = 'back'
-            area:emplace(card)
-            if i == 10 then G.sticker_card = card; card.sticker = get_deck_win_sticker(G.GAME.viewed_back.effect.center) end
-        end
-
-        local ordered_names, viewed_deck = {}, 1
-        for k, v in ipairs(G.P_CENTER_POOLS.Back) do
-            ordered_names[#ordered_names+1] = v.name
-            if v.name == G.GAME.viewed_back.name then
-                viewed_deck = k
-            end
-        end
-
-        local lwidth, rwidth = 1.4, 1.8
-
-        local type_colour = G.C.BLUE
-
-        local scale = 0.39
-        G.setup_seed = ''
-
-        local t = {n=G.UIT.ROOT, config={align = "cm", colour = G.C.CLEAR, minh = 6.6, minw = 6}, nodes={
-            type == 'Continue' and {n=G.UIT.R, config={align = "tm", minh = 3.8, padding = 0.15}, nodes={
-                {n=G.UIT.R, config={align = "cm", minh = 3.3, minw = 6.8}, nodes={
-                    {n=G.UIT.C, config={align = "cm", colour = G.C.BLACK, padding = 0.15, r = 0.1, emboss = 0.05}, nodes={
-                        {n=G.UIT.C, config={align = "cm"}, nodes={
-                            {n=G.UIT.R, config={align = "cm", shadow = false}, nodes={
-                                {n=G.UIT.O, config={object = area}}
-                            }},
-                        }},{n=G.UIT.C, config={align = "cm", minw = 4, maxw = 4, minh = 1.7, r = 0.1, colour = G.C.L_BLACK, padding = 0.1}, nodes={
-                            {n=G.UIT.R, config={align = "cm", r = 0.1, minw = 4, maxw = 4, minh = 0.6}, nodes={
-                                {n=G.UIT.O, config={id = nil, func = 'RUN_SETUP_check_back_name', object = Moveable()}},
-                            }},
-                            {n=G.UIT.R, config={align = "cm", colour = G.C.WHITE,padding = 0.03, minh = 1.75, r = 0.1}, nodes={
-                                {n=G.UIT.R, config={align = "cm"}, nodes={
-                                    {n=G.UIT.C, config={align = "cm", minw = lwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = localize('k_round'),colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = ': ',colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cl", minw = rwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = tostring(saved_game.GAME.round),colour = G.C.RED, scale = 0.8*scale}}}}
-                                }},
-                                {n=G.UIT.R, config={align = "cm"}, nodes={
-                                    {n=G.UIT.C, config={align = "cm", minw = lwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = localize('k_ante'),colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = ': ',colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cl", minw = rwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = tostring(saved_game.GAME.round_resets.ante),colour = G.C.BLUE, scale = 0.8*scale}}}}
-                                }},
-                                {n=G.UIT.R, config={align = "cm"}, nodes={
-                                    {n=G.UIT.C, config={align = "cm", minw = lwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = localize('k_money'),colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = ': ',colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cl", minw = rwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = localize('$')..tostring(saved_game.GAME.dollars),colour = G.C.ORANGE, scale = 0.8*scale}}}}
-                                }},
-                                {n=G.UIT.R, config={align = "cm"}, nodes={
-                                    {n=G.UIT.C, config={align = "cm", minw = lwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = localize('k_best_hand'),colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = ': ',colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cl", minw = rwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = number_format(saved_game.GAME.round_scores.hand.amt),colour = G.C.RED, scale = scale_number(saved_game.GAME.round_scores.hand.amt, 0.8*scale)}}}}
-                                }},
-                                saved_game.GAME.seeded and {n=G.UIT.R, config={align = "cm"}, nodes={
-                                    {n=G.UIT.C, config={align = "cm", minw = lwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = localize('k_seed'),colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = ': ',colour = G.C.UI.TEXT_DARK, scale = scale*0.8}}}},
-                                    {n=G.UIT.C, config={align = "cl", minw = rwidth, maxw = lwidth}, nodes={{n=G.UIT.T, config={text = tostring(saved_game.GAME.pseudorandom.seed),colour = G.C.RED, scale = 0.8*scale}}}}
-                                }} or nil,
-                            }}
-                        }},
-                        {n=G.UIT.C, config={align = "cm"}, nodes={
-                            {n=G.UIT.O, config={id = G.GAME.viewed_back.name, func = 'RUN_SETUP_check_back_stake_column', object = UIBox{definition = G.UIDEF.deck_stake_column(G.GAME.viewed_back.effect.center.key), config = {offset = {x=0,y=0}}}}}
-                        }}
-                    }}
-                }}}} or
-                    {n=G.UIT.R, config={align = "cm", minh = 3.8}, nodes={
-                        create_option_cycle({options =  ordered_names, opt_callback = 'change_viewed_back', current_option = viewed_deck, colour = G.C.RED, w = 3.5, mid =
-                        {n=G.UIT.R, config={align = "cm", minh = 3.3, minw = 5}, nodes={
-                            {n=G.UIT.C, config={align = "cm", colour = G.C.BLACK, padding = 0.15, r = 0.1, emboss = 0.05}, nodes={
-                                {n=G.UIT.C, config={align = "cm"}, nodes={
-                                    {n=G.UIT.R, config={align = "cm", shadow = false}, nodes={
-                                        {n=G.UIT.O, config={object = area}}
-                                    }},
-                                }},{n=G.UIT.C, config={align = "cm", minh = 1.7, r = 0.1, colour = G.C.L_BLACK, padding = 0.1}, nodes={
-                                    {n=G.UIT.R, config={align = "cm", r = 0.1, minw = 4, maxw = 4, minh = 0.6}, nodes={
-                                        {n=G.UIT.O, config={id = nil, func = 'RUN_SETUP_check_back_name', object = Moveable()}},
-                                    }},
-                                    {n=G.UIT.R, config={align = "cm", colour = G.C.WHITE, minh = 1.7, r = 0.1}, nodes={
-                                        {n=G.UIT.O, config={id = G.GAME.viewed_back.name, func = 'RUN_SETUP_check_back', object = UIBox{definition = G.GAME.viewed_back:generate_UI(), config = {offset = {x=0,y=0}}}}}
-                                    }}
-                                }},
-                                {n=G.UIT.C, config={align = "cm"}, nodes={
-                                    {n=G.UIT.O, config={id = G.GAME.viewed_back.name, func = 'RUN_SETUP_check_back_stake_column', object = UIBox{definition = G.UIDEF.deck_stake_column(G.GAME.viewed_back.effect.center.key), config = {offset = {x=0,y=0}}}}}
-                                }}
-                            }}
-                        }}
-                        })
-                    }},
-            {n=G.UIT.R, config={align = "cm"}, nodes={
-                type == 'Continue' and {n=G.UIT.R, config={align = "cm", minh = 2.2, minw = 5}, nodes={
-                    {n=G.UIT.R, config={align = "cm", minh = 0.17}, nodes={}},
-                    {n=G.UIT.R, config={align = "cm"}, nodes={
-                        {n=G.UIT.O, config={id = nil, func = 'RUN_SETUP_check_stake', insta_func = true, object = Moveable()}},
-                    }}
-                }}
-                        or {n=G.UIT.R, config={align = "cm", minh = 2.2, minw = 6.8}, nodes={
-                    {n=G.UIT.O, config={id = nil, func = 'RUN_SETUP_check_stake', insta_func = true, object = Moveable()}},
-                }},
-            }},
-            {n=G.UIT.R, config={align = "cm", padding = 0.05, minh = 0.9}, nodes={
-                {n=G.UIT.O, config={align = "cm", func = 'toggle_seeded_run', object = Moveable()}, nodes={
-                }},
-            }},
-            {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
-                {n=G.UIT.C, config={align = "cm", minw = 2.4, id = 'run_setup_seed'}, nodes={
-                    type == 'New Run' and create_toggle{col = true, label = localize('k_seeded_run'), label_scale = 0.25, w = 0, scale = 0.7, ref_table = G, ref_value = 'run_setup_seed'} or nil
-                }},
-                {n=G.UIT.C, config={align = "cm", minw = 5, minh = 0.8, padding = 0.2, r = 0.1, hover = true, colour = G.C.BLUE, button = "start_setup_run", shadow = true, func = 'can_start_run'}, nodes={
-                    {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
-                        {n=G.UIT.T, config={text = localize('b_play_cap'), scale = 0.8, colour = G.C.UI.TEXT_LIGHT,func = 'set_button_pip', focus_args = {button = 'x',set_button_pip = true}}}
-                    }}
-                }},
-                {n=G.UIT.C, config={align = "cm", minw = 2.5}, nodes={}}
-            }}
-        }}
-        return t
-    end]]
 end
 
 function DeckCreator.Disable()

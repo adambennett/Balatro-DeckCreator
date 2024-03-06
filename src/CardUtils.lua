@@ -112,26 +112,29 @@ function CardUtils.getJokersFromCustomJokerList(deck)
     for j = 1, #deck do
         local center
         local index
-        local isEternal = false
-        local isPinned = false
+        local eternal = false
+        local pinned = false
         local edition
+        local uuid
         for k,v in pairs(G.P_CENTER_POOLS["Joker"]) do
-            if v.key == deck[j].key then
+            if deck[j] ~= nil and v.key == deck[j].key then
                 center = v
                 index = k
-                isEternal = deck[j].isEternal
-                isPinned = deck[j].isPinned
+                eternal = deck[j].eternal
+                pinned = deck[j].pinned
                 edition = deck[j].edition
+                uuid = deck[j].uuid
                 break
             end
         end
+
         if center then
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
-            card.uuid = { key = center.key, type = 'joker' }
+            card.uuid = { key = center.key, type = 'joker', uuid = uuid }
             card.ability.order = (j-1)*4
             if edition then card:set_edition{[edition] = true} end
-            if isEternal then card:set_eternal(true) end
-            if isPinned then card.pinned = true end
+            if eternal then card:set_eternal(true) end
+            if pinned then card.pinned = true end
             table.insert(CardUtils.startingItems.jokers, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -157,17 +160,20 @@ function CardUtils.getTarotsFromCustomTarotList(deck)
         local center
         local index
         local edition
+        local uuid
         for k,v in pairs(G.P_CENTER_POOLS['Tarot']) do
-            if v.key == deck[j].key then
+            if deck[j] ~= nil and v.key == deck[j].key then
                 center = v
                 index = k
                 edition = deck[j].edition
+                uuid = deck[j].uuid
                 break
             end
         end
+
         if center then
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
-            card.uuid = { key = center.key, type = 'tarot' }
+            card.uuid = { key = center.key, type = 'tarot', uuid = uuid }
             card.ability.order = (j-1)*4
             if edition then card:set_edition{[edition] = true} end
             table.insert(CardUtils.startingItems.tarots, card)
@@ -192,17 +198,20 @@ function CardUtils.getPlanetsFromCustomPlanetList(deck)
         local center
         local index
         local edition
+        local uuid
         for k,v in pairs(G.P_CENTER_POOLS['Planet']) do
-            if v.key == deck[j].key then
+            if deck[j] ~= nil and v.key == deck[j].key then
                 center = v
                 index = k
                 edition = deck[j].edition
+                uuid = deck[j].uuid
                 break
             end
         end
+
         if center then
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
-            card.uuid = { key = center.key, type = 'planet' }
+            card.uuid = { key = center.key, type = 'planet', uuid = uuid }
             card.ability.order = (j-1)*4
             if edition then card:set_edition{[edition] = true} end
             table.insert(CardUtils.startingItems.planets, card)
@@ -227,17 +236,20 @@ function CardUtils.getSpectralsFromCustomSpectralList(deck)
         local center
         local index
         local edition
+        local uuid
         for k,v in pairs(G.P_CENTER_POOLS['Spectral']) do
-            if v.key == deck[j].key then
+            if deck[j] ~= nil and v.key == deck[j].key then
                 center = v
                 index = k
                 edition = deck[j].edition
+                uuid = deck[j].uuid
                 break
             end
         end
+
         if center then
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
-            card.uuid = { key = center.key, type = 'spectral' }
+            card.uuid = { key = center.key, type = 'spectral', uuid = uuid }
             card.ability.order = (j-1)*4
             if edition then card:set_edition{[edition] = true} end
             table.insert(CardUtils.startingItems.spectrals, card)
@@ -263,7 +275,7 @@ function CardUtils.getVouchersFromCustomVoucherList(deck)
         local center
         local index
         for k,v in pairs(G.P_CENTER_POOLS["Voucher"]) do
-            if v.key == deck[j] then
+            if deck[j] ~= nil and v.key == deck[j] then
                 center = v
                 index = k
                 break
@@ -386,8 +398,8 @@ function CardUtils.addItemToDeck(args)
     local deckList = args.deck_list or {}
     args.copies = args.copies or 1
 
-    local counter = 1
-    for i = 1, args.copies do
+    local randomEdition = false
+    for i = 1, args.addCard.copies do
 
         if args.isRandomType then
 
@@ -417,13 +429,13 @@ function CardUtils.addItemToDeck(args)
             if typeRoll <= 4 then
                 local edition
                 local editionRoll = math.random(1, 100)
-                if editionRoll < 40 then
+                if editionRoll < 45 then
                     edition = 'foil'
-                elseif editionRoll < 30 then
+                elseif editionRoll < 35 then
                     edition = 'holo'
-                elseif editionRoll < 20 then
+                elseif editionRoll < 25 then
                     edition = 'polychrome'
-                elseif editionRoll < 10 then
+                elseif editionRoll < 15 then
                     edition = 'negative'
                 end
 
@@ -433,8 +445,8 @@ function CardUtils.addItemToDeck(args)
                     id = keyRoll,
                     key = keyRoll,
                     edition = edition,
-                    isEternal = false,
-                    isPinned = false
+                    eternal = false,
+                    pinned = false
                 }
                 args.joker = true
                 args.ref = 'customJokerList'
@@ -469,7 +481,45 @@ function CardUtils.addItemToDeck(args)
         end
 
         local type
-        local newCard = args.addCard
+        local newCard
+        if args.addCard ~= nil then
+            if args.voucher then newCard = tostring(args.addCard)
+            else
+                newCard = {
+                    id = args.addCard.id,
+                    key = args.addCard.key,
+                    copies = args.addCard.copies,
+                    edition = args.addCard.edition,
+                    pinned = args.addCard.pinned,
+                    eternal = args.addCard.eternal,
+                    edition = args.addCard.edition,
+                    uuid = Utils.uuid()
+                }
+            end
+        end
+
+        local calcRandomEdition = (randomEdition or (newCard.edition ~= nil and newCard.edition == 'random'))
+
+        if calcRandomEdition and (args.tarot or args.planet or args.spectral) then
+            randomEdition = true
+            local roll = math.random(1, 100)
+            newCard.edition = roll > 85 and 'negative' or nil
+        elseif calcRandomEdition and args.joker then
+            randomEdition = true
+            local editionRoll = math.random(1, 100)
+            if editionRoll < 15 then
+                newCard.edition = 'negative'
+            elseif editionRoll < 25 then
+                newCard.edition = 'polychrome'
+            elseif editionRoll < 35 then
+                newCard.edition = 'holo'
+            elseif editionRoll < 45 then
+                newCard.edition = 'foil'
+            else
+                newCard.edition = nil
+            end
+        end
+
         if args.joker then
             type = 'jokers'
         elseif args.tarot then
@@ -493,21 +543,6 @@ function CardUtils.addItemToDeck(args)
 
         if newCard then
             table.insert(deckList[#deckList].config[args.ref], newCard)
-            --[[if type == 'vouchers' then
-                table.insert(deckList[#deckList].config[args.ref], newCard)
-            else
-                local key = type == 'jokers' and newCard.key or newCard
-                if deckList[#deckList].config.customCardList[key] == nil then
-                    deckList[#deckList].config[args.ref][key] = newCard
-                else
-                    while deckList[#deckList].config.customCardList[key .. "_" .. counter] ~= nil do
-                        counter = counter + 1
-                    end
-                    local extraKey = key .. "_" .. counter
-                    deckList[#deckList].config[args.ref][extraKey] = newCard
-                end
-            end]]
-
             local key = 'custom_' .. type .. '_set'
             Utils.customDeckList[#Utils.customDeckList].config[key] = true
         end

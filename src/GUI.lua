@@ -10,12 +10,11 @@ GUI.DynamicUIManager = {}
 GUI.DeckCreatorOpen = false
 GUI.StartingItemsOpen = false
 GUI.openTab = nil
-GUI.openItemType = nil
 
 function GUI.CloseAllOpenFlags()
     GUI.DeckCreatorOpen = false
     GUI.StartingItemsOpen = false
-    GUI.openItemType = nil
+    GUI.resetOpenStartingItemConfig()
 end
 
 function GUI.setOpenTab(tab)
@@ -28,6 +27,16 @@ function GUI.setOpenTab(tab)
         GUI.StartingItemsOpen = true
     end
 end
+
+function GUI.resetOpenStartingItemConfig()
+    GUI.OpenStartingItemConfig = {}
+    GUI.OpenStartingItemConfig.openItemType = nil
+    GUI.OpenStartingItemConfig.edition = "None"
+    GUI.OpenStartingItemConfig.copies = 1
+    GUI.OpenStartingItemConfig.pinned = false
+    GUI.OpenStartingItemConfig.eternal = false
+end
+GUI.resetOpenStartingItemConfig()
 
 function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleOpenGithub = function()
@@ -82,7 +91,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleOpenAddItemToDeck = function ()
-        GUI.openItemType = nil
+        GUI.resetOpenStartingItemConfig()
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu({
             definition = GUI.createSelectItemTypeMenu()
@@ -90,7 +99,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddVoucherMenu = function()
-        GUI.openItemType = 'voucher'
+        GUI.OpenStartingItemConfig.openItemType = 'voucher'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addVoucherMenu()
@@ -98,7 +107,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddJokerMenu = function()
-        GUI.openItemType = 'joker'
+        GUI.OpenStartingItemConfig.openItemType = 'joker'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addJokerMenu()
@@ -106,7 +115,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddTarotMenu = function()
-        GUI.openItemType = 'tarot'
+        GUI.OpenStartingItemConfig.openItemType = 'tarot'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addTarotMenu()
@@ -114,7 +123,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddPlanetMenu = function()
-        GUI.openItemType = 'planet'
+        GUI.OpenStartingItemConfig.openItemType = 'planet'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addPlanetMenu()
@@ -122,7 +131,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddSpectralMenu = function()
-        GUI.openItemType = 'spectral'
+        GUI.OpenStartingItemConfig.openItemType = 'spectral'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addSpectralMenu()
@@ -130,7 +139,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddTagMenu = function()
-        GUI.openItemType = 'tag'
+        GUI.OpenStartingItemConfig.openItemType = 'tag'
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu{
             definition = GUI.addTagMenu()
@@ -261,6 +270,12 @@ function GUI.registerGlobals()
         GUI.updateAllStartingItemsAreas()
     end
 
+    G.FUNCS.DeckCreatorModuleChangeOpenStartingItemConfigCopies = function(args)
+        GUI.OpenStartingItemConfig.copies = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeOpenStartingItemConfigEdition = function(args)
+        GUI.OpenStartingItemConfig.edition = string.lower(args.to_val)
+    end
     G.FUNCS.DeckCreatorModuleAddCardChangeRank = function(args)
         GUI.addCard.rank = args.to_val
     end
@@ -423,7 +438,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleReopenStartingItems = function()
-        GUI.openItemType = nil
+        GUI.resetOpenStartingItemConfig()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Starting Items")
         })
@@ -1245,6 +1260,9 @@ function GUI.createDecksMenu(chosen)
                                         tab_definition_function = function()
                                             GUI.setOpenTab("Base Deck")
                                             return GUI.DynamicUIManager.initTab({
+                                                preUpdateFunctions = {
+                                                  init = GUI.dynamicDeckEditorPreUpdate
+                                                },
                                                 updateFunctions = {
                                                     dynamicDeckEditorAreaCards = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaCards,
                                                     dynamicDeckEditorAreaDeckTables = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaDeckTables
@@ -1259,6 +1277,9 @@ function GUI.createDecksMenu(chosen)
                                         tab_definition_function = function()
                                             GUI.setOpenTab("Starting Items")
                                             return GUI.DynamicUIManager.initTab({
+                                                preUpdateFunctions = {
+                                                  init = GUI.dynamicStartingItemsPreUpdate
+                                                },
                                                 updateFunctions = {
                                                     dynamicStartingItemsAreaCards = G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaCards,
                                                     dynamicStartingItemsAreaDeckTables = G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaDeckTables
@@ -1676,13 +1697,36 @@ end
 function GUI.DynamicUIManager.initTab(args)
     local updateFunctions = args.updateFunctions
     local staticPageDefinition = args.staticPageDefinition
+    local preUpdateFunctions = args.preUpdateFunctions
+    local postUpdateFunctions = args.postUpdateFunctions
 
-    for _, updateFunction in pairs(updateFunctions) do
-        G.E_MANAGER:add_event(Event({func = function()
-            updateFunction{cycle_config = {current_option = 1}}
-            return true
-        end}))
+    if preUpdateFunctions ~= nil then
+        for _, updateFunction in pairs(preUpdateFunctions) do
+            G.E_MANAGER:add_event(Event({func = function()
+                updateFunction{cycle_config = {current_option = 1}}
+                return true
+            end}))
+        end
     end
+
+    if updateFunctions ~= nil then
+        for _, updateFunction in pairs(updateFunctions) do
+            G.E_MANAGER:add_event(Event({func = function()
+                updateFunction{cycle_config = {current_option = 1}}
+                return true
+            end}))
+        end
+    end
+
+    if postUpdateFunctions ~= nil then
+        for _, updateFunction in pairs(postUpdateFunctions) do
+            G.E_MANAGER:add_event(Event({func = function()
+                updateFunction{cycle_config = {current_option = 1}}
+                return true
+            end}))
+        end
+    end
+
     return GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
 end
 
@@ -1715,6 +1759,35 @@ function GUI.DynamicUIManager.updateDynamicAreas(uiDefinitions)
             }
         end
     end
+end
+
+-- Base Deck
+function GUI.flushDeckEditorAreas()
+
+    for k,v in pairs(CardUtils.allCardsEverMade) do
+        if v then
+            v:remove()
+            v = nil
+        end
+    end
+    CardUtils.allCardsEverMade = {}
+
+    if Helper.deckEditorAreas and #Helper.deckEditorAreas > 0 then
+        for j = 1, #Helper.deckEditorAreas do
+            Helper.deckEditorAreas[j]:remove()
+        end
+    end
+    Helper.deckEditorAreas = {}
+end
+
+function GUI.dynamicDeckEditorPreUpdate()
+    if GUI.openTab ~= "Base Deck" then
+        return
+    end
+    GUI.flushDeckEditorAreas()
+    local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
+    CardUtils.getCardsFromCustomCardList(deckList)
+    remove_nils(G.playing_cards)
 end
 
 function GUI.deckEditorPageStatic()
@@ -1794,47 +1867,7 @@ function GUI.dynamicDeckEditorAreaCards()
     end
 
     local flip_col = G.C.WHITE
-    local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
-    CardUtils.getCardsFromCustomCardList(deckList)
-    remove_nils(G.playing_cards)
     Helper.calculateDeckEditorSums()
-
-    -- local currentDeckName = Utils.customDeckList[#Utils.customDeckList].name
-
-    --[[local boxText = { "Click any card", "to remove it", "from your deck"}
-    local empty = true
-    local t = {}
-
-    for k,v in ipairs(boxText) do
-        t[#t+1] = {
-            n=G.UIT.R,
-            config={align = "cm", maxw = 0.7*5 },
-            nodes={
-                { n=G.UIT.T, config={text = v, scale = 0.3, colour = G.C.UI.TEXT_DARK } }
-            }
-        }
-    end
-
-    local descFromRows = {
-        n=G.UIT.R,
-        config={align = "cm", colour = empty and G.C.CLEAR or G.C.UI.BACKGROUND_WHITE, r = 0.1, padding = 0.04, minw = 2, minh = 0.6, emboss = not empty and 0.05 or nil, filler = true},
-        nodes={
-            {
-                n=G.UIT.R,
-                config={align = "cm", padding = 0.03},
-                nodes=t
-            }
-        }
-    }
-
-    local backGeneratedUI = {
-        n=G.UIT.ROOT,
-        config={align = "cm", minw = 0.7*5, minh = 0.7*1.5, id = currentDeckName, colour = G.C.CLEAR},
-        nodes={
-            descFromRows
-        }
-    }
-    Utils.log("Base Deck content:\n" .. Utils.tableToString(backGeneratedUI))]]
 
     return {
         n=G.UIT.C,
@@ -1844,17 +1877,6 @@ function GUI.dynamicDeckEditorAreaCards()
                 n=G.UIT.C,
                 config={align = "cm", padding = 0.1},
                 nodes={
-                    --[[{ n = G.UIT.R, config = { align = "cm", r = 0.1, colour = G.C.L_BLACK, emboss = 0.05, padding = 0.15 }, nodes = {
-                        { n = G.UIT.R, config = { align = "cm" }, nodes = {
-                            { n = G.UIT.O, config = { object = DynaText({ string = currentDeckName, colours = { G.C.WHITE }, bump = true, rotate = true, shadow = true, scale = 0.6 - string.len(currentDeckName) * 0.01 }) } },
-                        } },
-                        { n = G.UIT.R, config = { align = "cm", r = 0.1, padding = 0.1, minw = 2.5, minh = 1.3, colour = G.C.WHITE, emboss = 0.05 }, nodes = {
-                            { n = G.UIT.O, config = { object = UIBox {
-                                definition = backGeneratedUI,
-                                config = { offset = { x = 0, y = 0 } }
-                            } } }
-                        } }
-                    } },]]
                     { n = G.UIT.R, config = { align = "cm", r = 0.1, outline_colour = G.C.L_BLACK, line_emboss = 0.05, outline = 1.5 }, nodes = {
                         { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.07 }, nodes = {
                             { n = G.UIT.O, config = { object = DynaText({ string = { { string = localize('k_base_cards'), colour = G.C.RED }, Helper.sums.modded and { string = localize('k_effective'), colour = G.C.BLUE } or nil }, colours = { G.C.RED }, silent = true, scale = 0.4, pop_in_rate = 10, pop_delay = 4 }) } }
@@ -1888,27 +1910,8 @@ function GUI.dynamicDeckEditorAreaCards()
     }
 end
 
-function GUI.flushDeckEditorAreas()
-
-    for k,v in pairs(CardUtils.allCardsEverMade) do
-        if v then
-            v:remove()
-            v = nil
-        end
-    end
-    CardUtils.allCardsEverMade = {}
-
-    if Helper.deckEditorAreas and #Helper.deckEditorAreas > 0 then
-        for j = 1, #Helper.deckEditorAreas do
-            Helper.deckEditorAreas[j]:remove()
-        end
-    end
-    Helper.deckEditorAreas = {}
-end
-
 function GUI.dynamicDeckEditorAreaDeckTables()
 
-    GUI.flushDeckEditorAreas()
     if GUI.openTab ~= "Base Deck" then
         return {
             n=G.UIT.ROOT,
@@ -1916,9 +1919,6 @@ function GUI.dynamicDeckEditorAreaDeckTables()
             nodes={}
         }
     end
-
-    local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
-    CardUtils.getCardsFromCustomCardList(deckList)
 
     local deck_tables = {}
     local SUITS = {
@@ -1931,7 +1931,6 @@ function GUI.dynamicDeckEditorAreaDeckTables()
 
     local FakeBlind = {}
     function FakeBlind:debuff_card(arg) end
-    remove_nils(G.playing_cards)
     G.VIEWING_DECK = true
     G.GAME.blind = FakeBlind
 
@@ -1984,6 +1983,7 @@ function GUI.dynamicDeckEditorAreaDeckTables()
 end
 
 function GUI.updateAllDeckEditorAreas()
+    GUI.dynamicDeckEditorPreUpdate()
     GUI.DynamicUIManager.updateDynamicAreas({
         ["dynamicDeckEditorAreaCards"] = GUI.dynamicDeckEditorAreaCards()
     })
@@ -1992,13 +1992,29 @@ function GUI.updateAllDeckEditorAreas()
     })
 end
 
-function GUI.updateAllStartingItemsAreas()
-    GUI.DynamicUIManager.updateDynamicAreas({
-        ["dynamicStartingItemsAreaCards"] = GUI.dynamicStartingItemsAreaCards()
-    })
-    GUI.DynamicUIManager.updateDynamicAreas({
-        ["dynamicStartingItemsAreaDeckTables"] = GUI.dynamicStartingItemsAreaDeckTables()
-    })
+-- Starting Items
+function GUI.dynamicStartingItemsPreUpdate()
+    GUI.flushDeckEditorAreas()
+    if GUI.openTab ~= "Starting Items" then
+        return
+    end
+
+    local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
+    local tarotList = Utils.customDeckList[#Utils.customDeckList].config.customTarotList
+    local planetList = Utils.customDeckList[#Utils.customDeckList].config.customPlanetList
+    local spectralList = Utils.customDeckList[#Utils.customDeckList].config.customSpectralList
+    local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
+    CardUtils.getJokersFromCustomJokerList(jokerList)
+    CardUtils.getTarotsFromCustomTarotList(tarotList)
+    CardUtils.getPlanetsFromCustomPlanetList(planetList)
+    CardUtils.getSpectralsFromCustomSpectralList(spectralList)
+    CardUtils.getVouchersFromCustomVoucherList(voucherList)
+    remove_nils(CardUtils.startingItems.jokers)
+    remove_nils(CardUtils.startingItems.tarots)
+    remove_nils(CardUtils.startingItems.planets)
+    remove_nils(CardUtils.startingItems.spectrals)
+    remove_nils(CardUtils.startingItems.vouchers)
+    remove_nils(CardUtils.startingItems.tags)
 end
 
 function GUI.startingItemsPageStatic()
@@ -2077,22 +2093,6 @@ function GUI.dynamicStartingItemsAreaCards()
     end
 
     local flip_col = G.C.WHITE
-    local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
-    local tarotList = Utils.customDeckList[#Utils.customDeckList].config.customTarotList
-    local planetList = Utils.customDeckList[#Utils.customDeckList].config.customPlanetList
-    local spectralList = Utils.customDeckList[#Utils.customDeckList].config.customSpectralList
-    local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
-    CardUtils.getJokersFromCustomJokerList(jokerList)
-    CardUtils.getTarotsFromCustomTarotList(tarotList)
-    CardUtils.getPlanetsFromCustomPlanetList(planetList)
-    CardUtils.getSpectralsFromCustomSpectralList(spectralList)
-    CardUtils.getVouchersFromCustomVoucherList(voucherList)
-    remove_nils(CardUtils.startingItems.jokers)
-    remove_nils(CardUtils.startingItems.tarots)
-    remove_nils(CardUtils.startingItems.planets)
-    remove_nils(CardUtils.startingItems.spectrals)
-    remove_nils(CardUtils.startingItems.vouchers)
-    remove_nils(CardUtils.startingItems.tags)
     Helper.calculateStartingItemsSums()
 
     return {
@@ -2151,7 +2151,7 @@ function GUI.dynamicStartingItemsAreaCards()
 end
 
 function GUI.dynamicStartingItemsAreaDeckTables()
-    GUI.flushDeckEditorAreas()
+
     if GUI.openTab ~= "Starting Items" then
         return {
             n=G.UIT.ROOT,
@@ -2160,26 +2160,10 @@ function GUI.dynamicStartingItemsAreaDeckTables()
         }
     end
 
-    local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
-    local tarotList = Utils.customDeckList[#Utils.customDeckList].config.customTarotList
-    local planetList = Utils.customDeckList[#Utils.customDeckList].config.customPlanetList
-    local spectralList = Utils.customDeckList[#Utils.customDeckList].config.customSpectralList
-    local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
-    CardUtils.getJokersFromCustomJokerList(jokerList)
-    CardUtils.getTarotsFromCustomTarotList(tarotList)
-    CardUtils.getPlanetsFromCustomPlanetList(planetList)
-    CardUtils.getSpectralsFromCustomSpectralList(spectralList)
-    CardUtils.getVouchersFromCustomVoucherList(voucherList)
-
     local deck_tables = {}
     local FakeBlind = {}
     function FakeBlind:debuff_card(arg) end
-    remove_nils(CardUtils.startingItems.jokers)
-    remove_nils(CardUtils.startingItems.tarots)
-    remove_nils(CardUtils.startingItems.planets)
-    remove_nils(CardUtils.startingItems.spectrals)
-    remove_nils(CardUtils.startingItems.vouchers)
-    remove_nils(CardUtils.startingItems.tags)
+
     G.VIEWING_DECK = true
     G.GAME.blind = FakeBlind
 
@@ -2303,6 +2287,16 @@ function GUI.dynamicStartingItemsAreaDeckTables()
     }
 end
 
+function GUI.updateAllStartingItemsAreas()
+    GUI.dynamicStartingItemsPreUpdate()
+    GUI.DynamicUIManager.updateDynamicAreas({
+        ["dynamicStartingItemsAreaCards"] = GUI.dynamicStartingItemsAreaCards()
+    })
+    GUI.DynamicUIManager.updateDynamicAreas({
+        ["dynamicStartingItemsAreaDeckTables"] = GUI.dynamicStartingItemsAreaDeckTables()
+    })
+end
+
 function GUI.addVoucherMenu()
     local deck_tables = {}
 
@@ -2377,7 +2371,43 @@ function GUI.addJokerMenu()
     local t =  create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
         {n=G.UIT.R, config={align = "cm", r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm"}, nodes={
-            create_option_cycle({options = joker_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_joker_page', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true, nav = 'wide'}})
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        create_option_cycle({options = joker_options, w = 2.5, cycle_shoulders = true, opt_callback = 'your_collection_joker_page', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true, nav = 'wide'}})
+                    }}
+                }
+            },
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Copies", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 99), opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigCopies', current_option = (
+                                GUI.OpenStartingItemConfig.copies
+                        ), multiArrows = true, minorArrows = true })
+                    }},
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Edition", scale = 0.8, options = Utils.editions(true, true), opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigEdition', current_option = (
+                                GUI.OpenStartingItemConfig.edition
+                        )})
+                    }}
+                }
+            },
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        create_toggle({label = "Eternal", ref_table = GUI.OpenStartingItemConfig, ref_value = 'eternal'}),
+                    }},
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        create_toggle({label = "Pinned", ref_table = GUI.OpenStartingItemConfig, ref_value = 'pinned'}),
+                    }}
+                }
+            }
         }}
     }})
     return t
@@ -2417,7 +2447,31 @@ function GUI.addTarotMenu()
     local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm"}, nodes={
-            create_option_cycle({options = tarot_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_tarot_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        create_option_cycle({options = tarot_options, w = 2.5, cycle_shoulders = true, opt_callback = 'your_collection_tarot_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+                    }}
+                }
+            },
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Copies", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 99), opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigCopies', current_option = (
+                                GUI.OpenStartingItemConfig.copies
+                        ), multiArrows = true, minorArrows = true })
+                    }},
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Edition", scale = 0.8, options = { "None", "Negative", "Random" }, opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigEdition', current_option = (
+                                GUI.OpenStartingItemConfig.edition
+                        )})
+                    }}
+                }
+            }
         }}
     }})
     return t
@@ -2451,7 +2505,24 @@ function GUI.addPlanetMenu()
 
     local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
-        {n=G.UIT.R, config={align = "cm", padding = 0.7}, nodes={}},
+        {n=G.UIT.R, config={align = "cm", padding = 0.7}, nodes={
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Copies", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 99), opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigCopies', current_option = (
+                                GUI.OpenStartingItemConfig.copies
+                        ), multiArrows = true, minorArrows = true })
+                    }},
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Edition", scale = 0.8, options = { "None", "Negative", "Random" }, opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigEdition', current_option = (
+                                GUI.OpenStartingItemConfig.edition
+                        )})
+                    }}
+                }
+            }
+        }}
     }})
     return t
 end
@@ -2491,8 +2562,32 @@ function GUI.addSpectralMenu()
     local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
-            create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_spectral_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
-        }},
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_spectral_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+                    }}
+                }
+            },
+            {
+                n = G.UIT.C,
+                config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
+                nodes = {
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Copies", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 99), opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigCopies', current_option = (
+                                GUI.OpenStartingItemConfig.copies
+                        ), multiArrows = true, minorArrows = true })
+                    }},
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        Helper.createOptionSelector({label = "Edition", scale = 0.8, options = { "None", "Negative", "Random" }, opt_callback = 'DeckCreatorModuleChangeOpenStartingItemConfigEdition', current_option = (
+                                GUI.OpenStartingItemConfig.edition
+                        )})
+                    }}
+                }
+            }
+        }}
     }})
     return t
 end

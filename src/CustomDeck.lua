@@ -235,29 +235,41 @@ end
 
 function CustomDeck.getAllDeckBacks()
     return {
-        {x=0,y=0},
-        {x=0,y=2},
-        {x=1,y=2},
-        {x=2,y=2},
-        {x=3,y=2},
-        {x=0,y=3},
-        {x=3,y=0},
-        {x=6,y=2},
-        {x=3,y=3},
-        {x=1,y=3},
-        {x=3,y=4},
-        {x=4,y=3},
-        {x=2,y=4},
-        {x=4,y=2},
-        {x=2,y=3},
-        {x=0,y=4},
-        {x=1,y=4},
-        {x=6,y=0},
-        {x=6,y=1},
-        {x=5,y=1},
-        {x=5,y=0},
-        {x=4,y=0},
-        {x=5,y=2}
+        {x=0,y=0}, -- Red
+        {x=0,y=2}, -- Blue
+        {x=1,y=2}, -- Yellow
+        {x=2,y=2}, -- Green
+        {x=3,y=2}, -- Black
+        {x=0,y=3}, -- Magic
+        {x=3,y=0}, -- Nebula
+        {x=6,y=2}, -- Ghost
+        {x=3,y=3}, -- Abandoned
+        {x=1,y=3}, -- Checkered
+        {x=3,y=4}, -- Zodiac
+        {x=4,y=3}, -- Painted
+        {x=2,y=4}, -- Anaglyph
+        {x=4,y=2}, -- Plasma
+        {x=2,y=3}, -- Erratic
+        {x=0,y=4}, -- Challenge
+        {x=1,y=4}, -- Special
+        {x=4,y=2}, -- Fade
+        {x=6,y=0}, -- Gold
+        {x=6,y=1}, -- Silver
+        {x=5,y=1}, -- Glass
+        {x=5,y=0}, -- Stone
+        {x=4,y=1}, -- Lucky
+        {x=3,y=1}, -- Wild
+        {x=2,y=1}, -- Mult
+        {x=1,y=1}, -- Bonus
+        {x=1,y=0}, -- White
+        {x=4,y=0}, -- Lock
+        {x=0,y=1}, -- Soul
+        {x=5,y=3}, -- Question
+        {x=6,y=3}, -- Question 2
+        {x=3,y=0}, -- Gold Seal
+        {x=4,y=4}, -- Purple Seal
+        {x=5,y=4}, -- Red Seal
+        {x=6,y=4}, -- Blue Seal
     }
 end
 
@@ -280,12 +292,24 @@ function CustomDeck.getAllDeckBackNames()
         "Erratic",
         "Challenge",
         "Special",
+        "Fade",
         "Gold",
         "Silver",
         "Glass",
         "Stone",
+        "Lucky",
+        "Wild",
+        "Mult",
+        "Bonus",
+        "White",
         "Lock",
-        "Fade",
+        "Soul",
+        "Question",
+        "Question 2",
+        "Gold Seal",
+        "Purple Seal",
+        "Red Seal",
+        "Blue Seal",
         "Random"
     }
 end
