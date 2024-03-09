@@ -79,7 +79,36 @@ function CustomDeck:blankDeck()
         minus_hand_size_per_X_dollar = false,
         all_eternal = false,
         debuff_played_cards = false,
-        flipped_cards = false
+        flipped_cards = false,
+        negative_joker_money = 0,
+        negative_joker_for_broken_glass = false,
+        balance_percent = 0,
+        double_tag_percent = 0,
+        randomize_ranks = false,
+        randomize_suits = false,
+        no_numbered_cards = false,
+        randomize_money_small = false,
+        randomize_money_settings = false,
+        randomize_appearance_rates = false,
+        randomize_hands_discards = false,
+        random_starting_items = false,
+        randomly_enable_gameplay_settings = false,
+        one_random_voucher = false,
+        broken_glass_money = 0,
+        enhanced_dollars_per_round = 0,
+        randomize_money_configurable = 0,
+        random_starting_jokers = 0,
+        doubled_probabilities = false,
+        halved_probabilities = false,
+        negative_tag_percent = 0,
+        mega_standard_tag_percent = 0,
+        full_price_jokers = false,
+        full_price_consumables = false,
+        chip_reduction_percent = 0,
+        mult_reduction_percent = 0,
+        draw_to_hand_size = 5,
+        chance_to_increase_discard_cards_rank = 0,
+        chance_to_increase_drawn_cards_rank = 0
     }
 
     return o
@@ -119,7 +148,12 @@ end
 
 function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, reRollCost, jokerSlots, anteScaling, consumableSlots, dollarsPerHand, dollarsPerDiscard, jokerRate, tarotRate, planetRate, spectralRate, playingCardRate, randomizeRankSuit, noFaces, interestAmount, interestCap, discountPercent, edition, doubleTag, balanceChips, editionCount, deckBackIndex, winAnte, inflation, shopSlots,
                             allPolychrome, allHolo, allFoil, allBonus, allMult, allWild, allGlass, allSteel, allStone, allGold, allLucky, enableEternalsInShop, boosterAnteScaling, chipsDollarCap, discardCost,
-                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, uuid, copyDeckConfig, customCardList, customCardsSet, customJokerList, customJokersSet, customTarotList, customTarotsSet, customPlanetList, customPlanetsSet, customSpectralList, customSpectralsSet, customVoucherList, customVouchersSet)
+                            minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, uuid, copyDeckConfig,
+                            customCardList, customCardsSet, customJokerList, customJokersSet, customTarotList, customTarotsSet, customPlanetList, customPlanetsSet, customSpectralList, customSpectralsSet, customVoucherList, customVouchersSet,
+                            broken_glass_money, enhanced_dollars_per_round, negative_joker_money, negative_joker_for_broken_glass, balance_percent, double_tag_percent, randomize_ranks, randomize_suits, no_numbered_cards,
+                            randomize_money_configurable, randomize_money_small, randomize_money_settings, randomize_appearance_rates, random_starting_jokers, randomize_hands_discards, random_starting_items,
+                            randomly_enable_gameplay_settings, one_random_voucher, doubled_probabilities, halved_probabilities, negative_tag_percent, mega_standard_tag_percent, full_price_jokers, full_price_consumables,
+                            chip_reduction_percent, mult_reduction_percent, draw_to_hand_size, chance_to_increase_discard_cards_rank, chance_to_increase_drawn_cards_rank)
     o = {}
     local newUUID = uuid or Utils.uuid()
     setmetatable(o, self)
@@ -218,7 +252,37 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         all_eternal = allEternal,
         debuff_played_cards = debuffPlayedCards,
         flipped_cards = flippedCards,
-        deck_back_index = deckBackIndex
+        deck_back_index = deckBackIndex,
+        broken_glass_money = broken_glass_money,
+        enahnced_dollars_per_round = enhanced_dollars_per_round,
+        negative_joker_money = negative_joker_money,
+        negative_joker_for_broken_glass = negative_joker_for_broken_glass,
+        balance_percent = balanceChips and 100 or balance_percent,
+        double_tag_percent = doubleTag and 100 or double_tag_percent,
+        randomize_ranks = randomize_ranks,
+        randomize_suits = randomize_suits,
+        no_numbered_cards = no_numbered_cards,
+        randomize_money_configurable = randomize_money_configurable,
+        randomize_money_small = randomize_money_small,
+        randomize_money_settings = randomize_money_settings,
+        randomize_appearance_rates = randomize_appearance_rates,
+        random_starting_jokers = random_starting_jokers,
+        randomize_hands_discards = randomize_hands_discards,
+        random_starting_items = random_starting_items,
+        randomly_enable_gameplay_settings = randomly_enable_gameplay_settings,
+        one_random_voucher = one_random_voucher,
+        doubled_probabilities = doubled_probabilities,
+        halved_probabilities = halved_probabilities,
+        negative_tag_percent = negative_tag_percent,
+        mega_standard_tag_percent = mega_standard_tag_percent,
+        full_price_jokers = full_price_jokers,
+        full_price_consumables = full_price_consumables,
+        chip_reduction_percent = chip_reduction_percent,
+        mult_reduction_percent = mult_reduction_percent,
+        draw_to_hand_size = draw_to_hand_size,
+        chance_to_increase_discard_cards_rank = chance_to_increase_discard_cards_rank,
+        chance_to_increase_drawn_cards_rank = chance_to_increase_drawn_cards_rank
+
     }
 
     if dollarsPerDiscard ~= 0 then
@@ -315,7 +379,36 @@ function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, update
             deck.config.customSpectralList,
             deck.config.custom_spectrals_set,
             deck.config.customVoucherList,
-            deck.config.custom_vouchers_set
+            deck.config.custom_vouchers_set,
+            deck.config.broken_glass_money,
+            deck.config.enhanced_dollars_per_round,
+            deck.config.negative_joker_money,
+            deck.config.negative_joker_for_broken_glass,
+            deck.config.balance_percent,
+            deck.config.double_tag_percent,
+            deck.config.randomize_ranks,
+            deck.config.randomize_suits,
+            deck.config.no_numbered_cards,
+            deck.config.randomize_money_configurable,
+            deck.config.randomize_money_small,
+            deck.config.randomize_money_settings,
+            deck.config.randomize_appearance_rates,
+            deck.config.random_starting_jokers,
+            deck.config.randomize_hands_discards,
+            deck.config.random_starting_items,
+            deck.config.randomly_enable_gameplay_settings,
+            deck.config.one_random_voucher,
+            deck.config.doubled_probabilities,
+            deck.config.halved_probabilities,
+            deck.config.negative_tag_percent,
+            deck.config.mega_standard_tag_percent,
+            deck.config.full_price_jokers,
+            deck.config.full_price_consumables,
+            deck.config.chip_reduction_percent,
+            deck.config.mult_reduction_percent,
+            deck.config.draw_to_hand_size,
+            deck.config.chance_to_increase_discard_cards_rank,
+            deck.config.chance_to_increase_drawn_cards_rank
     )
 end
 

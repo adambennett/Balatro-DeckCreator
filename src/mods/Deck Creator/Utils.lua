@@ -10,6 +10,12 @@ Utils.EditDeckConfig = {
 }
 Utils.deletedSlugs = {}
 
+function Utils.log(message)
+    if sendDebugMessage ~= nil then
+        sendDebugMessage("DeckCreatorMod: " .. message)
+    end
+end
+
 function Utils.modDescription()
     return "GUI mod for creating, saving, loading, and sharing your own customizable decks!"
 end
@@ -32,9 +38,64 @@ function Utils.getCurrentEditingDeck()
     return Utils.EditDeckConfig.deck
 end
 
-function Utils.log(message)
-    if sendDebugMessage ~= nil then
-        sendDebugMessage("DeckCreatorMod: " .. message)
+function Utils.addDollarAmountAtEndOfRound(dollars, text)
+    local num_dollars = dollars
+    local scale = 0.9
+    local pitch = 0.95
+    local width = G.round_eval.T.w - 0.51
+    local eventId = Utils.uuid()
+    G.E_MANAGER:add_event(Event({
+        trigger = 'before',delay = 0.5,
+        func = function()
+            local left_text = {}
+            table.insert(left_text, {n=G.UIT.T, config={text = tostring(num_dollars), scale = 0.8*scale, colour = G.C.MONEY, shadow = true, juice = true}})
+            table.insert(left_text,{n=G.UIT.O, config={object = DynaText({string = {" " .. text}, colours = {G.C.UI.TEXT_LIGHT}, shadow = true, pop_in = 0, scale = 0.4*scale, silent = true})}})
+            local full_row = {n=G.UIT.R, config={align = "cm", minw = 5}, nodes={
+                {n=G.UIT.C, config={padding = 0.05, minw = width*0.55, minh = 0.61, align = "cl"}, nodes=left_text},
+                {n=G.UIT.C, config={padding = 0.05,minw = width*0.45, align = "cr"}, nodes={{n=G.UIT.C, config={align = "cm", id = 'dollar_' .. eventId},nodes={}}}}
+            }}
+            G.round_eval:add_child(full_row,G.round_eval:get_UIE_by_ID('bonus_round_eval'))
+            play_sound('cancel', pitch or 1)
+            play_sound('highlight1',( 1.5*pitch) or 1, 0.2)
+            return true
+        end
+    }))
+    local dollar_row = 0
+    if num_dollars > 60 then
+        G.E_MANAGER:add_event(Event({
+            trigger = 'before',delay = 0.38,
+            func = function()
+                G.round_eval:add_child(
+                        {n=G.UIT.R, config={align = "cm", id = 'dollar_row_'..(dollar_row+1)..'_'..eventId}, nodes={
+                            {n=G.UIT.O, config={object = DynaText({string = {localize('$')..num_dollars}, colours = {G.C.MONEY}, shadow = true, pop_in = 0, scale = 0.65, float = true})}}
+                        }},
+                        G.round_eval:get_UIE_by_ID('dollar_'..eventId))
+
+                play_sound('coin3', 0.9+0.2*math.random(), 0.7)
+                play_sound('coin6', 1.3, 0.8)
+                return true
+            end
+        }))
+    else
+        for i = 1, num_dollars or 1 do
+            G.E_MANAGER:add_event(Event({
+                trigger = 'before',delay = 0.18 - ((num_dollars > 20 and 0.13) or (num_dollars > 9 and 0.1) or 0),
+                func = function()
+                    if i%30 == 1 then
+                        G.round_eval:add_child(
+                                {n=G.UIT.R, config={align = "cm", id = 'dollar_row_'..(dollar_row+1)..'_'..eventId}, nodes={}},
+                                G.round_eval:get_UIE_by_ID('dollar_'..eventId))
+                        dollar_row = dollar_row+1
+                    end
+
+                    local r = {n=G.UIT.T, config={text = localize('$'), colour = G.C.MONEY, scale = ((num_dollars > 20 and 0.28) or (num_dollars > 9 and 0.43) or 0.58), shadow = true, hover = true, can_collide = false, juice = true}}
+                    play_sound('coin3', 0.9+0.2*math.random(), 0.7 - (num_dollars > 20 and 0.2 or 0))
+                    G.round_eval:add_child(r,G.round_eval:get_UIE_by_ID('dollar_row_'..(dollar_row)..'_'..eventId))
+                    G.VIBRATION = G.VIBRATION + 0.4
+                    return true
+                end
+            }))
+        end
     end
 end
 
@@ -88,6 +149,12 @@ function Utils.suits(includeRandom)
     return output
 end
 
+function Utils.protoSuits()
+    return {
+        "H", "C", "D", "S"
+    }
+end
+
 function Utils.ranks(includeRandom)
     includeRandom = includeRandom or false
     local output = {
@@ -97,6 +164,12 @@ function Utils.ranks(includeRandom)
         table.insert(output, "Random")
     end
     return output
+end
+
+function Utils.protoRanks()
+    return {
+        "A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"
+    }
 end
 
 function Utils.editions(includeNegative, includeRandom)

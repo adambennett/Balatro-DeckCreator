@@ -11,21 +11,43 @@ CardUtils.startingItems = {
     tags = {}
 }
 
-function CardUtils.initializeCustomCardList(deck)
+function CardUtils.initializeCustomCardList(deckObj)
+    local deck = deckObj.effect.config.customCardList
+    local randomizeRanks = deckObj.effect.config.randomize_ranks
+    local randomizeSuits = deckObj.effect.config.randomize_suits
+    local randomizeRankAndSuits = deckObj.effect.config.randomize_rank_suit
+    local noFaces = deckObj.effect.config.remove_faces
+    local noNumbered = deckObj.effect.config.no_numbered_cards
     G.playing_cards = {}
     G.deck.cards = {}
     local card_protos = {}
 
     for k, v in pairs(deck) do
+        local keep = true
+        if randomizeRankAndSuits then _, k = pseudorandom_element(G.P_CARDS, pseudoseed('erratic')) end
         local rank = string.sub(k, 3, 3)
         local suit = string.sub(k, 1, 1)
-        card_protos[#card_protos+1] = {
-            suit = suit,
-            rank = rank,
-            enhancement = v.enhancement ~= "None" and v.enhancementKey or nil,
-            edition = v.edition ~= "None" and v.editionKey or nil,
-            seal = v.seal ~= "None" and v.seal or nil
-        }
+        if randomizeRanks then
+            local list = Utils.protoRanks()
+            rank = list[math.random(1, #list)]
+        end
+        if randomizeSuits then
+            local list = Utils.protoSuits()
+            suit = list[math.random(1, #list)]
+        end
+
+        if noFaces and (rank == 'K' or rank == 'Q' or rank == 'J') then keep = false end
+        if noNumbered and (rank == '2' or rank == '3' or rank == '4' or rank == '5' or rank == '6' or rank == '7' or rank == '8' or rank == '9' or rank == 'T') then keep = false end
+
+        if keep then
+            card_protos[#card_protos+1] = {
+                suit = suit,
+                rank = rank,
+                enhancement = v.enhancement ~= "None" and v.enhancementKey or nil,
+                edition = v.edition ~= "None" and v.editionKey or nil,
+                seal = v.seal ~= "None" and v.seal or nil
+            }
+        end
     end
 
     for k, v in ipairs(card_protos) do

@@ -544,7 +544,7 @@ function Helper.calculateStartingItemsSums()
     Helper.sums.item_tallies = {
         ['Joker']  = 0,
         ['Consumable'] = 0,
-        ['Tag'] = 0,
+        -- ['Tag'] = 0,
         ['Voucher'] = 0,
         ['Tarot'] = 0,
         ['Planet'] = 0,
@@ -569,9 +569,9 @@ function Helper.calculateStartingItemsSums()
     for k,v in pairs(CardUtils.startingItems.vouchers) do
         Helper.sums.item_tallies["Voucher"] = (Helper.sums.item_tallies["Voucher"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.tags) do
+    --[[for k,v in pairs(CardUtils.startingItems.tags) do
         Helper.sums.item_tallies["Tag"] = (Helper.sums.item_tallies["Tag"] or 0) + 1
-    end
+    end]]
 
     Helper.sums.start_item_cols = {}
     for k,v in pairs(Helper.sums.item_tallies) do
@@ -584,7 +584,8 @@ function Helper.calculateStartingItemsSums()
                         n=G.UIT.C,
                         config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
                         nodes={
-                            {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            --{n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            {n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
                         }
                     },
                     {
