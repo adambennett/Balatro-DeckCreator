@@ -6,10 +6,10 @@ local CardUtils = require "CardUtils"
 
 local GUI = {}
 
+GUI.OpenTab = nil
 GUI.DynamicUIManager = {}
 GUI.DeckCreatorOpen = false
 GUI.StartingItemsOpen = false
-GUI.openTab = nil
 GUI.ManageDecksConfig = {
     allCustomBacks = {},
     currentIndex = 1
@@ -19,10 +19,14 @@ function GUI.CloseAllOpenFlags()
     GUI.DeckCreatorOpen = false
     GUI.StartingItemsOpen = false
     GUI.resetOpenStartingItemConfig()
+    if G.GAME and G.GAME.viewed_back then
+        G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[1])
+        G.PROFILES[G.SETTINGS.profile].MEMORY.deck = "Red Deck"
+    end
 end
 
 function GUI.setOpenTab(tab)
-    GUI.openTab = tab
+    GUI.OpenTab = tab
     GUI.CloseAllOpenFlags()
     Utils.log("Switched DeckCreator tab: " .. tab)
     if tab == "Base Deck" then
@@ -43,33 +47,130 @@ end
 GUI.resetOpenStartingItemConfig()
 
 function GUI.registerGlobals()
+    G.FUNCS.DeckCreatorModuleEmptyFunc = function() end
+
     G.FUNCS.DeckCreatorModuleOpenGithub = function()
         love.system.openURL("https://github.com/adambennett/Balatro-DeckCreator")
     end
 
     G.FUNCS.DeckCreatorModuleCopyDeck = function(args)
-        Utils.log("Copying deck: " .. Utils.tableToString(G.GAME.viewed_back))
+        local copyFrom
+        local matchUUID = G.GAME.viewed_back.effect.config.uuid
+        for k,v in pairs(Utils.customDeckList) do
+            if v.config.uuid == matchUUID then
+                copyFrom = v
+                break
+            end
+        end
+
+        local desc1 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 0 and copyFrom.loc_txt.text[1] or ""
+        local desc2 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 1 and copyFrom.loc_txt.text[2] or ""
+        local desc3 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 2 and copyFrom.loc_txt.text[3] or ""
+        local desc4 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 3 and copyFrom.loc_txt.text[4] or ""
+        local joinedDesc = desc1 .. " " .. desc2 .. " " .. desc3 .. " " .. desc4
+        local copy = CustomDeck.fullNewFromExisting(copyFrom, joinedDesc, "", "", "", true)
+
+        copy.config.dollars = copy.config.dollars + 8
+        copy.config.hand_size = copy.config.hand_size + 16
+        copy.config.discards = copy.config.discards + 6
+        copy.config.hands = copy.config.hands + 8
+        copy.config.joker_slot = copy.config.joker_slot + 10
+        copy.config.consumable_slot = copy.config.consumable_slot + 4
+        copy.config.interest_cap = copy.config.interest_cap / 25
+        if not copy.config.extra_hand_bonus or copy.config.extra_hand_bonus == 0 then
+            copy.config.extra_hand_bonus = 1
+        end
+
+        Utils.EditDeckConfig.newDeck = false
+        Utils.EditDeckConfig.copyDeck = true
+        Utils.EditDeckConfig.editDeck = false
+        Utils.EditDeckConfig.deck = copy
+        G.FUNCS.overlay_menu({
+            definition = GUI.createDecksMenu("Main Menu")
+        })
     end
 
     G.FUNCS.DeckCreatorModuleEditDeck = function(args)
-        Utils.log("Editing deck: " .. Utils.tableToString(G.GAME.viewed_back))
+        local matchUUID = G.GAME.viewed_back.effect.config.uuid
+        for k,v in pairs(Utils.customDeckList) do
+            if v.config.uuid == matchUUID then
+                Utils.EditDeckConfig.deck = v
+                break
+            end
+        end
+
+        local deck = Utils.EditDeckConfig.deck
+        local desc1 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 0 and deck.loc_txt.text[1] or ""
+        local desc2 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 1 and deck.loc_txt.text[2] or ""
+        local desc3 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 2 and deck.loc_txt.text[3] or ""
+        local desc4 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 3 and deck.loc_txt.text[4] or ""
+        local joinedDesc = desc1 .. " " .. desc2 .. " " .. desc3 .. " " .. desc4
+        Utils.EditDeckConfig.deck = CustomDeck.fullNewFromExisting(deck, joinedDesc, "", "", "", false)
+
+        Utils.EditDeckConfig.deck.config.dollars = Utils.EditDeckConfig.deck.config.dollars + 4
+        Utils.EditDeckConfig.deck.config.hand_size = Utils.EditDeckConfig.deck.config.hand_size + 8
+        Utils.EditDeckConfig.deck.config.discards = Utils.EditDeckConfig.deck.config.discards + 3
+        Utils.EditDeckConfig.deck.config.hands = Utils.EditDeckConfig.deck.config.hands + 4
+        Utils.EditDeckConfig.deck.config.joker_slot = Utils.EditDeckConfig.deck.config.joker_slot + 5
+        Utils.EditDeckConfig.deck.config.consumable_slot = Utils.EditDeckConfig.deck.config.consumable_slot + 2
+        Utils.EditDeckConfig.deck.config.interest_cap = Utils.EditDeckConfig.deck.config.interest_cap / 5
+        if not Utils.EditDeckConfig.deck.config.extra_hand_bonus or Utils.EditDeckConfig.deck.config.extra_hand_bonus == 0 then
+            Utils.EditDeckConfig.deck.config.extra_hand_bonus = 1
+        end
+
+        Utils.EditDeckConfig.newDeck = false
+        Utils.EditDeckConfig.copyDeck = false
+        Utils.EditDeckConfig.editDeck = true
+        G.FUNCS.overlay_menu({
+            definition = GUI.createDecksMenu("Main Menu")
+        })
     end
 
     G.FUNCS.DeckCreatorModuleDeleteDeck = function(args)
-        Utils.log("Deleting deck: " .. Utils.tableToString(G.GAME.viewed_back))
+        local matchUUID = G.GAME.viewed_back.effect.config.uuid
+        local removeIndex
+        for k,v in pairs(Utils.customDeckList) do
+            if v.config.uuid == matchUUID then
+                removeIndex = k
+                break
+            end
+        end
+
+        if removeIndex then
+            table.remove(Utils.customDeckList, removeIndex)
+        end
+
+        local next = G.GAME.viewed_back.effect.center.order + 1
+        table.insert(Utils.deletedSlugs, { slug = G.GAME.viewed_back.effect.center.key, order = G.GAME.viewed_back.effect.center.order })
+        CustomDeck.unregister(matchUUID)
+        Persistence.refreshDeckList()
+        Persistence.saveAllDecks()
+        if #Utils.customDeckList < 1 then
+            GUI.redrawMainMenu()
+            G.FUNCS.DeckCreatorModuleBackToMainMenu()
+        else
+            for k,v in pairs(Utils.customDeckList) do
+                if v.config and v.config.centerPosition then
+                    G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[v.config.centerPosition])
+                    break
+                end
+            end
+            G.FUNCS.overlay_menu({
+                definition = GUI.createManageDecksMenu()
+            })
+        end
     end
 
     G.FUNCS.DeckCreatorModuleChangeManageDeckViewedDeck = function(args)
-        Utils.log("Changing viewed manage decks back, to_key=" .. args.to_key .. ", to_val=" .. args.to_val)
+        for k,v in pairs(G.P_CENTER_POOLS.Back) do
+            if v and v.name and v.name == args.to_val then
+                G.GAME.viewed_back:change_to(v)
+                G.PROFILES[G.SETTINGS.profile].MEMORY.deck = args.to_val
+                return
+            end
+        end
         G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[args.to_key])
         G.PROFILES[G.SETTINGS.profile].MEMORY.deck = args.to_val
-    end
-
-    G.FUNCS.DeckCreatorModuleUpdateNewMods = function(args)
-        if not args or not args.cycle_config then return end
-        GUI.DynamicUIManager.updateDynamicAreas({
-            ["modsList"] = GUI.dynamicNewMods(args.cycle_config.current_option)
-        })
     end
 
     G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaCards = function(args)
@@ -98,15 +199,13 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleAddCard = function()
         CardUtils.addCardToDeck({ addCard = GUI.addCard, deck_list = Utils.customDeckList})
-        Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
-        G.FUNCS:exit_overlay_menu()
+        Utils.getCurrentEditingDeck().config.custom_cards_set = true
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
         })
     end
 
     G.FUNCS.DeckCreatorModuleOpenAddCardToDeck = function ()
-        G.FUNCS:exit_overlay_menu()
         G.FUNCS.overlay_menu({
             definition = GUI.createAddCardsMenu()
         })
@@ -178,13 +277,13 @@ function GUI.registerGlobals()
             copies = 1
         }
         CardUtils.addCardToDeck({ addCard = addCard, deck_list = Utils.customDeckList})
-        Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
+        Utils.getCurrentEditingDeck().config.custom_cards_set = true
         GUI.updateAllDeckEditorAreas()
     end
 
     G.FUNCS.DeckCreatorModuleGenerateItem = function()
         CardUtils.addItemToDeck({ isRandomType = true, deck_list = Utils.customDeckList})
-        Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
+        Utils.getCurrentEditingDeck().config.custom_cards_set = true
         GUI.updateAllStartingItemsAreas()
     end
 
@@ -196,8 +295,8 @@ function GUI.registerGlobals()
                 c = nil
             end
         end
-        Utils.customDeckList[#Utils.customDeckList].config.customCardList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set = true
+        Utils.getCurrentEditingDeck().config.customCardList = {}
+        Utils.getCurrentEditingDeck().config.custom_cards_set = true
         if G.playing_cards and #G.playing_cards > 0 then
             for j = 1, #G.playing_cards do
                 local c = G.playing_cards[j]
@@ -219,16 +318,16 @@ function GUI.registerGlobals()
                 c = nil
             end
         end
-        Utils.customDeckList[#Utils.customDeckList].config.customVoucherList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.customJokerList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.customTarotList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.customPlanetList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.customSpectralList = {}
-        Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set = false
-        Utils.customDeckList[#Utils.customDeckList].config.custom_jokers_set = false
-        Utils.customDeckList[#Utils.customDeckList].config.custom_tarots_set = false
-        Utils.customDeckList[#Utils.customDeckList].config.custom_planets_set = false
-        Utils.customDeckList[#Utils.customDeckList].config.custom_spectrals_set = false
+        Utils.getCurrentEditingDeck().config.customVoucherList = {}
+        Utils.getCurrentEditingDeck().config.customJokerList = {}
+        Utils.getCurrentEditingDeck().config.customTarotList = {}
+        Utils.getCurrentEditingDeck().config.customPlanetList = {}
+        Utils.getCurrentEditingDeck().config.customSpectralList = {}
+        Utils.getCurrentEditingDeck().config.custom_vouchers_set = false
+        Utils.getCurrentEditingDeck().config.custom_jokers_set = false
+        Utils.getCurrentEditingDeck().config.custom_tarots_set = false
+        Utils.getCurrentEditingDeck().config.custom_planets_set = false
+        Utils.getCurrentEditingDeck().config.custom_spectrals_set = false
         if CardUtils.startingItems.vouchers and #CardUtils.startingItems.vouchers > 0 then
             for j = 1, #CardUtils.startingItems.vouchers do
                 local c = CardUtils.startingItems.vouchers[j]
@@ -321,27 +420,27 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleChangeDiscardCost = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.discard_cost = args.to_val
+        Utils.getCurrentEditingDeck().config.discard_cost = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeDiscountPercent = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.discount_percent = args.to_val
+        Utils.getCurrentEditingDeck().config.discount_percent = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeShopSlots = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.shop_slots = args.to_val
+        Utils.getCurrentEditingDeck().config.shop_slots = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeInterestCap = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.interest_cap = args.to_val
+        Utils.getCurrentEditingDeck().config.interest_cap = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeInterestAmount = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.interest_amount = args.to_val
+        Utils.getCurrentEditingDeck().config.interest_amount = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeWinAnte = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.win_ante = args.to_val
+        Utils.getCurrentEditingDeck().config.win_ante = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeDeckBackIndex = function(args)
@@ -352,104 +451,116 @@ function GUI.registerGlobals()
                 break
             end
         end
-        Utils.customDeckList[#Utils.customDeckList].config.deck_back_index = current_option_index
+        Utils.getCurrentEditingDeck().config.deck_back_index = current_option_index
     end
 
     G.FUNCS.DeckCreatorModuleChangeEditionCount = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.edition_count = args.to_val
+        Utils.getCurrentEditingDeck().config.edition_count = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeCopyFromDeck = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.copy_deck_config = args.to_val
+        Utils.getCurrentEditingDeck().config.copy_deck_config = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeJokerSlots = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.joker_slot = args.to_val
+        Utils.getCurrentEditingDeck().config.joker_slot = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeConsumableSlots = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.consumable_slot = args.to_val
+        Utils.getCurrentEditingDeck().config.consumable_slot = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeAnteScaling = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.ante_scaling = args.to_val
+        Utils.getCurrentEditingDeck().config.ante_scaling = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeJokerRate = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.joker_rate = args.to_val
+        Utils.getCurrentEditingDeck().config.joker_rate = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeTarotRate = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.tarot_rate = args.to_val
+        Utils.getCurrentEditingDeck().config.tarot_rate = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangePlanetRate = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.planet_rate = args.to_val
+        Utils.getCurrentEditingDeck().config.planet_rate = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeSpectralRate = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.spectral_rate = args.to_val
+        Utils.getCurrentEditingDeck().config.spectral_rate = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangePlayingCardRate = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.playing_card_rate = args.to_val
+        Utils.getCurrentEditingDeck().config.playing_card_rate = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeDollars = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.dollars = args.to_val
+        Utils.getCurrentEditingDeck().config.dollars = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeDollarsPerHand = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.extra_hand_bonus = args.to_val
+        Utils.getCurrentEditingDeck().config.extra_hand_bonus = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeDollarsPerDiscard = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.extra_discard_bonus = args.to_val
+        Utils.getCurrentEditingDeck().config.extra_discard_bonus = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeRerollCost = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.reroll_cost = args.to_val
+        Utils.getCurrentEditingDeck().config.reroll_cost = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeNumHands = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.hands = args.to_val
+        Utils.getCurrentEditingDeck().config.hands = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeNumDiscards = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.discards = args.to_val
+        Utils.getCurrentEditingDeck().config.discards = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeHandSize = function(args)
-        Utils.customDeckList[#Utils.customDeckList].config.hand_size = args.to_val
+        Utils.getCurrentEditingDeck().config.hand_size = args.to_val
     end
 
-    G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
+    G.FUNCS.DeckCreatorModuleBackToMainMenu = function()
+        G.SETTINGS.paused = true
         GUI.CloseAllOpenFlags()
-        G.FUNCS:exit_overlay_menu()
-
         if SMODS.BalamodMode then
             G.FUNCS.overlay_menu({
-                definition = G.UIDEF.mods()
+                definition = GUI.createBalamodMenu()
             })
         else
             G.FUNCS.overlay_menu({
                 definition = create_UIBox_mods()
             })
         end
+    end
 
-
+    G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu({
+            definition = G.UIDEF.mods()
+        })
     end
 
     G.FUNCS.DeckCreatorModuleOpenCreateDeck = function()
         G.SETTINGS.paused = true
-
-        Utils.addDeckToList(CustomDeck:blankDeck())
+        Utils.EditDeckConfig.newDeck = true
+        Utils.EditDeckConfig.copyDeck = false
+        Utils.EditDeckConfig.editDeck = false
+        Utils.EditDeckConfig.deck = CustomDeck:blankDeck()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
         })
-        G.FUNCS:exit_overlay_menu()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Main Menu")
+        })
+    end
+
+    G.FUNCS.DeckCreatorModuleOpenMainMenu = function()
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu({
+            definition = GUI.createBalamodMenu()
         })
     end
 
@@ -461,12 +572,14 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleReopenBaseDeck = function()
+        G.SETTINGS.paused = true
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
         })
     end
 
     G.FUNCS.DeckCreatorModuleReopenStartingItems = function()
+        G.SETTINGS.paused = true
         GUI.resetOpenStartingItemConfig()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Starting Items")
@@ -475,170 +588,135 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleSaveDeck = function()
 
-        Utils.log("Saving new custom deck: " .. Utils.customDeckList[#Utils.customDeckList].name)
+        local desc1 = Utils.getCurrentEditingDeck().descLine1
+        local desc2 = Utils.getCurrentEditingDeck().descLine2
+        local desc3 = Utils.getCurrentEditingDeck().descLine3
+        local desc4 = Utils.getCurrentEditingDeck().descLine4
 
-        local desc1 = Utils.customDeckList[#Utils.customDeckList].descLine1
-        local desc2 = Utils.customDeckList[#Utils.customDeckList].descLine2
-        local desc3 = Utils.customDeckList[#Utils.customDeckList].descLine3
-        local desc4 = Utils.customDeckList[#Utils.customDeckList].descLine4
-
-        if desc1 == "" and desc2 == "" and desc3 == "" and desc4 == "" then
+        if desc1 == "" then
             desc1 = "Custom Deck"
             desc2 = "created at"
-            desc3 = "{C:attention}" .. Utils.timestamp() .. "{}"
+            desc3 = Utils.timestamp()
+        elseif string.len(desc1) > 20 then
+            local original = desc1
+            desc1 = string.sub(original, 1, 20)
+            desc2 = string.sub(original, 21, 40)
+            desc3 = string.sub(original, 41, 60)
+            desc4 = string.sub(original, 61, 80)
         end
 
-        Utils.log("Deck description initialized: " .. desc1 .. " " .. desc2 .. " " .. desc3 .. " " .. desc4)
+        local newDeck = CustomDeck.fullNewFromExisting(Utils.getCurrentEditingDeck(), desc1, desc2, desc3, desc4)
+        newDeck:register()
 
-        local newDeck = CustomDeck:fullNew(
-                Utils.customDeckList[#Utils.customDeckList].name,
-                {name = Utils.customDeckList[#Utils.customDeckList].name, text = {
-                    [1] = desc1, [2] = desc2, [3] = desc3, [4] = desc4
-                }},
-                Utils.customDeckList[#Utils.customDeckList].config.dollars,
-                Utils.customDeckList[#Utils.customDeckList].config.hand_size,
-                Utils.customDeckList[#Utils.customDeckList].config.discards,
-                Utils.customDeckList[#Utils.customDeckList].config.hands,
-                Utils.customDeckList[#Utils.customDeckList].config.reroll_cost,
-                Utils.customDeckList[#Utils.customDeckList].config.joker_slot,
-                Utils.customDeckList[#Utils.customDeckList].config.ante_scaling,
-                Utils.customDeckList[#Utils.customDeckList].config.consumable_slot,
-                Utils.customDeckList[#Utils.customDeckList].config.extra_hand_bonus,
-                Utils.customDeckList[#Utils.customDeckList].config.extra_discard_bonus,
-                Utils.customDeckList[#Utils.customDeckList].config.joker_rate,
-                Utils.customDeckList[#Utils.customDeckList].config.tarot_rate,
-                Utils.customDeckList[#Utils.customDeckList].config.planet_rate,
-                Utils.customDeckList[#Utils.customDeckList].config.spectral_rate,
-                Utils.customDeckList[#Utils.customDeckList].config.playing_card_rate,
-                Utils.customDeckList[#Utils.customDeckList].config.randomize_rank_suit,
-                Utils.customDeckList[#Utils.customDeckList].config.remove_faces,
-                Utils.customDeckList[#Utils.customDeckList].config.interest_amount,
-                Utils.customDeckList[#Utils.customDeckList].config.interest_cap,
-                Utils.customDeckList[#Utils.customDeckList].config.discount_percent,
-                Utils.customDeckList[#Utils.customDeckList].config.edition,
-                Utils.customDeckList[#Utils.customDeckList].config.double_tag,
-                Utils.customDeckList[#Utils.customDeckList].config.balance_chips,
-                Utils.customDeckList[#Utils.customDeckList].config.edition_count,
-                Utils.customDeckList[#Utils.customDeckList].config.deck_back_index,
-                Utils.customDeckList[#Utils.customDeckList].config.win_ante,
-                Utils.customDeckList[#Utils.customDeckList].config.inflation,
-                Utils.customDeckList[#Utils.customDeckList].config.shop_slots,
-                Utils.customDeckList[#Utils.customDeckList].config.all_polychrome,
-                Utils.customDeckList[#Utils.customDeckList].config.all_holo,
-                Utils.customDeckList[#Utils.customDeckList].config.all_foil,
-                Utils.customDeckList[#Utils.customDeckList].config.all_bonus,
-                Utils.customDeckList[#Utils.customDeckList].config.all_mult,
-                Utils.customDeckList[#Utils.customDeckList].config.all_wild,
-                Utils.customDeckList[#Utils.customDeckList].config.all_glass,
-                Utils.customDeckList[#Utils.customDeckList].config.all_steel,
-                Utils.customDeckList[#Utils.customDeckList].config.all_stone,
-                Utils.customDeckList[#Utils.customDeckList].config.all_gold,
-                Utils.customDeckList[#Utils.customDeckList].config.all_lucky,
-                Utils.customDeckList[#Utils.customDeckList].config.enable_eternals_in_shop,
-                Utils.customDeckList[#Utils.customDeckList].config.booster_ante_scaling,
-                Utils.customDeckList[#Utils.customDeckList].config.chips_dollar_cap,
-                Utils.customDeckList[#Utils.customDeckList].config.discard_cost,
-                Utils.customDeckList[#Utils.customDeckList].config.minus_hand_size_per_X_dollar,
-                Utils.customDeckList[#Utils.customDeckList].config.all_eternal,
-                Utils.customDeckList[#Utils.customDeckList].config.debuff_played_cards,
-                Utils.customDeckList[#Utils.customDeckList].config.flipped_cards,
-                Utils.customDeckList[#Utils.customDeckList].config.uuid,
-                Utils.customDeckList[#Utils.customDeckList].config.copy_deck_config,
-                Utils.customDeckList[#Utils.customDeckList].config.customCardList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_cards_set,
-                Utils.customDeckList[#Utils.customDeckList].config.customJokerList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_jokers_set,
-                Utils.customDeckList[#Utils.customDeckList].config.customTarotList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_tarots_set,
-                Utils.customDeckList[#Utils.customDeckList].config.customPlanetList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_planets_set,
-                Utils.customDeckList[#Utils.customDeckList].config.customSpectralList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_spectrals_set,
-                Utils.customDeckList[#Utils.customDeckList].config.customVoucherList,
-                Utils.customDeckList[#Utils.customDeckList].config.custom_vouchers_set
-        )
-        Utils.log("newDeck initialized\n" .. Utils.tableToString(newDeck))
-        Utils.customDeckList[#Utils.customDeckList] = newDeck
+        if Utils.EditDeckConfig.editDeck then
+            local newList = {}
+            for k,v in pairs(Utils.customDeckList) do
+                if v.config.uuid == Utils.EditDeckConfig.deck.config.uuid then
+                    table.insert(newList, newDeck)
+                else
+                    table.insert(newList, v)
+                end
+            end
+            Utils.customDeckList = newList
+
+        else
+            Utils.addDeckToList(newDeck)
+        end
 
         Persistence.refreshDeckList()
-        Utils.log("All custom decks re-injected")
-
         Persistence.saveAllDecks()
         GUI.CloseAllOpenFlags()
-        Utils.log("All custom decks saved successfully. Returning to main menu")
-
+        GUI.redrawMainMenu()
         G.FUNCS:exit_overlay_menu()
     end
 end
 
+function GUI.redrawMainMenu()
+    if not SMODS.BalamodMode then
+        SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
+    end
+end
+
+function GUI.mainMenu()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                padding = 0.5,
+                align = "cm"
+            },
+            nodes = {
+
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                padding = 0.1,
+                align = "cm"
+            },
+            nodes = {
+                UIBox_button({
+                    label = {" Create Deck "},
+                    shadow = true,
+                    scale = 0.75 * 0.5,
+                    colour = G.C.BOOSTER,
+                    button = "DeckCreatorModuleOpenCreateDeck",
+                    minh = 0.8,
+                    minw = 8
+                })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                padding = 0.1,
+                align = "cm"
+            },
+            nodes = {
+                #Utils.customDeckList > 0 and UIBox_button({
+                    label = {" Manage Decks "},
+                    shadow = true,
+                    scale = 0.75 * 0.5,
+                    colour = G.C.BOOSTER,
+                    button = "DeckCreatorModuleOpenManageDecks",
+                    minh = 0.8,
+                    minw = 8
+                }) or UIBox_button({
+                    label = {" No Custom Decks Found "},
+                    shadow = true,
+                    scale = 0.75 * 0.5,
+                    colour = G.C.RED,
+                    button = "DeckCreatorModuleEmptyFunc",
+                    minh = 0.8,
+                    minw = 8
+                })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                padding = 0.1,
+                align = "cm"
+            },
+            nodes = {
+                UIBox_button({
+                    label = {" Source Code "},
+                    shadow = true,
+                    scale = 0.75 * 0.5,
+                    colour = G.C.BOOSTER,
+                    button = "DeckCreatorModuleOpenGithub",
+                    minh = 0.8,
+                    minw = 8
+                })
+            }
+        }
+    }
+end
+
 function GUI.registerModMenuUI()
     if not SMODS.BalamodMode then
-        SMODS.registerUIElement("ADeckCreatorModule", {
-            {
-                n = G.UIT.R,
-                config = {
-                    padding = 0.5,
-                    align = "cm"
-                },
-                nodes = {
-
-                }
-            },
-            {
-                n = G.UIT.R,
-                config = {
-                    padding = 0.1,
-                    align = "cm"
-                },
-                nodes = {
-                    UIBox_button({
-                        label = {" Create Deck "},
-                        shadow = true,
-                        scale = 0.75 * 0.5,
-                        colour = G.C.BOOSTER,
-                        button = "DeckCreatorModuleOpenCreateDeck",
-                        minh = 0.8,
-                        minw = 8
-                    })
-                }
-            },
-            {
-                n = G.UIT.R,
-                config = {
-                    padding = 0.1,
-                    align = "cm"
-                },
-                nodes = {
-                    UIBox_button({
-                        label = {" Manage Decks "},
-                        shadow = true,
-                        scale = 0.75 * 0.5,
-                        colour = G.C.BOOSTER,
-                        button = "DeckCreatorModuleOpenManageDecks",
-                        minh = 0.8,
-                        minw = 8
-                    })
-                }
-            },
-            {
-                n = G.UIT.R,
-                config = {
-                    padding = 0.1,
-                    align = "cm"
-                },
-                nodes = {
-                    UIBox_button({
-                        label = {" Source Code "},
-                        shadow = true,
-                        scale = 0.75 * 0.5,
-                        colour = G.C.BOOSTER,
-                        button = "DeckCreatorModuleOpenGithub",
-                        minh = 0.8,
-                        minw = 8
-                    })
-                }
-            },
-        })
+        SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
     end
 end
 
@@ -657,6 +735,74 @@ function GUI.resetAddCard()
 end
 GUI.addCard = GUI.resetAddCard()
 
+function GUI.DynamicUIManager.initTab(args)
+    local updateFunctions = args.updateFunctions
+    local staticPageDefinition = args.staticPageDefinition
+    local preUpdateFunctions = args.preUpdateFunctions
+    local postUpdateFunctions = args.postUpdateFunctions
+
+    if preUpdateFunctions ~= nil then
+        for _, updateFunction in pairs(preUpdateFunctions) do
+            G.E_MANAGER:add_event(Event({func = function()
+                updateFunction{cycle_config = {current_option = 1}}
+                return true
+            end}))
+        end
+    end
+
+    if updateFunctions ~= nil then
+        for _, updateFunction in pairs(updateFunctions) do
+            G.E_MANAGER:add_event(Event({func = function()
+                updateFunction{cycle_config = {current_option = 1}}
+                return true
+            end}))
+        end
+    end
+
+    if postUpdateFunctions ~= nil then
+        for _, updateFunction in pairs(postUpdateFunctions) do
+            G.E_MANAGER:add_event(Event({func = function()
+                updateFunction{cycle_config = {current_option = 1}}
+                return true
+            end}))
+        end
+    end
+
+    return GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
+end
+
+function GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
+    return {
+        n = G.UIT.ROOT,
+        config = {
+            emboss = 0.05,
+            minh = 6,
+            r = 0.1,
+            minw = 8,
+            align = "cm",
+            padding = 0.2,
+            colour = G.C.BLACK
+        },
+        nodes = {
+            staticPageDefinition
+        }
+    }
+end
+
+function GUI.DynamicUIManager.updateDynamicAreas(uiDefinitions)
+    for id, uiDefinition in pairs(uiDefinitions) do
+        local dynamicArea = G.OVERLAY_MENU:get_UIE_by_ID(id)
+        if dynamicArea and dynamicArea.config.object then
+            dynamicArea.config.object:remove()
+            dynamicArea.config.object = UIBox{
+                definition = uiDefinition,
+                config = {offset = {x=0, y=0}, align = 'cm', parent = dynamicArea}
+            }
+        end
+    end
+end
+
+-- Menus
 function GUI.createAddCardsMenu()
     GUI.addCard = GUI.resetAddCard()
     return create_UIBox_generic_options({
@@ -841,7 +987,7 @@ end
 function GUI.createDecksMenu(chosen)
     chosen = chosen or "Main Menu"
     return create_UIBox_generic_options({
-        back_func = "DeckCreatorModuleBackToModsScreen",
+        back_func = "DeckCreatorModuleBackToMainMenu",
         contents = {
             {
                 n = G.UIT.R,
@@ -894,11 +1040,10 @@ function GUI.createDecksMenu(chosen)
                                                         },
                                                         nodes = {
                                                             create_text_input({
-                                                                -- id = "deckName",
                                                                 w = 4,  -- Width of the text input
                                                                 max_length = 25,  -- Max length of deck name
                                                                 prompt_text = "Custom Deck",  -- Prompt text for input
-                                                                ref_table = Utils.customDeckList[#Utils.customDeckList],  -- Table to store the inputted value
+                                                                ref_table = Utils.getCurrentEditingDeck(),  -- Table to store the inputted value
                                                                 ref_value = 'name',  -- Key in ref_table where input is stored
                                                                 extended_corpus = true,
                                                                 keyboard_offset = 1,
@@ -906,104 +1051,12 @@ function GUI.createDecksMenu(chosen)
                                                             }),
                                                         }
                                                     },
-                                                    Helper.createOptionSelector({label = "Card Back", scale = 0.8, options = CustomDeck.getAllDeckBackNames(), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.deck_back_index
-                                                    )}),
+                                                    create_option_cycle({label = "Card Back", scale = 0.8, options = CustomDeck.getAllDeckBackNames(), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
+                                                            Utils.getCurrentEditingDeck().config.deck_back_index
+                                                    ), no_pips = true }),
                                                     Helper.createOptionSelector({label = "Winning Ante", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 50), opt_callback = 'DeckCreatorModuleChangeWinAnte', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.win_ante
+                                                            Utils.getCurrentEditingDeck().config.win_ante
                                                     ), multiArrows = true, minorArrows = true }),
-
-                                                    -- Description Line 1
-                                                    --[[{
-                                                        n = G.UIT.R,
-                                                        config = {
-                                                            padding = 0.3,
-                                                            align = "cm",
-                                                            minw = 4  -- Adjust the width as needed
-                                                        },
-                                                        nodes = {
-                                                            Helper.createTextInput({
-                                                                id = "desc1",
-                                                                w = 4,  -- Width of the text input
-                                                                max_length = 25,  -- Max length of deck name
-                                                                prompt_text = "Description line 1",  -- Prompt text for input
-                                                                ref_table = Utils.customDeckList[#Utils.customDeckList],  -- Table to store the inputted value
-                                                                ref_value = 'descLine1',  -- Key in ref_table where input is stored
-                                                                extended_corpus = true,
-                                                                keyboard_offset = 2,
-                                                                callback = function(val) end
-                                                            }),
-                                                        }
-                                                    },
-
-                                                    -- Description Line 2
-                                                    {
-                                                        n = G.UIT.R,
-                                                        config = {
-                                                            padding = 0.3,
-                                                            align = "cm",
-                                                            minw = 4  -- Adjust the width as needed
-                                                        },
-                                                        nodes = {
-                                                            Helper.createTextInput({
-                                                                id = "desc2",
-                                                                w = 4,  -- Width of the text input
-                                                                max_length = 25,  -- Max length of deck name
-                                                                prompt_text = "Description line 2",  -- Prompt text for input
-                                                                ref_table = Utils.customDeckList[#Utils.customDeckList],  -- Table to store the inputted value
-                                                                ref_value = 'descLine2',  -- Key in ref_table where input is stored
-                                                                extended_corpus = true,
-                                                                keyboard_offset = 3,
-                                                                callback = function(val) end
-                                                            }),
-                                                        }
-                                                    },
-
-                                                    -- Description Line 3
-                                                    {
-                                                        n = G.UIT.R,
-                                                        config = {
-                                                            padding = 0.3,
-                                                            align = "cm",
-                                                            minw = 4  -- Adjust the width as needed
-                                                        },
-                                                        nodes = {
-                                                            Helper.createTextInput({
-                                                                id = "desc3",
-                                                                w = 4,  -- Width of the text input
-                                                                max_length = 25,  -- Max length of deck name
-                                                                prompt_text = "Description line 3",  -- Prompt text for input
-                                                                ref_table = Utils.customDeckList[#Utils.customDeckList],  -- Table to store the inputted value
-                                                                ref_value = 'descLine3',  -- Key in ref_table where input is stored
-                                                                extended_corpus = true,
-                                                                keyboard_offset = 4,
-                                                                callback = function(val) end
-                                                            }),
-                                                        }
-                                                    },
-
-                                                    -- Description Line 4
-                                                    {
-                                                        n = G.UIT.R,
-                                                        config = {
-                                                            padding = 0.3,
-                                                            align = "cm",
-                                                            minw = 4  -- Adjust the width as needed
-                                                        },
-                                                        nodes = {
-                                                            Helper.createTextInput({
-                                                                id = "desc4",
-                                                                w = 4,  -- Width of the text input
-                                                                max_length = 25,  -- Max length of deck name
-                                                                prompt_text = "Description line 4",  -- Prompt text for input
-                                                                ref_table = Utils.customDeckList[#Utils.customDeckList],  -- Table to store the inputted value
-                                                                ref_value = 'descLine4',  -- Key in ref_table where input is stored
-                                                                extended_corpus = true,
-                                                                keyboard_offset = 5,
-                                                                callback = function(val) end
-                                                            }),
-                                                        }
-                                                    },]]
 
                                                     -- Save Deck
                                                     {
@@ -1079,7 +1132,7 @@ function GUI.createDecksMenu(chosen)
                                                                 config = {
                                                                     align = "cm",
                                                                     padding = 0.05,
-                                                                    minw = 4  -- Adjust the width as needed
+                                                                    minw = 4
                                                                 },
                                                                 nodes = {
                                                                     {
@@ -1098,12 +1151,11 @@ function GUI.createDecksMenu(chosen)
                                                                 },
                                                                 nodes = {
                                                                     create_text_input({
-                                                                        -- id = "deckName",
-                                                                        w = 4,  -- Width of the text input
-                                                                        max_length = 25,  -- Max length of deck name
-                                                                        prompt_text = "Custom Description",  -- Prompt text for input
-                                                                        ref_table = Utils.customDeckList[#Utils.customDeckList],  -- Table to store the inputted value
-                                                                        ref_value = 'descLine1',  -- Key in ref_table where input is stored
+                                                                        w = 4,
+                                                                        max_length = 70,
+                                                                        prompt_text = "Custom Description",
+                                                                        ref_table = Utils.getCurrentEditingDeck(),
+                                                                        ref_value = 'descLine1',
                                                                         extended_corpus = true,
                                                                         keyboard_offset = 1,
                                                                         callback = function(val) end
@@ -1125,7 +1177,7 @@ function GUI.createDecksMenu(chosen)
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
                                                                             Helper.createOptionSelector({label = "Joker Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeJokerSlots', current_option = (
-                                                                                    Utils.customDeckList[#Utils.customDeckList].config.joker_slot
+                                                                                    Utils.getCurrentEditingDeck().config.joker_slot
                                                                             ), multiArrows = true }),
                                                                         }
                                                                     },
@@ -1134,7 +1186,7 @@ function GUI.createDecksMenu(chosen)
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
                                                                             Helper.createOptionSelector({label = "Shop Slots", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 5), opt_callback = 'DeckCreatorModuleChangeShopSlots', current_option = (
-                                                                                    Utils.customDeckList[#Utils.customDeckList].config.shop_slots
+                                                                                    Utils.getCurrentEditingDeck().config.shop_slots
                                                                             )}),
                                                                         }
                                                                     }
@@ -1149,7 +1201,7 @@ function GUI.createDecksMenu(chosen)
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
                                                                             Helper.createOptionSelector({label = "Consumable Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeConsumableSlots', current_option = (
-                                                                                    Utils.customDeckList[#Utils.customDeckList].config.consumable_slot
+                                                                                    Utils.getCurrentEditingDeck().config.consumable_slot
                                                                             ), multiArrows = true }),
                                                                         }
                                                                     },
@@ -1158,7 +1210,7 @@ function GUI.createDecksMenu(chosen)
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
                                                                             Helper.createOptionSelector({label = "Ante Scaling", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 3), opt_callback = 'DeckCreatorModuleChangeAnteScaling', current_option = (
-                                                                                    Utils.customDeckList[#Utils.customDeckList].config.ante_scaling
+                                                                                    Utils.getCurrentEditingDeck().config.ante_scaling
                                                                             )}),
                                                                         }
                                                                     }
@@ -1167,7 +1219,7 @@ function GUI.createDecksMenu(chosen)
                                                         }
                                                     }
                                                    --[[ Helper.createOptionSelector({label = "Copy Deck Properties", scale = 0.8, options = Utils.allDeckNames(), opt_callback = 'DeckCreatorModuleChangeCopyFromDeck', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.copy_deck_config
+                                                            Utils.getCurrentEditingDeck().config.copy_deck_config
                                                     ) }),]]
                                                 }
                                             }
@@ -1203,7 +1255,7 @@ function GUI.createDecksMenu(chosen)
                                                               },
                                                               nodes = {
                                                                   Helper.createOptionSelector({label = "Starting Dollars", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeDollars', current_option = (
-                                                                          Utils.customDeckList[#Utils.customDeckList].config.dollars
+                                                                          Utils.getCurrentEditingDeck().config.dollars
                                                                   ), multiArrows = true })
                                                               }
                                                           },
@@ -1215,7 +1267,7 @@ function GUI.createDecksMenu(chosen)
                                                               },
                                                               nodes = {
                                                                   Helper.createOptionSelector({label = "Dollars per Hand", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeDollarsPerHand', current_option = (
-                                                                          Utils.customDeckList[#Utils.customDeckList].config.extra_hand_bonus
+                                                                          Utils.getCurrentEditingDeck().config.extra_hand_bonus
                                                                   ), multiArrows = true }),
                                                               }
                                                           },
@@ -1227,7 +1279,7 @@ function GUI.createDecksMenu(chosen)
                                                               },
                                                               nodes = {
                                                                   Helper.createOptionSelector({label = "Interest Amount", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeInterestAmount', current_option = (
-                                                                          Utils.customDeckList[#Utils.customDeckList].config.interest_amount
+                                                                          Utils.getCurrentEditingDeck().config.interest_amount
                                                                   ), multiArrows = true }),
                                                               }
                                                           },
@@ -1238,8 +1290,8 @@ function GUI.createDecksMenu(chosen)
                                                                   padding = 0.1
                                                               },
                                                               nodes = {
-                                                                  Helper.createOptionSelector({label = "Discount Percent", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeInterestCap', current_option = (
-                                                                          Utils.customDeckList[#Utils.customDeckList].config.discount_percent
+                                                                  Helper.createOptionSelector({label = "Discount Percent", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeDiscountPercent', current_option = (
+                                                                          Utils.getCurrentEditingDeck().config.discount_percent
                                                                   ), multiArrows = true, minorArrows = true }),
                                                               }
                                                           },
@@ -1257,7 +1309,7 @@ function GUI.createDecksMenu(chosen)
                                                                 },
                                                                 nodes = {
                                                                     Helper.createOptionSelector({label = "Reroll Cost", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRerollCost', current_option = (
-                                                                            Utils.customDeckList[#Utils.customDeckList].config.reroll_cost
+                                                                            Utils.getCurrentEditingDeck().config.reroll_cost
                                                                     ), multiArrows = true }),
                                                                 }
                                                             },
@@ -1269,7 +1321,7 @@ function GUI.createDecksMenu(chosen)
                                                                 },
                                                                 nodes = {
                                                                     Helper.createOptionSelector({label = "Dollars per Discard", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeDollarsPerDiscard', current_option = (
-                                                                            Utils.customDeckList[#Utils.customDeckList].config.extra_discard_bonus
+                                                                            Utils.getCurrentEditingDeck().config.extra_discard_bonus
                                                                     ), multiArrows = true }),
                                                                 }
                                                             },
@@ -1281,7 +1333,7 @@ function GUI.createDecksMenu(chosen)
                                                                 },
                                                                 nodes = {
                                                                     Helper.createOptionSelector({label = "Interest Cap", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeInterestCap', current_option = (
-                                                                            Utils.customDeckList[#Utils.customDeckList].config.interest_cap
+                                                                            Utils.getCurrentEditingDeck().config.interest_cap
                                                                     ), multiArrows = true }),
                                                                 }
                                                             },
@@ -1293,7 +1345,7 @@ function GUI.createDecksMenu(chosen)
                                                                 },
                                                                 nodes = {
                                                                     Helper.createOptionSelector({label = "Discard Cost", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeDiscardCost', current_option = (
-                                                                            Utils.customDeckList[#Utils.customDeckList].config.discard_cost
+                                                                            Utils.getCurrentEditingDeck().config.discard_cost
                                                                     ), multiArrows = true }),
                                                                 }
                                                             },
@@ -1322,13 +1374,13 @@ function GUI.createDecksMenu(chosen)
                                                 },
                                                 nodes = {
                                                     Helper.createOptionSelector({label = "Number of Hands", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNumHands', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.hands
+                                                            Utils.getCurrentEditingDeck().config.hands
                                                     ), multiArrows = true}),
                                                     Helper.createOptionSelector({label = "Number of Discards", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNumDiscards', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.discards
+                                                            Utils.getCurrentEditingDeck().config.discards
                                                     ), multiArrows = true }),
                                                     Helper.createOptionSelector({label = "Hand Size", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 25), opt_callback = 'DeckCreatorModuleChangeHandSize', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.hand_size
+                                                            Utils.getCurrentEditingDeck().config.hand_size
                                                     ), multiArrows = true, minorArrows = true, doubleArrowsOnly = true }),
                                                 }
                                             }
@@ -1353,19 +1405,19 @@ function GUI.createDecksMenu(chosen)
                                                 },
                                                 nodes = {
                                                     Helper.createOptionSelector({label = "Joker Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeJokerRate', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.joker_rate
+                                                            Utils.getCurrentEditingDeck().config.joker_rate
                                                     ), multiArrows = true, minorArrows = true }),
                                                     Helper.createOptionSelector({label = "Tarot Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeTarotRate', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.tarot_rate
+                                                            Utils.getCurrentEditingDeck().config.tarot_rate
                                                     ), multiArrows = true, minorArrows = true }),
                                                     Helper.createOptionSelector({label = "Planet Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangePlanetRate', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.planet_rate
+                                                            Utils.getCurrentEditingDeck().config.planet_rate
                                                     ), multiArrows = true, minorArrows = true }),
                                                     Helper.createOptionSelector({label = "Spectral Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeSpectralRate', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.spectral_rate
+                                                            Utils.getCurrentEditingDeck().config.spectral_rate
                                                     ), multiArrows = true, minorArrows = true }),
                                                     Helper.createOptionSelector({label = "Playing Card Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangePlayingCardRate', current_option = (
-                                                            Utils.customDeckList[#Utils.customDeckList].config.playing_card_rate
+                                                            Utils.getCurrentEditingDeck().config.playing_card_rate
                                                     ), multiArrows = true, minorArrows = true })
                                                 }
                                             }
@@ -1389,6 +1441,9 @@ function GUI.createDecksMenu(chosen)
                                                     dynamicDeckEditorAreaCards = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaCards,
                                                     dynamicDeckEditorAreaDeckTables = G.FUNCS.DeckCreatorModuleUpdateDynamicDeckEditorAreaDeckTables
                                                 },
+                                                postUpdateFunctions = {
+                                                    post = GUI.dynamicDeckEditorPostUpdate()
+                                                },
                                                 staticPageDefinition = GUI.deckEditorPageStatic()
                                             })
                                         end
@@ -1405,6 +1460,9 @@ function GUI.createDecksMenu(chosen)
                                                 updateFunctions = {
                                                     dynamicStartingItemsAreaCards = G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaCards,
                                                     dynamicStartingItemsAreaDeckTables = G.FUNCS.DeckCreatorModuleUpdateDynamicStartingItemsAreaDeckTables
+                                                },
+                                                postUpdateFunctions = {
+                                                    post = GUI.dynamicStartingItemsPostUpdate()
                                                 },
                                                 staticPageDefinition = GUI.startingItemsPageStatic()
                                             })
@@ -1462,7 +1520,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Double Tag on Boss win", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'double_tag'}),
+                                                                    create_toggle({label = "Double Tag on Boss win", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'double_tag'}),
                                                                 }
                                                             },
                                                             {
@@ -1472,7 +1530,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Balance Chips and Mult", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'balance_chips'}),
+                                                                    create_toggle({label = "Balance Chips and Mult", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'balance_chips'}),
                                                                 }
                                                             },
                                                             {
@@ -1482,7 +1540,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All Jokers Eternal", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'all_eternal'}),
+                                                                    create_toggle({label = "All Jokers Eternal", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'all_eternal'}),
                                                                 }
                                                             },
                                                             {
@@ -1492,7 +1550,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Boosters cost $1 more per Ante", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'booster_ante_scaling'}),
+                                                                    create_toggle({label = "Boosters cost $1 more per Ante", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'booster_ante_scaling'}),
                                                                 }
                                                             },
                                                             {
@@ -1502,7 +1560,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Hold -1 cards in hand per $5", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'minus_hand_size_per_X_dollar'}),
+                                                                    create_toggle({label = "Hold -1 cards in hand per $5", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'minus_hand_size_per_X_dollar'}),
                                                                 }
                                                             },
                                                             {
@@ -1512,7 +1570,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Gain $1 per round for each\nof your Enhanced cards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'one_dollar_for_each_enhanced_card'}),
+                                                                    create_toggle({label = "Gain $1 per round for each\nof your Enhanced cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'one_dollar_for_each_enhanced_card'}),
                                                                 }
                                                             },
                                                             {
@@ -1522,7 +1580,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Gain $10 when a Glass card breaks", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'ten_dollars_for_broken_glass'}),
+                                                                    create_toggle({label = "Gain $10 when a Glass card breaks", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'ten_dollars_for_broken_glass'}),
                                                                 }
                                                             },
                                                         }
@@ -1538,7 +1596,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "1 in 4 cards are drawn face down", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'flipped_cards'}),
+                                                                    create_toggle({label = "1 in 4 cards are drawn face down", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'flipped_cards'}),
                                                                 }
                                                             },
                                                             {
@@ -1548,7 +1606,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "All played cards become debuffed after scoring", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'debuff_played_cards'}),
+                                                                    create_toggle({label = "All played cards become debuffed after scoring", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'debuff_played_cards'}),
                                                                 }
                                                             },
                                                             {
@@ -1558,7 +1616,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Eternal Jokers appear in shop", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'enable_eternals_in_shop'}),
+                                                                    create_toggle({label = "Eternal Jokers appear in shop", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'enable_eternals_in_shop'}),
                                                                 }
                                                             },
                                                             {
@@ -1568,7 +1626,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Chips cannot exceed current $", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'chips_dollar_cap'}),
+                                                                    create_toggle({label = "Chips cannot exceed current $", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'chips_dollar_cap'}),
                                                                 }
                                                             },
                                                             {
@@ -1578,7 +1636,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Raise prices by $1 on every purchase", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'inflation'}),
+                                                                    create_toggle({label = "Raise prices by $1 on every purchase", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'inflation'}),
                                                                 }
                                                             },
                                                             {
@@ -1588,7 +1646,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Lose $1 per round for each Negative Joker", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'lose_one_dollar_per_negative_joker'}),
+                                                                    create_toggle({label = "Lose $1 per round for each Negative Joker", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'lose_one_dollar_per_negative_joker'}),
                                                                 }
                                                             },
                                                             {
@@ -1598,7 +1656,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Receive random Negative Joker when a Glass card breaks", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'negative_joker_for_broken_glass'}),
+                                                                    create_toggle({label = "Receive random Negative Joker when a Glass card breaks", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'negative_joker_for_broken_glass'}),
                                                                 }
                                                             },
                                                         }
@@ -1636,7 +1694,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "No Face Cards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'remove_faces'}),
+                                                                    create_toggle({label = "No Face Cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'remove_faces'}),
                                                                 }
                                                             },
                                                             {
@@ -1646,7 +1704,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Randomize Ranks and Suits", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_rank_suit'}),
+                                                                    create_toggle({label = "Randomize Ranks and Suits", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_rank_suit'}),
                                                                 }
                                                             },
                                                             {
@@ -1656,7 +1714,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Increase Starting Money ($0 - $100)", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_money_big'}),
+                                                                    create_toggle({label = "Increase Starting Money ($0 - $100)", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_money_big'}),
                                                                 }
                                                             },
                                                             {
@@ -1666,7 +1724,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Scramble All Money Settings", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_money'}),
+                                                                    create_toggle({label = "Scramble All Money Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_money'}),
                                                                 }
                                                             },
                                                             {
@@ -1676,7 +1734,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Scramble Appearance Rate Settings", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_appearance_rates'}),
+                                                                    create_toggle({label = "Scramble Appearance Rate Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_appearance_rates'}),
                                                                 }
                                                             },
                                                             {
@@ -1686,7 +1744,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Randomize Suits", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_suits'}),
+                                                                    create_toggle({label = "Randomize Suits", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_suits'}),
                                                                 }
                                                             },
                                                             {
@@ -1696,7 +1754,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Start with 2 Random Jokers", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'two_random_jokers'}),
+                                                                    create_toggle({label = "Start with 2 Random Jokers", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'two_random_jokers'}),
                                                                 }
                                                             },
                                                         }
@@ -1712,7 +1770,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "No Numbered Cards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'no_numbered_cards'}),
+                                                                    create_toggle({label = "No Numbered Cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'no_numbered_cards'}),
                                                                 }
                                                             },
                                                             {
@@ -1722,7 +1780,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Scramble Number of Hands & Discards", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_hands_discards'}),
+                                                                    create_toggle({label = "Scramble Number of Hands & Discards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_hands_discards'}),
                                                                 }
                                                             },
                                                             {
@@ -1732,7 +1790,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Increase Starting Money ($0 - $20)", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_money_small'}),
+                                                                    create_toggle({label = "Increase Starting Money ($0 - $20)", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_money_small'}),
                                                                 }
                                                             },
                                                             {
@@ -1742,7 +1800,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Random Starting Items", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'random_starting_items'}),
+                                                                    create_toggle({label = "Random Starting Items", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'random_starting_items'}),
                                                                 }
                                                             },
                                                             {
@@ -1752,7 +1810,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Randomly Enable Gameplay Settings", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomly_enable_gameplay'}),
+                                                                    create_toggle({label = "Randomly Enable Gameplay Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomly_enable_gameplay'}),
                                                                 }
                                                             },
                                                             {
@@ -1762,7 +1820,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Randomize Ranks", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'randomize_ranks'}),
+                                                                    create_toggle({label = "Randomize Ranks", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_ranks'}),
                                                                 }
                                                             },
                                                             {
@@ -1772,7 +1830,7 @@ function GUI.createDecksMenu(chosen)
                                                                     padding = 0.1
                                                                 },
                                                                 nodes = {
-                                                                    create_toggle({label = "Start with 1 Random Voucher", ref_table = Utils.customDeckList[#Utils.customDeckList].config, ref_value = 'one_random_voucher'}),
+                                                                    create_toggle({label = "Start with 1 Random Voucher", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'one_random_voucher'}),
                                                                 }
                                                             },
                                                         }
@@ -1820,40 +1878,40 @@ function GUI.createManageDecksMenu()
 
     G.PROFILES[G.SETTINGS.profile].MEMORY.stake = G.PROFILES[G.SETTINGS.profile].MEMORY.stake or 1
 
+    local ordered_names = {}
     local customDecks = 0
     local curIndex = 1
+    local firstDeckUUID = #Utils.customDeckList > 0 and Utils.customDeckList[1].config and Utils.customDeckList[1].config.uuid or nil
     for k,v in ipairs(G.P_CENTER_POOLS.Back) do
-        if v.config.customDeck then
+        if v.config.customDeck and (firstDeckUUID == nil or v.config.uuid == firstDeckUUID) then
             local back = Back(v)
-            if G.GAME.viewed_back == nil then
-                G.GAME.viewed_back = back
-                GUI.ManageDecksConfig.currentIndex = curIndex
+            G.GAME.viewed_back = back
+            GUI.ManageDecksConfig.currentIndex = curIndex
+            if firstDeckUUID == nil then
+                firstDeckUUID = back.effect.config.uuid
             end
+        end
+        if v.config.customDeck then
+            ordered_names[#ordered_names+1] = v.name
             customDecks = customDecks + 1
             curIndex = curIndex + 1
             table.insert(GUI.ManageDecksConfig.allCustomBacks, back)
         end
     end
 
-    local area = CardArea(
-            G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
-            G.CARD_W,
-            G.CARD_H,
-            {card_limit = 5, type = 'deck', highlight_limit = 0, deck_height = 0.75, thin_draw = 1})
-
+    local area = CardArea(G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,G.CARD_W,G.CARD_H,{card_limit = 5, type = 'deck', highlight_limit = 0, deck_height = 0.75, thin_draw = 1})
     for i = 1, customDecks do
         local card = Card(G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h, G.CARD_W, G.CARD_H, pseudorandom_element(G.P_CARDS), G.P_CENTERS.c_base, {playing_card = i, viewed_back = true})
         card.sprite_facing = 'back'
         card.facing = 'back'
         area:emplace(card)
-        -- if i == customDecks then G.sticker_card = card; card.sticker = get_deck_win_sticker(G.GAME.viewed_back.effect.center) end
     end
 
-    local ordered_names, viewed_deck = {}, 1
-    for k, v in ipairs(G.P_CENTER_POOLS.Back) do
-        if v.config.customDeck then
-            ordered_names[#ordered_names+1] = v.name
-            if v.name == G.GAME.viewed_back.name then viewed_deck = k end
+    for k,v in pairs(G.P_CENTER_POOLS.Back) do
+        if v and v.config and v.config.uuid == firstDeckUUID then
+            G.GAME.viewed_back:change_to(v)
+            G.PROFILES[G.SETTINGS.profile].MEMORY.deck = v.name
+            break
         end
     end
 
@@ -1871,7 +1929,7 @@ function GUI.createManageDecksMenu()
                 config = { align = "cm", minw = 3, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
                 nodes = {
                     {n=G.UIT.R, config={align = "cm", minh = 3.8}, nodes={
-                        create_option_cycle({options =  ordered_names, opt_callback = 'DeckCreatorModuleChangeManageDeckViewedDeck', current_option = viewed_deck, colour = G.C.RED, w = 6, mid =
+                        create_option_cycle({options =  ordered_names, opt_callback = 'DeckCreatorModuleChangeManageDeckViewedDeck', current_option = 1, colour = G.C.RED, w = 6, mid =
                         {n=G.UIT.R, config={align = "cm", minh = 3.3, minw = 6}, nodes={
                             {n=G.UIT.C, config={align = "cm", colour = G.C.BLACK, padding = 0.15, r = 0.1, emboss = 0.05}, nodes={
                                 {n=G.UIT.C, config={align = "cm"}, nodes={
@@ -1954,7 +2012,7 @@ function GUI.createManageDecksMenu()
         }
     }
     return create_UIBox_generic_options({
-        back_func = "DeckCreatorModuleBackToModsScreen",
+        back_func = "DeckCreatorModuleBackToMainMenu",
         contents = {
             {n=G.UIT.R, config={align = "cm", padding = 0, draw_layer = 1 }, nodes={
                 t
@@ -1963,71 +2021,98 @@ function GUI.createManageDecksMenu()
     })
 end
 
-function GUI.DynamicUIManager.initTab(args)
-    local updateFunctions = args.updateFunctions
-    local staticPageDefinition = args.staticPageDefinition
-    local preUpdateFunctions = args.preUpdateFunctions
-    local postUpdateFunctions = args.postUpdateFunctions
+function GUI.createBalamodMenu()
+    local scale = 0.75
+    return (create_UIBox_generic_options({
+        back_func = "DeckCreatorModuleBackToModsScreen",
+        contents = {
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0,
+                    align = "tm"
+                },
+                nodes = {
+                    create_tabs({
+                        snap_to_nav = true,
+                        colour = G.C.BOOSTER,
+                        tabs = {
+                            {
+                                label = "Deck Creator",
+                                chosen = true,
+                                tab_definition_function = function()
+                                    local modNodes = {}
 
-    if preUpdateFunctions ~= nil then
-        for _, updateFunction in pairs(preUpdateFunctions) do
-            G.E_MANAGER:add_event(Event({func = function()
-                updateFunction{cycle_config = {current_option = 1}}
-                return true
-            end}))
-        end
-    end
 
-    if updateFunctions ~= nil then
-        for _, updateFunction in pairs(updateFunctions) do
-            G.E_MANAGER:add_event(Event({func = function()
-                updateFunction{cycle_config = {current_option = 1}}
-                return true
-            end}))
-        end
-    end
+                                    -- Authors names in blue
+                                    table.insert(modNodes, {
+                                        n = G.UIT.R,
+                                        config = {
+                                            padding = 0,
+                                            align = "cm",
+                                            r = 0.1,
+                                            emboss = 0.1,
+                                            outline = 1,
+                                            padding = 0.07
+                                        },
+                                        nodes = {
+                                            {
+                                                n = G.UIT.T,
+                                                config = {
+                                                    text = "Nyoxide",
+                                                    shadow = true,
+                                                    scale = scale * 0.65,
+                                                    colour = G.C.BLUE,
+                                                }
+                                            }
+                                        }
+                                    })
 
-    if postUpdateFunctions ~= nil then
-        for _, updateFunction in pairs(postUpdateFunctions) do
-            G.E_MANAGER:add_event(Event({func = function()
-                updateFunction{cycle_config = {current_option = 1}}
-                return true
-            end}))
-        end
-    end
+                                    -- Mod description
+                                    table.insert(modNodes, {
+                                        n = G.UIT.R,
+                                        config = {
+                                            padding = 0.2,
+                                            align = "cm"
+                                        },
+                                        nodes = {
+                                            {
+                                                n = G.UIT.T,
+                                                config = {
+                                                    text = Utils.modDescription(),
+                                                    shadow = false,
+                                                    scale = scale * 0.5,
+                                                    colour = G.C.UI.TEXT_LIGHT
+                                                }
+                                            }
+                                        }
+                                    })
 
-    return GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
-end
+                                    for k,v in pairs(GUI.mainMenu()) do
+                                        table.insert(modNodes, v)
+                                    end
 
-function GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
-    return {
-        n = G.UIT.ROOT,
-        config = {
-            emboss = 0.05,
-            minh = 6,
-            r = 0.1,
-            minw = 8,
-            align = "cm",
-            padding = 0.2,
-            colour = G.C.BLACK
-        },
-        nodes = {
-            staticPageDefinition
-        }
-    }
-end
-
-function GUI.DynamicUIManager.updateDynamicAreas(uiDefinitions)
-    for id, uiDefinition in pairs(uiDefinitions) do
-        local dynamicArea = G.OVERLAY_MENU:get_UIE_by_ID(id)
-        if dynamicArea and dynamicArea.config.object then
-            dynamicArea.config.object:remove()
-            dynamicArea.config.object = UIBox{
-                definition = uiDefinition,
-                config = {offset = {x=0, y=0}, align = 'cm', parent = dynamicArea}
+                                    return {
+                                        n = G.UIT.ROOT,
+                                        config = {
+                                            emboss = 0.05,
+                                            minh = 6,
+                                            r = 0.1,
+                                            minw = 6,
+                                            align = "tm",
+                                            padding = 0.2,
+                                            colour = G.C.BLACK
+                                        },
+                                        nodes = modNodes
+                                    }
+                                end
+                            }
+                        }
+                    })
+                }
             }
-        end
-    end
+        }
+    }))
 end
 
 -- Base Deck
@@ -2044,19 +2129,30 @@ function GUI.flushDeckEditorAreas()
     if Helper.deckEditorAreas and #Helper.deckEditorAreas > 0 then
         for j = 1, #Helper.deckEditorAreas do
             Helper.deckEditorAreas[j]:remove()
+            Helper.deckEditorAreas[j] = nil
         end
     end
     Helper.deckEditorAreas = {}
+    local memoryBefore = collectgarbage("count")
+    collectgarbage("collect")
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (Flush): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
 end
 
 function GUI.dynamicDeckEditorPreUpdate()
-    if GUI.openTab ~= "Base Deck" then
+    if GUI.OpenTab ~= "Base Deck" then
         return
     end
     GUI.flushDeckEditorAreas()
-    local deckList = Utils.customDeckList[#Utils.customDeckList].config.customCardList
-    CardUtils.getCardsFromCustomCardList(deckList)
+    CardUtils.getCardsFromCustomCardList(Utils.getCurrentEditingDeck().config.customCardList)
     remove_nils(G.playing_cards)
+end
+
+function GUI.dynamicDeckEditorPostUpdate()
+    collectgarbage("collect")
 end
 
 function GUI.deckEditorPageStatic()
@@ -2127,7 +2223,7 @@ end
 
 function GUI.dynamicDeckEditorAreaCards()
 
-    if GUI.openTab ~= "Base Deck" then
+    if GUI.OpenTab ~= "Base Deck" then
         return {
             n=G.UIT.C,
             config={align = "cm", minw = 1.5, minh = 2, r = 0.1, colour = G.C.BLACK, emboss = 0.05},
@@ -2188,7 +2284,7 @@ end
 
 function GUI.dynamicDeckEditorAreaDeckTables()
 
-    if GUI.openTab ~= "Base Deck" then
+    if GUI.OpenTab ~= "Base Deck" then
         return {
             n=G.UIT.ROOT,
             config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 11.4, minh = 4.2},
@@ -2216,7 +2312,7 @@ function GUI.dynamicDeckEditorAreaDeckTables()
         table.insert(SUITS[string.sub(v.base.suit, 1, 1)], v)
     end
 
-    local xy = GUI.openTab == 'Base Deck' and 0 or 9999
+    local xy = GUI.OpenTab == 'Base Deck' and 0 or 9999
 
     for j = 1, 4 do
         if SUITS[suit_map[j]][1] then
@@ -2266,20 +2362,21 @@ function GUI.updateAllDeckEditorAreas()
     GUI.DynamicUIManager.updateDynamicAreas({
         ["dynamicDeckEditorAreaDeckTables"] = GUI.dynamicDeckEditorAreaDeckTables()
     })
+    GUI.dynamicDeckEditorPostUpdate()
 end
 
 -- Starting Items
 function GUI.dynamicStartingItemsPreUpdate()
     GUI.flushDeckEditorAreas()
-    if GUI.openTab ~= "Starting Items" then
+    if GUI.OpenTab ~= "Starting Items" then
         return
     end
 
-    local jokerList = Utils.customDeckList[#Utils.customDeckList].config.customJokerList
-    local tarotList = Utils.customDeckList[#Utils.customDeckList].config.customTarotList
-    local planetList = Utils.customDeckList[#Utils.customDeckList].config.customPlanetList
-    local spectralList = Utils.customDeckList[#Utils.customDeckList].config.customSpectralList
-    local voucherList = Utils.customDeckList[#Utils.customDeckList].config.customVoucherList
+    local jokerList = Utils.getCurrentEditingDeck().config.customJokerList
+    local tarotList = Utils.getCurrentEditingDeck().config.customTarotList
+    local planetList = Utils.getCurrentEditingDeck().config.customPlanetList
+    local spectralList = Utils.getCurrentEditingDeck().config.customSpectralList
+    local voucherList = Utils.getCurrentEditingDeck().config.customVoucherList
     CardUtils.getJokersFromCustomJokerList(jokerList)
     CardUtils.getTarotsFromCustomTarotList(tarotList)
     CardUtils.getPlanetsFromCustomPlanetList(planetList)
@@ -2291,6 +2388,10 @@ function GUI.dynamicStartingItemsPreUpdate()
     remove_nils(CardUtils.startingItems.spectrals)
     remove_nils(CardUtils.startingItems.vouchers)
     remove_nils(CardUtils.startingItems.tags)
+end
+
+function GUI.dynamicStartingItemsPostUpdate()
+    collectgarbage("collect")
 end
 
 function GUI.startingItemsPageStatic()
@@ -2365,7 +2466,7 @@ function GUI.startingItemsPageStatic()
 end
 
 function GUI.dynamicStartingItemsAreaCards()
-    if GUI.openTab ~= "Starting Items" then
+    if GUI.OpenTab ~= "Starting Items" then
         return {
             n=G.UIT.C,
             config={align = "cm", minw = 1.5, minh = 2, r = 0.1, colour = G.C.BLACK, emboss = 0.05},
@@ -2433,7 +2534,7 @@ end
 
 function GUI.dynamicStartingItemsAreaDeckTables()
 
-    if GUI.openTab ~= "Starting Items" then
+    if GUI.OpenTab ~= "Starting Items" then
         return {
             n=G.UIT.ROOT,
             config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 11.4, minh = 4.2},
@@ -2448,7 +2549,7 @@ function GUI.dynamicStartingItemsAreaDeckTables()
     G.VIEWING_DECK = true
     G.GAME.blind = FakeBlind
 
-    local xy = GUI.openTab == 'Starting Items' and 0 or 9999
+    local xy = GUI.OpenTab == 'Starting Items' and 0 or 9999
 
     -- vouchers
     local voucherArea = CardArea(
@@ -2576,6 +2677,7 @@ function GUI.updateAllStartingItemsAreas()
     GUI.DynamicUIManager.updateDynamicAreas({
         ["dynamicStartingItemsAreaDeckTables"] = GUI.dynamicStartingItemsAreaDeckTables()
     })
+    GUI.dynamicStartingItemsPostUpdate()
 end
 
 function GUI.addVoucherMenu()

@@ -2,7 +2,6 @@ local Utils = require "Utils"
 local CardUtils = require "CardUtils"
 
 local CustomDeck = {name = "", slug = "", config = {}, spritePos = {}, loc_txt = {}, unlocked = true, discovered = true}
-CustomDeck.BalamodDeckList = {}
 
 function CustomDeck:blankDeck()
     o = {}
@@ -92,9 +91,9 @@ function CustomDeck:new(name, slug, config, spritePos, loc_txt)
     self.__index = self
 
     if slug == nil or slug == "" then
-        o.slug = "b_" .. name
+        o.slug = "b_" .. name .. "_" .. (config and config.uuid or "")
     else
-        o.slug = "b_" .. slug
+        o.slug = slug
     end
 
     o.loc_txt = loc_txt
@@ -104,6 +103,17 @@ function CustomDeck:new(name, slug, config, spritePos, loc_txt)
     o.unlocked = true
     o.discovered = true
 
+    o.descLine1 = ""
+    o.descLine2 = ""
+    o.descLine3 = ""
+    o.descLine4 = ""
+    if (loc_txt and loc_txt.text and #loc_txt.text > 0) then
+        o.descLine1 = loc_txt.text[1]
+        o.descLine2 = #loc_txt.text > 1 and loc_txt.text[2] or ""
+        o.descLine3 = #loc_txt.text > 2 and loc_txt.text[3] or ""
+        o.descLine4 = #loc_txt.text > 3 and loc_txt.text[4] or ""
+    end
+
     return o
 end
 
@@ -111,17 +121,31 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
                             allPolychrome, allHolo, allFoil, allBonus, allMult, allWild, allGlass, allSteel, allStone, allGold, allLucky, enableEternalsInShop, boosterAnteScaling, chipsDollarCap, discardCost,
                             minus_hand_size_per_X_dollar, allEternal, debuffPlayedCards, flippedCards, uuid, copyDeckConfig, customCardList, customCardsSet, customJokerList, customJokersSet, customTarotList, customTarotsSet, customPlanetList, customPlanetsSet, customSpectralList, customSpectralsSet, customVoucherList, customVouchersSet)
     o = {}
+    local newUUID = uuid or Utils.uuid()
     setmetatable(o, self)
     self.__index = self
 
     o.loc_txt = loc_txt
+    if o.loc_txt and o.loc_txt.text then
+        o.descLine1 = #o.loc_txt.text > 0 and o.loc_txt.text[1] or ""
+        o.descLine2 = #o.loc_txt.text > 1 and o.loc_txt.text[2] or ""
+        o.descLine3 = #o.loc_txt.text > 2 and o.loc_txt.text[3] or ""
+        o.descLine4 = #o.loc_txt.text > 3 and o.loc_txt.text[4] or ""
+    end
     o.name = name
     if name:match("^%s*$") then
         o.name = "Custom Deck_" .. Utils.tableLength(Utils.customDeckList)
         o.loc_txt.name = o.name
     end
 
-    o.slug = "b_" .. o.name
+    for k,v in pairs(Utils.customDeckList) do
+        if v.name == o.name then
+            o.name = o.name .. " "
+            break
+        end
+    end
+
+    o.slug = "b_" .. o.name .. "_" .. newUUID
     o.spritePos = {x = 0, y = 0}
     local list = CustomDeck.getAllDeckBacks()
     if deckBackIndex ~= nil and deckBackIndex > 0 and deckBackIndex <= #list then
@@ -145,7 +169,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         custom_spectrals_set = customSpectralsSet,
         custom_vouchers_set = customVouchersSet,
         invert_back = true,
-        uuid = uuid or Utils.uuid(),
+        uuid = newUUID,
         customCardList = customCardList,
         customDeck = true,
         custom_cards_set = customCardsSet,
@@ -193,7 +217,8 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         minus_hand_size_per_X_dollar = minus_hand_size_per_X_dollar,
         all_eternal = allEternal,
         debuff_played_cards = debuffPlayedCards,
-        flipped_cards = flippedCards
+        flipped_cards = flippedCards,
+        deck_back_index = deckBackIndex
     }
 
     if dollarsPerDiscard ~= 0 then
@@ -215,15 +240,105 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     if discardCost ~= nil and discardCost > 0 then
         o.config.discard_cost = discardCost
     end
-    o:register()
+
     return o
 end
 
+function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, updateUUID)
+
+    if not deck.config and deck.effect and deck.effect.config then
+        deck.config = deck.effect.config
+    end
+
+    return CustomDeck:fullNew(
+            deck.name,
+            {name = deck.name, text = {
+                [1] = desc1 or "", [2] = desc2 or "", [3] = desc3 or "", [4] = desc4 or ""
+            }},
+            deck.config.dollars,
+            deck.config.hand_size,
+            deck.config.discards,
+            deck.config.hands,
+            deck.config.reroll_cost,
+            deck.config.joker_slot,
+            deck.config.ante_scaling,
+            deck.config.consumable_slot,
+            deck.config.extra_hand_bonus,
+            deck.config.extra_discard_bonus,
+            deck.config.joker_rate,
+            deck.config.tarot_rate,
+            deck.config.planet_rate,
+            deck.config.spectral_rate,
+            deck.config.playing_card_rate,
+            deck.config.randomize_rank_suit,
+            deck.config.remove_faces,
+            deck.config.interest_amount,
+            deck.config.interest_cap,
+            deck.config.discount_percent,
+            deck.config.edition,
+            deck.config.double_tag,
+            deck.config.balance_chips,
+            deck.config.edition_count,
+            deck.config.deck_back_index,
+            deck.config.win_ante,
+            deck.config.inflation,
+            deck.config.shop_slots,
+            deck.config.all_polychrome,
+            deck.config.all_holo,
+            deck.config.all_foil,
+            deck.config.all_bonus,
+            deck.config.all_mult,
+            deck.config.all_wild,
+            deck.config.all_glass,
+            deck.config.all_steel,
+            deck.config.all_stone,
+            deck.config.all_gold,
+            deck.config.all_lucky,
+            deck.config.enable_eternals_in_shop,
+            deck.config.booster_ante_scaling,
+            deck.config.chips_dollar_cap,
+            deck.config.discard_cost,
+            deck.config.minus_hand_size_per_X_dollar,
+            deck.config.all_eternal,
+            deck.config.debuff_played_cards,
+            deck.config.flipped_cards,
+            updateUUID and Utils.uuid() or deck.config.uuid,
+            deck.config.copy_deck_config,
+            deck.config.customCardList,
+            deck.config.custom_cards_set,
+            deck.config.customJokerList,
+            deck.config.custom_jokers_set,
+            deck.config.customTarotList,
+            deck.config.custom_tarots_set,
+            deck.config.customPlanetList,
+            deck.config.custom_planets_set,
+            deck.config.customSpectralList,
+            deck.config.custom_spectrals_set,
+            deck.config.customVoucherList,
+            deck.config.custom_vouchers_set
+    )
+end
+
 function CustomDeck:register()
-    if SMODS.BalamodMode then
-        table.insert(CustomDeck.BalamodDeckList, self)
-    else
+    if not SMODS.BalamodMode and not SMODS.Decks[self] then
         table.insert(SMODS.Decks, self)
+    end
+end
+
+function CustomDeck.unregister(deleteUUID)
+    if not SMODS.BalamodMode then
+        local deckList = SMODS.Decks
+        local removeIndex
+        for k,v in pairs(deckList) do
+            if v.config.uuid == deleteUUID then
+                removeIndex = k
+                break
+            end
+        end
+
+        if removeIndex then
+            table.remove(deckList, removeIndex)
+        end
     end
 end
 
@@ -266,7 +381,7 @@ function CustomDeck.getAllDeckBacks()
         {x=0,y=1}, -- Soul
         {x=5,y=3}, -- Question
         {x=6,y=3}, -- Question 2
-        {x=3,y=0}, -- Gold Seal
+        {x=3,y=4}, -- Gold Seal
         {x=4,y=4}, -- Purple Seal
         {x=5,y=4}, -- Red Seal
         {x=6,y=4}, -- Blue Seal

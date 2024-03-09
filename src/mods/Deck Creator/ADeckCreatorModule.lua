@@ -43,13 +43,14 @@ if mods ~= nil then
     table.insert(package.loaders, 1, customLoader)
 
     local mod = require "DeckCreator"
+    local Utils = require "Utils"
     table.insert(mods, {
         mod_id = "ADeckCreatorModule",
         name = "Deck Creator",
         version = "1.0.0",
         author = "Nyoxide",
-        menu = "DeckCreatorModuleOpenCreateDeck",
-        description = "GUI mod for creating, saving, loading, and sharing your own customizable decks!\nUse the Menu button below to create or manage your custom decks.",
+        menu = "DeckCreatorModuleOpenMainMenu",
+        description = Utils.modDescription(),
         enabled = true,
         on_enable = function()
             mod.Enable()

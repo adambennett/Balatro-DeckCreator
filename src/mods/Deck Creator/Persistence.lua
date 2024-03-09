@@ -69,7 +69,8 @@ function Persistence.loadAllDeckLists()
                         end
 
                         if file ~= "CustomDecks.txt" then
-                            deckConfig.loc_txt.text = { "Custom Deck", "imported via", "{C:attention}" .. file .. "{}", "" }
+                            deckConfig.loc_txt = deckConfig.loc_txt or {}
+                            deckConfig.loc_txt.text = deckConfig.loc_txt.text or { "Custom Deck", "imported via", file, "" }
                         end
 
                         local loadedDeck = CustomDeck.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.config, deckConfig.spritePos, deckConfig.loc_txt)
@@ -99,17 +100,32 @@ function Persistence.setUnloadedLists()
 end
 
 function Persistence.refreshDeckList()
-    if not SMODS.BalamodMode then
-        SMODS.injectDecks()
-        return
-    end
-
     local minId = 17
     local id = 0
 
-    for i, deck in ipairs(CustomDeck.BalamodDeckList) do
+
+    for _, deck in ipairs(Utils.deletedSlugs) do
+        G.P_CENTERS[deck.slug] = nil
+        table.remove(G.P_CENTER_POOLS.Back, deck.order)
+    end
+
+    local allCustomDecks = {}
+    if not SMODS.BalamodMode then
+        for i, deck in ipairs(SMODS.Decks) do
+            if not deck.config.customDeck then
+                table.insert(allCustomDecks, deck)
+            end
+        end
+    end
+    for i, deck in ipairs(Utils.customDeckList) do
+        table.insert(allCustomDecks, deck)
+    end
+
+
+    for i, deck in ipairs(allCustomDecks) do
         -- Prepare some Datas
         id = i + minId - 1
+        deck.config.centerPosition = id - 1
 
         local deck_obj = {
             stake = 1,
@@ -153,8 +169,7 @@ function Persistence.refreshDeckList()
                 end
             end
         end
-
-        Utils.log("The Deck named " .. deck.name .. " with the slug " .. deck.slug .. " have been registered at the id " .. id .. ".")
+        Utils.log("The Deck named " .. deck.name .. " with the slug " .. deck.slug .. " has been registered at the id " .. id .. ".")
     end
 end
 

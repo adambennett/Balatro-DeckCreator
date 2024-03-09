@@ -11,16 +11,16 @@ function DeckCreator.Enable()
 
     Utils.registerGlobals()
     GUI.registerGlobals()
-    GUI.registerModMenuUI()
     Helper.registerGlobals()
     Persistence.loadAllDeckLists()
     Persistence.setUnloadedLists()
+    GUI.registerModMenuUI()
 
     local CardClick = Card.click
     function Card:click()
         if GUI.DeckCreatorOpen then
             local compareProto
-            for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customCardList) do
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.customCardList) do
                 if k == self.uuid then
                     compareProto = v
                     break
@@ -29,14 +29,14 @@ function DeckCreator.Enable()
 
             if compareProto then
                 local removeIndex
-                for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customCardList) do
+                for k,v in pairs(Utils.getCurrentEditingDeck().config.customCardList) do
                     if v.value == compareProto.value and v.suit == compareProto.suit and v.edition == compareProto.edition and v.enhancement == compareProto.enhancement and v.seal == compareProto.seal then
                         removeIndex = k
                         break
                     end
                 end
                 if removeIndex ~= nil then
-                    Utils.customDeckList[#Utils.customDeckList].config.customCardList[removeIndex] = nil
+                    Utils.getCurrentEditingDeck().config.customCardList[removeIndex] = nil
                 end
             end
 
@@ -75,7 +75,7 @@ function DeckCreator.Enable()
             else
                 if self.uuid and self.uuid.type == 'voucher' then
                     local removeIndex
-                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customVoucherList) do
+                    for k,v in pairs(Utils.getCurrentEditingDeck().config.customVoucherList) do
                         if v == self.uuid.key then
                             removeIndex = k
                             break
@@ -83,7 +83,7 @@ function DeckCreator.Enable()
                     end
 
                     if removeIndex then
-                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customVoucherList, removeIndex)
+                        table.remove(Utils.getCurrentEditingDeck().config.customVoucherList, removeIndex)
                     end
 
                     self:remove()
@@ -98,7 +98,7 @@ function DeckCreator.Enable()
                     end
                 elseif self.uuid and self.uuid.type == 'joker' then
                     local removeIndex
-                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customJokerList) do
+                    for k,v in pairs(Utils.getCurrentEditingDeck().config.customJokerList) do
                         if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
@@ -106,7 +106,7 @@ function DeckCreator.Enable()
                     end
 
                     if removeIndex then
-                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customJokerList, removeIndex)
+                        table.remove(Utils.getCurrentEditingDeck().config.customJokerList, removeIndex)
                     end
 
                     self:remove()
@@ -121,7 +121,7 @@ function DeckCreator.Enable()
                     end
                 elseif self.uuid and self.uuid.type == 'tarot' then
                     local removeIndex
-                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customTarotList) do
+                    for k,v in pairs(Utils.getCurrentEditingDeck().config.customTarotList) do
                         if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
@@ -129,7 +129,7 @@ function DeckCreator.Enable()
                     end
 
                     if removeIndex then
-                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customTarotList, removeIndex)
+                        table.remove(Utils.getCurrentEditingDeck().config.customTarotList, removeIndex)
                     end
 
                     self:remove()
@@ -144,7 +144,7 @@ function DeckCreator.Enable()
                     end
                 elseif self.uuid and self.uuid.type == 'planet' then
                     local removeIndex
-                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customPlanetList) do
+                    for k,v in pairs(Utils.getCurrentEditingDeck().config.customPlanetList) do
                         if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
@@ -152,7 +152,7 @@ function DeckCreator.Enable()
                     end
 
                     if removeIndex then
-                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customPlanetList, removeIndex)
+                        table.remove(Utils.getCurrentEditingDeck().config.customPlanetList, removeIndex)
                     end
 
                     self:remove()
@@ -167,7 +167,7 @@ function DeckCreator.Enable()
                     end
                 elseif self.uuid and self.uuid.type == 'spectral' then
                     local removeIndex
-                    for k,v in pairs(Utils.customDeckList[#Utils.customDeckList].config.customSpectralList) do
+                    for k,v in pairs(Utils.getCurrentEditingDeck().config.customSpectralList) do
                         if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
                             removeIndex = k
                             break
@@ -175,7 +175,7 @@ function DeckCreator.Enable()
                     end
 
                     if removeIndex then
-                        table.remove(Utils.customDeckList[#Utils.customDeckList].config.customSpectralList, removeIndex)
+                        table.remove(Utils.getCurrentEditingDeck().config.customSpectralList, removeIndex)
                     end
 
                     self:remove()
@@ -404,7 +404,6 @@ function DeckCreator.Enable()
             args.challenge = {}
             args.challenge.jokers = {}
             args.challenge.consumables = {}
-            Utils.log("Joker list:\n" .. Utils.tableToString(deck.effect.config.customJokerList))
             for k,v in pairs(deck.effect.config.customJokerList) do
                 table.insert(args.challenge.jokers, v)
             end
@@ -447,7 +446,6 @@ function DeckCreator.Enable()
     local KeyPress = G.CONTROLLER.key_press
     function G.CONTROLLER:key_press(key)
         KeyPress(self, key)
-        -- Utils.log("Key pressed: " .. key)
         if key == 'escape' then
             GUI.CloseAllOpenFlags()
         end

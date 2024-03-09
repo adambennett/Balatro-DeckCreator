@@ -537,8 +537,6 @@ function Helper.calculateDeckEditorSums()
             }
         }
     end
-
-    -- Utils.log("rank tallies after recalculate:\n" .. Utils.tableToString(Helper.sums.rank_tallies))
 end
 
 function Helper.calculateStartingItemsSums()

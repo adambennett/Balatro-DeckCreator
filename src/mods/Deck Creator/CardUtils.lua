@@ -140,9 +140,6 @@ function CardUtils.getJokersFromCustomJokerList(deck)
         end
     end
 
-    Utils.log("StartingItems.jokers size: " .. #CardUtils.startingItems.jokers)
-    Utils.log("CardUtils.allCardsEverMade size: " .. #CardUtils.allCardsEverMade)
-
     if Utils.runMemoryChecks then
         local memoryAfter = collectgarbage("count")
         local diff = memoryAfter - memoryBefore
@@ -380,16 +377,16 @@ function CardUtils.addCardToDeck(args)
             uuid = Utils.uuid()
         }
 
-        if deckList[#deckList].config.customCardList[key] == nil then
+        if Utils.getCurrentEditingDeck().config.customCardList[key] == nil then
             newCard.key = key
-            deckList[#deckList].config.customCardList[key] = newCard
+            Utils.getCurrentEditingDeck().config.customCardList[key] = newCard
         else
-            while deckList[#deckList].config.customCardList[key .. "_" .. counter] ~= nil do
+            while Utils.getCurrentEditingDeck().config.customCardList[key .. "_" .. counter] ~= nil do
                 counter = counter + 1
             end
             local extraKey = key .. "_" .. counter
             newCard.key = extraKey
-            deckList[#deckList].config.customCardList[extraKey] = newCard
+            Utils.getCurrentEditingDeck().config.customCardList[extraKey] = newCard
         end
     end
 end
@@ -397,10 +394,10 @@ end
 function CardUtils.addItemToDeck(args)
     local deckList = args.deck_list or {}
     args.addCard = args.addCard or {}
-    args.addCard.copies = args.addCard.copies or 1
+    local copies = args.addCard and type(args.addCard) ~= 'string' and args.addCard.copies or 1
 
     local randomEdition = false
-    for i = 1, args.addCard.copies do
+    for i = 1, copies do
 
         if args.isRandomType then
 
@@ -408,7 +405,7 @@ function CardUtils.addItemToDeck(args)
             local unObtainedVouchers = {}
             for x, y in pairs(allVouchers) do
                 local foundMatch = false
-                for k,v in pairs(deckList[#deckList].config.customVoucherList) do
+                for k,v in pairs(Utils.getCurrentEditingDeck().config.customVoucherList) do
                     if v == y.id then
                         foundMatch = true
                         break
@@ -489,7 +486,7 @@ function CardUtils.addItemToDeck(args)
                 newCard = {
                     id = args.addCard.id,
                     key = args.addCard.key,
-                    copies = args.addCard.copies,
+                    copies = copies,
                     edition = args.addCard.edition,
                     pinned = args.addCard.pinned,
                     eternal = args.addCard.eternal,
@@ -510,11 +507,11 @@ function CardUtils.addItemToDeck(args)
             local editionRoll = math.random(1, 100)
             if editionRoll < 15 then
                 newCard.edition = 'negative'
-            elseif editionRoll < 25 then
+            elseif editionRoll < 20 then
                 newCard.edition = 'polychrome'
-            elseif editionRoll < 35 then
+            elseif editionRoll < 25 then
                 newCard.edition = 'holo'
-            elseif editionRoll < 45 then
+            elseif editionRoll < 30 then
                 newCard.edition = 'foil'
             else
                 newCard.edition = nil
@@ -535,7 +532,7 @@ function CardUtils.addItemToDeck(args)
             type = 'vouchers'
 
             -- return early if duplicated voucher to prevent crashes
-            for k,v in pairs(deckList[#deckList].config.customVoucherList) do
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.customVoucherList) do
                 if v == newCard then
                     return false
                 end
@@ -543,9 +540,9 @@ function CardUtils.addItemToDeck(args)
         end
 
         if newCard then
-            table.insert(deckList[#deckList].config[args.ref], newCard)
+            table.insert(Utils.getCurrentEditingDeck().config[args.ref], newCard)
             local key = 'custom_' .. type .. '_set'
-            Utils.customDeckList[#Utils.customDeckList].config[key] = true
+            Utils.getCurrentEditingDeck().config[key] = true
         end
     end
     return true

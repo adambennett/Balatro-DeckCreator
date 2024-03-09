@@ -1,7 +1,18 @@
 local Utils = {}
 
 Utils.customDeckList = {}
-Utils.runMemoryChecks = false
+Utils.runMemoryChecks = true
+Utils.EditDeckConfig = {
+    newDeck = true,
+    copyDeck = false,
+    editDeck = false,
+    deck = nil
+}
+Utils.deletedSlugs = {}
+
+function Utils.modDescription()
+    return "GUI mod for creating, saving, loading, and sharing your own customizable decks!"
+end
 
 function Utils.registerGlobals()
     G.FUNCS.LogDebug = function(message)
@@ -15,6 +26,10 @@ end
 
 function Utils.addDeckToList(newDeck)
     table.insert(Utils.customDeckList , newDeck)
+end
+
+function Utils.getCurrentEditingDeck()
+    return Utils.EditDeckConfig.deck
 end
 
 function Utils.log(message)
@@ -253,6 +268,34 @@ function Utils.tableToString(tbl, indent)
             str = str .. formatting .. "\n" .. Utils.tableToString(v, indent+1)
         else
             str = str .. formatting .. tostring(v) .. "\n"
+        end
+    end
+    return str
+end
+
+function Utils.tableToStringIgnoreKeys(tbl, ignoreKeys, indent)
+    if not indent then indent = 0 end
+    if type(tbl) ~= "table" then return tostring(tbl) end
+
+    local str = ""
+    for k, v in pairs(tbl) do
+        local skipKey = false
+        if ignoreKeys and #ignoreKeys > 0 then
+            for x,y in pairs(ignoreKeys) do
+                if y == k then
+                    skipKey = true
+                    break
+                end
+            end
+        end
+
+        if not skipKey then
+            local formatting = string.rep("  ", indent) .. k .. ": "
+            if type(v) == "table" then
+                str = str .. formatting .. "\n" .. Utils.tableToStringIgnoreKeys(v, ignoreKeys, indent+1)
+            else
+                str = str .. formatting .. tostring(v) .. "\n"
+            end
         end
     end
     return str
