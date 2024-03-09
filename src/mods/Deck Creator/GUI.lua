@@ -107,13 +107,13 @@ function GUI.registerGlobals()
         local joinedDesc = desc1 .. " " .. desc2 .. " " .. desc3 .. " " .. desc4
         Utils.EditDeckConfig.deck = CustomDeck.fullNewFromExisting(deck, joinedDesc, "", "", "", false)
 
-        Utils.EditDeckConfig.deck.config.dollars = Utils.EditDeckConfig.deck.config.dollars + 4
-        Utils.EditDeckConfig.deck.config.hand_size = Utils.EditDeckConfig.deck.config.hand_size + 8
-        Utils.EditDeckConfig.deck.config.discards = Utils.EditDeckConfig.deck.config.discards + 3
-        Utils.EditDeckConfig.deck.config.hands = Utils.EditDeckConfig.deck.config.hands + 4
-        Utils.EditDeckConfig.deck.config.joker_slot = Utils.EditDeckConfig.deck.config.joker_slot + 5
-        Utils.EditDeckConfig.deck.config.consumable_slot = Utils.EditDeckConfig.deck.config.consumable_slot + 2
-        Utils.EditDeckConfig.deck.config.interest_cap = Utils.EditDeckConfig.deck.config.interest_cap / 5
+        Utils.EditDeckConfig.deck.config.dollars = Utils.EditDeckConfig.deck.config.dollars + 8
+        Utils.EditDeckConfig.deck.config.hand_size = Utils.EditDeckConfig.deck.config.hand_size + 16
+        Utils.EditDeckConfig.deck.config.discards = Utils.EditDeckConfig.deck.config.discards + 6
+        Utils.EditDeckConfig.deck.config.hands = Utils.EditDeckConfig.deck.config.hands + 8
+        Utils.EditDeckConfig.deck.config.joker_slot = Utils.EditDeckConfig.deck.config.joker_slot + 10
+        Utils.EditDeckConfig.deck.config.consumable_slot = Utils.EditDeckConfig.deck.config.consumable_slot + 4
+        Utils.EditDeckConfig.deck.config.interest_cap = Utils.EditDeckConfig.deck.config.interest_cap / 25
         if not Utils.EditDeckConfig.deck.config.extra_hand_bonus or Utils.EditDeckConfig.deck.config.extra_hand_bonus == 0 then
             Utils.EditDeckConfig.deck.config.extra_hand_bonus = 1
         end
