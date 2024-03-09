@@ -1,7 +1,7 @@
 local Utils = {}
 
 Utils.customDeckList = {}
-Utils.runMemoryChecks = true
+Utils.runMemoryChecks = false
 Utils.EditDeckConfig = {
     newDeck = true,
     copyDeck = false,
