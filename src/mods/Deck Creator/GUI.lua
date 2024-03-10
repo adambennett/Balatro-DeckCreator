@@ -3,6 +3,7 @@ local Utils = require "Utils"
 local CustomDeck = require "CustomDeck"
 local Helper = require "GuiElementHelper"
 local CardUtils = require "CardUtils"
+local ModloaderHelper = require "ModloaderHelper"
 
 local GUI = {}
 
@@ -54,6 +55,16 @@ function GUI.registerGlobals()
         love.system.openURL("https://github.com/adambennett/Balatro-DeckCreator")
     end
 
+    if ModloaderHelper.SteamoddedLoaded then
+        local OpenModUI = G.FUNCS.openModUI_ADeckCreatorModule
+        if OpenModUI then
+            G.FUNCS.openModUI_ADeckCreatorModule = function(args)
+                ModloaderHelper.ModsMenuOpenedBy = 'Steamodded'
+                OpenModUI(args)
+            end
+        end
+    end
+
     G.FUNCS.DeckCreatorModuleCopyDeck = function(args)
         local copyFrom
         local matchUUID = G.GAME.viewed_back.effect.config.uuid
@@ -86,6 +97,7 @@ function GUI.registerGlobals()
         Utils.EditDeckConfig.copyDeck = true
         Utils.EditDeckConfig.editDeck = false
         Utils.EditDeckConfig.deck = copy
+        GUI.addCard = GUI.resetAddCard()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Main Menu")
         })
@@ -122,6 +134,7 @@ function GUI.registerGlobals()
         Utils.EditDeckConfig.newDeck = false
         Utils.EditDeckConfig.copyDeck = false
         Utils.EditDeckConfig.editDeck = true
+        GUI.addCard = GUI.resetAddCard()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Main Menu")
         })
@@ -141,7 +154,6 @@ function GUI.registerGlobals()
             table.remove(Utils.customDeckList, removeIndex)
         end
 
-        local next = G.GAME.viewed_back.effect.center.order + 1
         table.insert(Utils.deletedSlugs, { slug = G.GAME.viewed_back.effect.center.key, order = G.GAME.viewed_back.effect.center.order })
         CustomDeck.unregister(matchUUID)
         Persistence.refreshDeckList()
@@ -590,7 +602,7 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleChangeDeckBackIndex = function(args)
         local current_option_index = 1
-        for i, option in ipairs(CustomDeck.getAllDeckBackNames(false)) do
+        for i, option in ipairs(CustomDeck.getAllDeckBackNames()) do
             if option == args.to_val then
                 current_option_index = i
                 break
@@ -671,11 +683,12 @@ function GUI.registerGlobals()
         G.SETTINGS.paused = true
         GUI.CloseAllOpenFlags()
         GUI.ManageDecksConfig.manageDecksOpen = false
-        if SMODS.BalamodMode then
+        GUI.addCard = GUI.resetAddCard()
+        if ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Balamod' then
             G.FUNCS.overlay_menu({
                 definition = GUI.createBalamodMenu()
             })
-        else
+        elseif ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Steamodded' then
             G.FUNCS.overlay_menu({
                 definition = create_UIBox_mods()
             })
@@ -684,6 +697,7 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
         G.SETTINGS.paused = true
+        GUI.addCard = GUI.resetAddCard()
         G.FUNCS.overlay_menu({
             definition = G.UIDEF.mods()
         })
@@ -696,6 +710,7 @@ function GUI.registerGlobals()
         Utils.EditDeckConfig.copyDeck = false
         Utils.EditDeckConfig.editDeck = false
         Utils.EditDeckConfig.deck = CustomDeck:blankDeck()
+        GUI.addCard = GUI.resetAddCard()
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
         })
@@ -706,6 +721,8 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleOpenMainMenu = function()
         G.SETTINGS.paused = true
+        ModloaderHelper.ModsMenuOpenedBy = 'Balamod'
+        GUI.addCard = GUI.resetAddCard()
         G.FUNCS.overlay_menu({
             definition = GUI.createBalamodMenu()
         })
@@ -714,6 +731,7 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleOpenManageDecks = function()
         G.SETTINGS.paused = true
         GUI.ManageDecksConfig.manageDecksOpen = true
+        GUI.addCard = GUI.resetAddCard()
         G.FUNCS.overlay_menu({
             definition = GUI.createManageDecksMenu()
         })
@@ -776,12 +794,13 @@ function GUI.registerGlobals()
         Persistence.saveAllDecks()
         GUI.CloseAllOpenFlags()
         GUI.redrawMainMenu()
+        GUI.addCard = GUI.resetAddCard()
         G.FUNCS:exit_overlay_menu()
     end
 end
 
 function GUI.redrawMainMenu()
-    if not SMODS.BalamodMode then
+    if ModloaderHelper.SteamoddedLoaded then
         SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
     end
 end
@@ -864,7 +883,7 @@ function GUI.mainMenu()
 end
 
 function GUI.registerModMenuUI()
-    if not SMODS.BalamodMode then
+    if ModloaderHelper.SteamoddedLoaded then
         SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
     end
 end
@@ -945,7 +964,6 @@ end
 
 -- Menus
 function GUI.createAddCardsMenu()
-    GUI.addCard = GUI.resetAddCard()
     return create_UIBox_generic_options({
         back_func = "DeckCreatorModuleReopenBaseDeck",
         contents = {
@@ -1192,7 +1210,7 @@ function GUI.createDecksMenu(chosen)
                                                             }),
                                                         }
                                                     },
-                                                    create_option_cycle({label = "Card Back", scale = 0.8, options = CustomDeck.getAllDeckBackNames(false), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
+                                                    create_option_cycle({label = "Card Back", scale = 0.8, options = CustomDeck.getAllDeckBackNames(), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
                                                             Utils.getCurrentEditingDeck().config.deck_back_index
                                                     ), no_pips = true }),
                                                     Helper.createOptionSelector({label = "Winning Ante", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 50), opt_callback = 'DeckCreatorModuleChangeWinAnte', current_option = (

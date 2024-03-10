@@ -1,5 +1,6 @@
 local Utils = require "Utils"
 local CardUtils = require "CardUtils"
+local ModloaderHelper = require "ModloaderHelper"
 
 local CustomDeck = {name = "", slug = "", config = {}, spritePos = {}, loc_txt = {}, unlocked = true, discovered = true}
 
@@ -455,13 +456,13 @@ function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, update
 end
 
 function CustomDeck:register()
-    if not SMODS.BalamodMode and not SMODS.Decks[self] then
+    if ModloaderHelper.SteamoddedLoaded and not SMODS.Decks[self] then
         table.insert(SMODS.Decks, self)
     end
 end
 
 function CustomDeck.unregister(deleteUUID)
-    if not SMODS.BalamodMode then
+    if ModloaderHelper.SteamoddedLoaded then
         local deckList = SMODS.Decks
         local removeIndex
         for k,v in pairs(deckList) do
@@ -523,8 +524,8 @@ function CustomDeck.getAllDeckBacks()
     }
 end
 
-function CustomDeck.getAllDeckBackNames(includeRandom)
-    local output = {
+function CustomDeck.getAllDeckBackNames()
+    return {
         "Red",
         "Blue",
         "Yellow",
@@ -559,12 +560,9 @@ function CustomDeck.getAllDeckBackNames(includeRandom)
         "Gold Seal",
         "Purple Seal",
         "Red Seal",
-        "Blue Seal"
+        "Blue Seal",
+        "Random"
     }
-    if includeRandom then
-        table.insert(output, "Random")
-    end
-    return output
 end
 
 return CustomDeck

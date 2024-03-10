@@ -1,9 +1,8 @@
 local Utils = require "Utils"
 local CustomDeck = require "CustomDeck"
+local ModloaderHelper = require "ModloaderHelper"
 
 local Persistence = {}
-Persistence.UnloadedDeckList = {}
-Persistence.UnloadedCenters = {}
 local filename = "CustomDecks.txt"
 
 local function serializeDeck(val, depth)
@@ -88,15 +87,8 @@ function Persistence.loadAllDeckLists()
         Utils.log("No decks loaded from any files")
     else
         Utils.log(Utils.tableLength(Utils.customDeckList) .. " custom decks loaded")
-        if SMODS.BalamodMode then
-            Persistence.refreshDeckList()
-        end
+        Persistence.refreshDeckList()
     end
-end
-
-function Persistence.setUnloadedLists()
-    Persistence.UnloadedDeckList = G.P_CENTER_POOLS.Back
-    Persistence.UnloadedCenters = G.P_CENTERS
 end
 
 function Persistence.refreshDeckList()
@@ -109,8 +101,17 @@ function Persistence.refreshDeckList()
         table.remove(G.P_CENTER_POOLS.Back, deck.order)
     end
 
+    for _, deck in ipairs(Utils.disabledSlugs) do
+        G.P_CENTERS[deck.slug] = nil
+        table.remove(G.P_CENTER_POOLS.Back, deck.order)
+    end
+
+    if not ModloaderHelper.DeckCreatorLoader then
+        return
+    end
+
     local allCustomDecks = {}
-    if not SMODS.BalamodMode then
+    if ModloaderHelper.SteamoddedLoaded then
         for i, deck in ipairs(SMODS.Decks) do
             if not deck.config.customDeck then
                 table.insert(allCustomDecks, deck)

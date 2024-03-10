@@ -10,6 +10,7 @@ Utils.EditDeckConfig = {
     deck = nil
 }
 Utils.deletedSlugs = {}
+Utils.disabledSlugs = {}
 
 function Utils.log(message)
     if Utils.mode ~= "PROD" and sendDebugMessage ~= nil then
