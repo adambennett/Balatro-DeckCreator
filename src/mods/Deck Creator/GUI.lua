@@ -166,6 +166,11 @@ function GUI.registerGlobals()
         GUI.updateAllStaticModAreas(args.cycle_config.current_option)
     end
 
+    G.FUNCS.DeckCreatorModuleChangeDynamicModsPage = function(args)
+        if not args or not args.cycle_config then return end
+        GUI.updateAllDynamicModAreas(args.cycle_config.current_option)
+    end
+
     G.FUNCS.DeckCreatorModuleChangeManageDeckViewedDeck = function(args)
         for k,v in pairs(G.P_CENTER_POOLS.Back) do
             if v and v.name and v.name == args.to_val then
@@ -211,6 +216,18 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnTwo = function(args)
         GUI.DynamicUIManager.updateDynamicAreas({
             ["staticModsColumnTwo"] = GUI.dynamicStaticModsColumnTwo()
+        })
+    end
+
+    G.FUNCS.DeckCreatorModuleUpdateDynamicDynamicModsColumnOne = function(args)
+        GUI.DynamicUIManager.updateDynamicAreas({
+            ["dynamicModsColumnOne"] = GUI.dynamicDynamicModsColumnOne()
+        })
+    end
+
+    G.FUNCS.DeckCreatorModuleUpdateDynamicDynamicModsColumnTwo = function(args)
+        GUI.DynamicUIManager.updateDynamicAreas({
+            ["dynamicModsColumnTwo"] = GUI.dynamicDynamicModsColumnTwo()
         })
     end
 
@@ -413,6 +430,9 @@ function GUI.registerGlobals()
     end
     G.FUNCS.DeckCreatorModuleChangeOpenStartingItemConfigEdition = function(args)
         GUI.OpenStartingItemConfig.edition = string.lower(args.to_val)
+        if GUI.OpenStartingItemConfig.edition == 'holographic' then
+            GUI.OpenStartingItemConfig.edition = 'holo'
+        end
     end
     G.FUNCS.DeckCreatorModuleAddCardChangeRank = function(args)
         GUI.addCard.rank = args.to_val
@@ -424,6 +444,9 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleAddCardChangeEdition = function(args)
         GUI.addCard.edition = args.to_val
         GUI.addCard.editionKey = string.lower(args.to_val)
+        if GUI.addCard.editionKey == 'holographic' then
+            GUI.addCard.editionKey = 'holo'
+        end
     end
     G.FUNCS.DeckCreatorModuleAddCardChangeEnhancement = function(args)
         GUI.addCard.enhancement = args.to_val
@@ -434,6 +457,46 @@ function GUI.registerGlobals()
     end
     G.FUNCS.DeckCreatorModuleAddCardChangeCopies = function(args)
         GUI.addCard.copies = args.to_val
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeRandomPolychromeCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_polychrome_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomHolographicCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_holographic_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomFoilCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_foil_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomEditionCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_edition_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomBonusCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_bonus_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomGlassCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_glass_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomLuckyCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_lucky_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomSteelCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_steel_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomStoneCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_stone_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomWildCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_wild_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomMultCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_mult_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomGoldCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_gold_cards = args.to_val
+    end
+    G.FUNCS.DeckCreatorModuleChangeRandomEnhancementCards = function(args)
+        Utils.getCurrentEditingDeck().config.random_enhancement_cards = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeDiscardCost = function(args)
@@ -466,6 +529,10 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleChangeEnhancedDollarsPerRound = function(args)
         Utils.getCurrentEditingDeck().config.enhanced_dollars_per_round = args.to_val
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeRandomSellValueIncrease = function(args)
+        Utils.getCurrentEditingDeck().config.random_sell_value_increase = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeChanceToIncreaseDiscardCardsRank = function(args)
@@ -522,7 +589,7 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleChangeDeckBackIndex = function(args)
         local current_option_index = 1
-        for i, option in ipairs(CustomDeck.getAllDeckBackNames()) do
+        for i, option in ipairs(CustomDeck.getAllDeckBackNames(false)) do
             if option == args.to_val then
                 current_option_index = i
                 break
@@ -737,7 +804,7 @@ function GUI.mainMenu()
                     label = {" Create Deck "},
                     shadow = true,
                     scale = 0.75 * 0.5,
-                    colour = G.C.BOOSTER,
+                    colour = G.C.GREEN,
                     button = "DeckCreatorModuleOpenCreateDeck",
                     minh = 0.8,
                     minw = 8
@@ -781,7 +848,7 @@ function GUI.mainMenu()
                     label = {" Source Code "},
                     shadow = true,
                     scale = 0.75 * 0.5,
-                    colour = G.C.BOOSTER,
+                    colour = G.C.GOLD,
                     button = "DeckCreatorModuleOpenGithub",
                     minh = 0.8,
                     minw = 8
@@ -851,15 +918,6 @@ end
 function GUI.DynamicUIManager.generateBaseNode(staticPageDefinition)
     return {
         n = G.UIT.ROOT,
-        --[[config = {
-            emboss = 0.05,
-            minh = 6,
-            r = 0.1,
-            minw = 8,
-            align = "cm",
-            padding = 0.2,
-            colour = G.C.BLACK
-        },]]
         config={align = "cm", colour = G.C.BLACK,  r = 0.1},
         nodes = {
             staticPageDefinition
@@ -1129,7 +1187,7 @@ function GUI.createDecksMenu(chosen)
                                                             }),
                                                         }
                                                     },
-                                                    create_option_cycle({label = "Card Back", scale = 0.8, options = CustomDeck.getAllDeckBackNames(), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
+                                                    create_option_cycle({label = "Card Back", scale = 0.8, options = CustomDeck.getAllDeckBackNames(false), opt_callback = 'DeckCreatorModuleChangeDeckBackIndex', current_option = (
                                                             Utils.getCurrentEditingDeck().config.deck_back_index
                                                     ), no_pips = true }),
                                                     Helper.createOptionSelector({label = "Winning Ante", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 50), opt_callback = 'DeckCreatorModuleChangeWinAnte', current_option = (
@@ -1564,7 +1622,7 @@ function GUI.createDecksMenu(chosen)
                                                     colour = G.C.BLACK
                                                 },
                                                 nodes = {
-                                                    {n=G.UIT.T, config={text = "Coming soon!",colour = G.C.WHITE, scale = 2, shadow = true}}
+                                                    {n=G.UIT.T, config={text = "Coming soon!",colour = G.C.WHITE, scale = 1, shadow = true}}
                                                 }
                                             }
                                         end
@@ -1576,383 +1634,37 @@ function GUI.createDecksMenu(chosen)
                                             GUI.setOpenTab("Static Mods")
                                             return GUI.DynamicUIManager.initTab({
                                                 preUpdateFunctions = {
-                                                    init = GUI.dynamicStaticModsPreUpdate
+                                                    init = GUI.staticModsPreUpdate
                                                 },
                                                 updateFunctions = {
                                                     staticModsColumnOne = G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnOne,
                                                     staticModsColumnTwo = G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnTwo
                                                 },
                                                 postUpdateFunctions = {
-                                                    post = GUI.dynamicStaticModsPostUpdate
+                                                    post = GUI.staticModsPostUpdate
                                                 },
                                                 staticPageDefinition = GUI.staticModsPageStatic()
                                             })
                                         end
                                     },
-                                    --[[{
-
-                                        label = " Static Mods ",
-                                        chosen = chosen == "Static Mods",
-                                        tab_definition_function = function()
-                                            GUI.setOpenTab("Static Mods")
-                                            return {
-                                                n = G.UIT.ROOT,
-                                                config = {
-                                                    emboss = 0.05,
-                                                    minh = 6,
-                                                    r = 0.1,
-                                                    minw = 16,
-                                                    align = "cm",
-                                                    padding = 0.2,
-                                                    colour = G.C.BLACK
-                                                },
-                                                nodes = {
-                                                    {
-                                                        n = G.UIT.C,
-                                                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-                                                        nodes = {
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "Chance to Gain Double Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeDoubleTagPercent', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.double_tag_percent
-                                                                    ), multiArrows = true, minorArrows = true })
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "Chance to Balance Chips and Mult", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeBalancePercent', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.balance_percent
-                                                                    ), multiArrows = true, minorArrows = true }),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "Lose $X per round for each Negative Joker", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNegativeJokerMoney', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.negative_joker_money
-                                                                    ), multiArrows = true, minorArrows = true })
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Boosters cost $1 more per Ante", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'booster_ante_scaling'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Hold -1 cards in hand per $5", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'minus_hand_size_per_X_dollar'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "All played cards become debuffed after scoring", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'debuff_played_cards'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Eternal Jokers appear in shop", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'enable_eternals_in_shop'}),
-                                                                }
-                                                            },
-                                                        }
-                                                    },
-                                                    {
-                                                        n = G.UIT.C,
-                                                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-                                                        nodes = {
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "1 in X cards are drawn face down", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeFlippedCards', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.broken_glass_money
-                                                                    ), multiArrows = true, minorArrows = true })
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "Gain $X per round for each Enhanced card", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeEnhancedDollarsPerRound', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.double_tag_percent
-                                                                    ), multiArrows = true, minorArrows = true })
-
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "Gain $X when a Glass card breaks", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeBrokenGlassMoney', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.broken_glass_money
-                                                                    ), multiArrows = true, minorArrows = true })
-
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Chips cannot exceed current $", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'chips_dollar_cap'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Raise prices by $1 on every purchase", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'inflation'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "All Jokers Eternal", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'all_eternal'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Receive random Negative Joker when a Glass card breaks", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'negative_joker_for_broken_glass'}),
-                                                                }
-                                                            },
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        end
-                                    },]]
                                     {
-
                                         label = " Dynamic Mods ",
                                         chosen = chosen == "Dynamic Mods",
                                         tab_definition_function = function()
                                             GUI.setOpenTab("Dynamic Mods")
-                                            return {
-                                                n = G.UIT.ROOT,
-                                                config = {
-                                                    emboss = 0.05,
-                                                    minh = 6,
-                                                    r = 0.1,
-                                                    minw = 8,
-                                                    align = "cm",
-                                                    padding = 0.2,
-                                                    colour = G.C.BLACK
+                                            return GUI.DynamicUIManager.initTab({
+                                                preUpdateFunctions = {
+                                                    init = GUI.dynamicModsPreUpdate
                                                 },
-                                                nodes = {
-                                                    {
-                                                        n = G.UIT.C,
-                                                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-                                                        nodes = {
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "No Face Cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'remove_faces'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Randomize Ranks and Suits", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_rank_suit'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Start with 1 Random Voucher", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'one_random_voucher'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Scramble All Money Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_money_settings'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Scramble Appearance Rate Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_appearance_rates'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Randomize Suits", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_suits'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "Start with X Random Jokers", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomStartingJokers', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.randomize_money_configurable
-                                                                    ), multiArrows = true, minorArrows = true })
-                                                                }
-                                                            },
-                                                        }
-                                                    },
-                                                    {
-                                                        n = G.UIT.C,
-                                                        config = { align = "cm", minw = 3, padding = 0.2, r = 0.1, colour = G.C.CLEAR },
-                                                        nodes = {
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "No Numbered Cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'no_numbered_cards'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Scramble Number of Hands & Discards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_hands_discards'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Increase Starting Money ($0 - $20)", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_money_small'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Random Starting Items", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'random_starting_items'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Randomly Enable Gameplay Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomly_enable_gameplay_settings'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    create_toggle({label = "Randomize Ranks", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_ranks'}),
-                                                                }
-                                                            },
-                                                            {
-                                                                n = G.UIT.R,
-                                                                config = {
-                                                                    align = "cm",
-                                                                    padding = 0.1
-                                                                },
-                                                                nodes = {
-                                                                    Helper.createOptionSelector({label = "Increase Starting Money ($0 - $X)", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomizeMoneyConfigurable', current_option = (
-                                                                            Utils.getCurrentEditingDeck().config.randomize_money_configurable
-                                                                    ), multiArrows = true, minorArrows = true })
-                                                                }
-                                                            },
-                                                        }
-                                                    },
-                                                }
-                                            }
+                                                updateFunctions = {
+                                                    dynamicModsColumnOne = G.FUNCS.DeckCreatorModuleUpdateDynamicDynamicModsColumnOne,
+                                                    dynamicModsColumnTwo = G.FUNCS.DeckCreatorModuleUpdateDynamicDynamicModsColumnTwo
+                                                },
+                                                postUpdateFunctions = {
+                                                    post = GUI.dynamicModsPostUpdate
+                                                },
+                                                staticPageDefinition = GUI.dynamicModsPageStatic()
+                                            })
                                         end
                                     }
                                 }
@@ -2249,7 +1961,7 @@ function GUI.flushDeckEditorAreas()
         end
     end
     Helper.deckEditorAreas = {}
-    local memoryBefore = collectgarbage("count")
+    local memoryBefore = Utils.checkMemory()
     collectgarbage("collect")
     if Utils.runMemoryChecks then
         local memoryAfter = collectgarbage("count")
@@ -2376,7 +2088,7 @@ function GUI.dynamicDeckEditorAreaCards()
                             tally_sprite({ x = 1, y = 1 }, { { string = Helper.sums.suit_tallies['Diamonds'], colour = flip_col }, { string = Helper.sums.mod_suit_tallies['Diamonds'], colour = G.C.BLUE } }, { localize('Diamonds', 'suits_plural') }),
                         } },
                         { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
-                            {n=G.UIT.C, config={align = "cm", padding = 0.07,force_focus = true,  focus_args = {type = 'tally_sprite'}, tooltip = {text = "All cards"}}, nodes={
+                            {n=G.UIT.C, config={align = "cm", padding = 0.07,force_focus = true,  focus_args = {type = 'tally_sprite'}}, nodes={
                                 {n=G.UIT.R, config={align = "cm"}, nodes={
                                     {n=G.UIT.T, config={text = "Total: " .. Helper.sums.total_cards,colour = flip_col, scale = 0.4, shadow = true}},
                                 }},
@@ -3147,28 +2859,19 @@ function GUI.addTagMenu()
 end
 
 -- Static Mods
-function GUI.dynamicStaticModsPreUpdate()
+function GUI.staticModsPreUpdate()
     if GUI.OpenTab ~= "Static Mods" then
         return
     end
 end
 
-function GUI.dynamicStaticModsPostUpdate()
+function GUI.staticModsPostUpdate()
     collectgarbage("collect")
 end
 
 function GUI.staticModsPageStatic()
     return {
         n = G.UIT.ROOT,
-        --[[config = {
-            emboss = 0.05,
-            minh = 3,
-            r = 0.1,
-            minw = 3,
-            align = "cm",
-            padding = 0.2,
-            colour = G.C.BLACK
-        },]]
         config={
             align = "cm",
             colour = G.C.CLEAR,
@@ -3176,15 +2879,6 @@ function GUI.staticModsPageStatic()
             minh = 7,
             minw = 22
         },
-        --[[config={
-            align = "cm",
-            r = 0.1,
-            emboss = 0.05,
-            colour = G.C.BLACK,
-            padding = 0.2,
-            minh = 8,
-            minw = 22
-        },]]
         nodes = {
 
             {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
@@ -3211,7 +2905,7 @@ function GUI.staticModsPageStatic()
                 }
             }},
             {n=G.UIT.R, config={align = "cm", padding = 0.1 }, nodes={
-                create_option_cycle({label = "", scale = 0.8, options = { "Page 1/4", "Page 2/4", "Page 3/4", "Page 4/4"}, opt_callback = 'DeckCreatorModuleChangeStaticModsPage', current_option = 1, no_pips = false }),
+                create_option_cycle({label = "", scale = 0.8, options = { "Page 1/4", "Page 2/4", "Page 3/4", "Page 4/4"}, opt_callback = 'DeckCreatorModuleChangeStaticModsPage', current_option = 1, no_pips = true }),
             }}
         }
     }
@@ -3270,16 +2964,15 @@ function GUI.dynamicStaticModsColumnTwo(page)
 end
 
 function GUI.updateAllStaticModAreas(page)
-    GUI.dynamicStaticModsPreUpdate()
+    GUI.staticModsPreUpdate()
     GUI.DynamicUIManager.updateDynamicAreas({
         ["staticModsColumnOne"] = GUI.dynamicStaticModsColumnOne(page)
     })
     GUI.DynamicUIManager.updateDynamicAreas({
         ["staticModsColumnTwo"] = GUI.dynamicStaticModsColumnTwo(page)
     })
-    GUI.dynamicStaticModsPostUpdate()
+    GUI.staticModsPostUpdate()
 end
-
 
 function GUI.staticModsPageOneColumnOne()
     return {
@@ -3576,7 +3269,9 @@ function GUI.staticModsPageFourColumnOne()
                 padding = 0.1
             },
             nodes = {
-
+                Helper.createOptionSelector({label = "Add $X of Sell Value to a random Joker at the end of round", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeRandomSellValueIncrease', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_sell_value_increase
+                ), multiArrows = true, minorArrows = true })
             }
         },
         {
@@ -3624,7 +3319,7 @@ function GUI.staticModsPageFourColumnTwo()
                 padding = 0.1
             },
             nodes = {
-                Helper.createOptionSelector({label = "Draw on Play or Discard", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeDrawToHandSize', current_option = (
+                Helper.createOptionSelector({label = "Number of Cards to Draw on Play or Discard", scale = 0.8, options = Utils.generateBoundedIntegerListWithNoneOption(1, 9999), opt_callback = 'DeckCreatorModuleChangeDrawToHandSize', current_option = (
                         Utils.getCurrentEditingDeck().config.draw_to_hand_size
                 ), multiArrows = true, minorArrows = true })
             }
@@ -3647,6 +3342,455 @@ function GUI.staticModsPageFourColumnTwo()
             },
             nodes = {
 
+            }
+        },
+    }
+end
+
+-- Dynamic Mods
+function GUI.dynamicModsPreUpdate()
+    if GUI.OpenTab ~= "Dynamic Mods" then
+        return
+    end
+end
+
+function GUI.dynamicModsPostUpdate()
+    collectgarbage("collect")
+end
+
+function GUI.dynamicModsPageStatic()
+    return {
+        n = G.UIT.ROOT,
+        config={
+            align = "cm",
+            colour = G.C.CLEAR,
+            padding = 0.2,
+            minh = 7,
+            minw = 10
+        },
+        nodes = {
+            {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+                {
+                    n = G.UIT.C,
+                    config = { align = "cm", padding = 0.2, r = 0.1, colour = G.C.CLEAR, minh = 3, minw = 10 },
+                    nodes = {
+
+                        {n=G.UIT.R, config={align = "cm", padding = 0.1, minh = 3, minw = 2}, nodes={
+                            {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={}},
+                            {n=G.UIT.O, config={padding = 2, id = 'dynamicModsColumnOne', object = Moveable()}},
+                        }},
+                    }
+                },
+                {
+                    n = G.UIT.C,
+                    config = { align = "cm", padding = 0.2, r = 0.1, colour = G.C.CLEAR, minh = 3, minw = 10 },
+                    nodes = {
+                        {n=G.UIT.R, config={align = "cm", padding = 0.1, minh = 3, minw = 2}, nodes={
+                            {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={}},
+                            {n=G.UIT.O, config={padding = 2, id = 'dynamicModsColumnTwo', object = Moveable()}},
+                        }},
+                    }
+                }
+            }},
+            {n=G.UIT.R, config={align = "cm", padding = 0.1 }, nodes={
+                create_option_cycle({label = "", scale = 0.8, options = { "Page 1/4", "Page 2/4", "Page 3/4", "Page 4/4"}, opt_callback = 'DeckCreatorModuleChangeDynamicModsPage', current_option = 1, no_pips = true }),
+            }}
+        }
+    }
+end
+
+function GUI.dynamicDynamicModsColumnOne(page)
+
+    if GUI.OpenTab ~= "Dynamic Mods" then
+        return {
+            n=G.UIT.ROOT,
+            config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
+            nodes={}
+        }
+    end
+
+    local output = GUI.dynamicModsPageOneColumnOne()
+    if page == 2 then
+        output = GUI.dynamicModsPageTwoColumnOne()
+    elseif page == 3 then
+        output = GUI.dynamicModsPageThreeColumnOne()
+    elseif page == 4 then
+        output = GUI.dynamicModsPageFourColumnOne()
+    end
+
+    return {
+        n=G.UIT.ROOT,
+        config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
+        nodes=output
+    }
+end
+
+function GUI.dynamicDynamicModsColumnTwo(page)
+
+    if GUI.OpenTab ~= "Dynamic Mods" then
+        return {
+            n=G.UIT.ROOT,
+            config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
+            nodes={}
+        }
+    end
+
+    local output = GUI.dynamicModsPageOneColumnTwo()
+    if page == 2 then
+        output = GUI.dynamicModsPageTwoColumnTwo()
+    elseif page == 3 then
+        output = GUI.dynamicModsPageThreeColumnTwo()
+    elseif page == 4 then
+        output = GUI.dynamicModsPageFourColumnTwo()
+    end
+
+    return {
+        n=G.UIT.ROOT,
+        config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
+        nodes=output
+    }
+end
+
+function GUI.updateAllDynamicModAreas(page)
+    GUI.dynamicModsPreUpdate()
+    GUI.DynamicUIManager.updateDynamicAreas({
+        ["dynamicModsColumnOne"] = GUI.dynamicDynamicModsColumnOne(page)
+    })
+    GUI.DynamicUIManager.updateDynamicAreas({
+        ["dynamicModsColumnTwo"] = GUI.dynamicDynamicModsColumnTwo(page)
+    })
+    GUI.dynamicModsPostUpdate()
+end
+
+function GUI.dynamicModsPageOneColumnOne()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                create_toggle({label = "No Face Cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'remove_faces'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                create_toggle({label = "Randomize Suits", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_suits'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                create_toggle({label = "Randomize Ranks and Suits", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_rank_suit'}),
+            }
+        }
+    }
+end
+
+function GUI.dynamicModsPageOneColumnTwo()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                create_toggle({label = "No Numbered Cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'no_numbered_cards'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                create_toggle({label = "Randomize Ranks", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_ranks'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                create_toggle({label = "Start with 1 Random Voucher", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'one_random_voucher'}),
+            }
+        }
+    }
+end
+
+function GUI.dynamicModsPageTwoColumnOne()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Polychrome", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomPolychromeCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_polychrome_cards
+                ), multiArrows = true, minorArrows = true })
+
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Holographic", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomHolographicCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_holographic_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "Start with X Random Jokers", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomStartingJokers', current_option = (
+                        Utils.getCurrentEditingDeck().config.randomize_money_configurable
+                ), multiArrows = true, minorArrows = true })
+            }
+        }
+    }
+end
+
+function GUI.dynamicModsPageTwoColumnTwo()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+
+                Helper.createOptionSelector({label = "X Random Cards become Foil", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomFoilCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_foil_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+
+                Helper.createOptionSelector({label = "X Random Cards gain a Random Edition", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomEditionCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_edition_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "Increase Starting Money ($0 - $X)", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomizeMoneyConfigurable', current_option = (
+                        Utils.getCurrentEditingDeck().config.randomize_money_configurable
+                ), multiArrows = true, minorArrows = true })
+            }
+        }
+    }
+end
+
+function GUI.dynamicModsPageThreeColumnOne()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Bonus", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomBonusCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_bonus_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Glass", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomGlassCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_glass_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Lucky", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomLuckyCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_lucky_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        }
+    }
+end
+
+function GUI.dynamicModsPageThreeColumnTwo()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Steel", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomSteelCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_steel_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Stone", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomStoneCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_stone_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Wild", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomWildCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_wild_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        }
+    }
+end
+
+function GUI.dynamicModsPageFourColumnOne()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Mult", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomMultCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_mult_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards become Gold", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomGoldCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_gold_cards
+                ), multiArrows = true, minorArrows = true })
+                --create_toggle({label = "Scramble Number of Hands & Discards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_hands_discards'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                --create_toggle({label = "Scramble All Money Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_money_settings'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+               -- create_toggle({label = "Random Starting Items", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'random_starting_items'}),
+            }
+        },
+    }
+end
+
+function GUI.dynamicModsPageFourColumnTwo()
+    return {
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                Helper.createOptionSelector({label = "X Random Cards gain Random Enhancement", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeRandomEnhancementCards', current_option = (
+                        Utils.getCurrentEditingDeck().config.random_enhancement_cards
+                ), multiArrows = true, minorArrows = true })
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                --create_toggle({label = "Increase Starting Money ($0 - $20)", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_money_small'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                --create_toggle({label = "Scramble Appearance Rate Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomize_appearance_rates'}),
+            }
+        },
+        {
+            n = G.UIT.R,
+            config = {
+                align = "cm",
+                padding = 0.1
+            },
+            nodes = {
+                --create_toggle({label = "Randomly Enable Gameplay Settings", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'randomly_enable_gameplay_settings'}),
             }
         },
     }

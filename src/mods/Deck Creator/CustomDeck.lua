@@ -106,9 +106,23 @@ function CustomDeck:blankDeck()
         full_price_consumables = false,
         chip_reduction_percent = 0,
         mult_reduction_percent = 0,
-        draw_to_hand_size = 5,
+        draw_to_hand_size = "--",
         chance_to_increase_discard_cards_rank = 0,
-        chance_to_increase_drawn_cards_rank = 0
+        chance_to_increase_drawn_cards_rank = 0,
+        random_sell_value_increase = 0,
+        random_polychrome_cards = 0,
+        random_holographic_cards = 0,
+        random_foil_cards = 0,
+        random_edition_cards = 0,
+        random_bonus_cards = 0,
+        random_glass_cards = 0,
+        random_lucky_cards = 0,
+        random_steel_cards = 0,
+        random_stone_cards = 0,
+        random_wild_cards = 0,
+        random_mult_cards = 0,
+        random_gold_cards = 0,
+        random_enhancement_cards = 0,
     }
 
     return o
@@ -153,7 +167,8 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
                             broken_glass_money, enhanced_dollars_per_round, negative_joker_money, negative_joker_for_broken_glass, balance_percent, double_tag_percent, randomize_ranks, randomize_suits, no_numbered_cards,
                             randomize_money_configurable, randomize_money_small, randomize_money_settings, randomize_appearance_rates, random_starting_jokers, randomize_hands_discards, random_starting_items,
                             randomly_enable_gameplay_settings, one_random_voucher, doubled_probabilities, halved_probabilities, negative_tag_percent, mega_standard_tag_percent, full_price_jokers, full_price_consumables,
-                            chip_reduction_percent, mult_reduction_percent, draw_to_hand_size, chance_to_increase_discard_cards_rank, chance_to_increase_drawn_cards_rank)
+                            chip_reduction_percent, mult_reduction_percent, draw_to_hand_size, chance_to_increase_discard_cards_rank, chance_to_increase_drawn_cards_rank, random_sell_value_increase, random_gold_cards,
+                            random_polychrome_cards, random_holographic_cards, random_foil_cards, random_edition_cards, random_bonus_cards, random_glass_cards, random_lucky_cards, random_steel_cards, random_stone_cards, random_wild_cards, random_mult_cards, random_enhancement_cards)
     o = {}
     local newUUID = uuid or Utils.uuid()
     setmetatable(o, self)
@@ -281,8 +296,21 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         mult_reduction_percent = mult_reduction_percent,
         draw_to_hand_size = draw_to_hand_size,
         chance_to_increase_discard_cards_rank = chance_to_increase_discard_cards_rank,
-        chance_to_increase_drawn_cards_rank = chance_to_increase_drawn_cards_rank
-
+        chance_to_increase_drawn_cards_rank = chance_to_increase_drawn_cards_rank,
+        random_sell_value_increase = random_sell_value_increase,
+        random_polychrome_cards = random_polychrome_cards,
+        random_holographic_cards = random_holographic_cards,
+        random_foil_cards = random_foil_cards,
+        random_edition_cards = random_edition_cards,
+        random_bonus_cards = random_bonus_cards,
+        random_glass_cards = random_glass_cards,
+        random_lucky_cards = random_lucky_cards,
+        random_steel_cards = random_steel_cards,
+        random_stone_cards = random_stone_cards,
+        random_wild_cards = random_wild_cards,
+        random_mult_cards = random_mult_cards,
+        random_enhancement_cards = random_enhancement_cards,
+        random_gold_cards = random_gold_cards,
     }
 
     if dollarsPerDiscard ~= 0 then
@@ -408,7 +436,21 @@ function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, update
             deck.config.mult_reduction_percent,
             deck.config.draw_to_hand_size,
             deck.config.chance_to_increase_discard_cards_rank,
-            deck.config.chance_to_increase_drawn_cards_rank
+            deck.config.chance_to_increase_drawn_cards_rank,
+            deck.config.random_sell_value_increase,
+            deck.config.random_gold_cards,
+            deck.config.random_polychrome_cards,
+            deck.config.random_holographic_cards,
+            deck.config.random_foil_cards,
+            deck.config.random_edition_cards,
+            deck.config.random_bonus_cards,
+            deck.config.random_glass_cards,
+            deck.config.random_lucky_cards,
+            deck.config.random_steel_cards,
+            deck.config.random_stone_cards,
+            deck.config.random_wild_cards,
+            deck.config.random_mult_cards,
+            deck.config.random_enhancement_cards
     )
 end
 
@@ -481,8 +523,8 @@ function CustomDeck.getAllDeckBacks()
     }
 end
 
-function CustomDeck.getAllDeckBackNames()
-    return {
+function CustomDeck.getAllDeckBackNames(includeRandom)
+    local output = {
         "Red",
         "Blue",
         "Yellow",
@@ -517,9 +559,12 @@ function CustomDeck.getAllDeckBackNames()
         "Gold Seal",
         "Purple Seal",
         "Red Seal",
-        "Blue Seal",
-        "Random"
+        "Blue Seal"
     }
+    if includeRandom then
+        table.insert(output, "Random")
+    end
+    return output
 end
 
 return CustomDeck

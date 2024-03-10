@@ -11,13 +11,42 @@ CardUtils.startingItems = {
     tags = {}
 }
 
+local function shuffleDeck(deck)
+    for i = #deck, 2, -1 do
+        local j = math.random(i)
+        deck[i], deck[j] = deck[j], deck[i]
+    end
+end
+
+local function applyAbilities(deck, abilitiesCount, abilities, isEdition)
+    local applied = 0
+    for _, card in ipairs(deck) do
+        if applied >= abilitiesCount then break end
+        if isEdition then
+            if not card.edition then
+                card.edition = abilities[math.random(#abilities)]
+                if card.edition == 'holographic' then
+                    card.edition = 'holo'
+                end
+                applied = applied + 1
+            end
+        else
+            if not card.enhancement then
+                card.enhancement = abilities[math.random(#abilities)]
+                applied = applied + 1
+            end
+        end
+    end
+end
+
 function CardUtils.initializeCustomCardList(deckObj)
-    local deck = deckObj.effect.config.customCardList
-    local randomizeRanks = deckObj.effect.config.randomize_ranks
-    local randomizeSuits = deckObj.effect.config.randomize_suits
-    local randomizeRankAndSuits = deckObj.effect.config.randomize_rank_suit
-    local noFaces = deckObj.effect.config.remove_faces
-    local noNumbered = deckObj.effect.config.no_numbered_cards
+    local config = deckObj.effect.config
+    local deck = config.customCardList
+    local randomizeRanks = config.randomize_ranks
+    local randomizeSuits = config.randomize_suits
+    local randomizeRankAndSuits = config.randomize_rank_suit
+    local noFaces = config.remove_faces
+    local noNumbered = config.no_numbered_cards
     G.playing_cards = {}
     G.deck.cards = {}
     local card_protos = {}
@@ -48,6 +77,35 @@ function CardUtils.initializeCustomCardList(deckObj)
                 seal = v.seal ~= "None" and v.seal or nil
             }
         end
+    end
+
+    shuffleDeck(card_protos)
+
+    local editionAbilities = {'polychrome', 'holographic', 'foil'}
+    local editionCounts = {
+        config.random_polychrome_cards,
+        config.random_holographic_cards,
+        config.random_foil_cards
+    }
+    for i, ability in ipairs(editionAbilities) do
+        applyAbilities(card_protos, editionCounts[i], {ability}, true, true)
+    end
+
+    local enhancementAbilities = {'m_bonus', 'm_glass', 'm_lucky', 'm_steel', 'm_stone', 'm_wild', 'm_mult', 'm_gold'}
+    local enhancementCounts = {
+        config.random_bonus_cards, config.random_glass_cards, config.random_lucky_cards,
+        config.random_steel_cards, config.random_stone_cards, config.random_wild_cards,
+        config.random_mult_cards, config.random_gold_cards
+    }
+    for i, ability in ipairs(enhancementAbilities) do
+        applyAbilities(card_protos, enhancementCounts[i], {ability}, false)
+    end
+
+    if config.random_edition_cards > 0 then
+        applyAbilities(card_protos, config.random_edition_cards, editionAbilities, true)
+    end
+    if config.random_enhancement_cards > 0 then
+        applyAbilities(card_protos, config.random_enhancement_cards, enhancementAbilities, false)
     end
 
     for k, v in ipairs(card_protos) do
@@ -109,7 +167,7 @@ function CardUtils.getCardsFromCustomCardList(deck)
         }
     end
 
-    local memoryBefore = collectgarbage("count")
+    local memoryBefore = Utils.checkMemory()
     for k, v in ipairs(card_protos) do
         local _card = Card(999, 999, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
         _card.uuid = v.key
@@ -118,9 +176,10 @@ function CardUtils.getCardsFromCustomCardList(deck)
         table.insert(G.playing_cards, _card)
         table.insert(CardUtils.allCardsEverMade, _card)
     end
-    local memoryAfter = collectgarbage("count")
-    local diff = memoryAfter - memoryBefore
+
     if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
         Utils.log("MEMORY CHECK (CardCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
     end
 end
@@ -129,7 +188,7 @@ function CardUtils.getJokersFromCustomJokerList(deck)
     CardUtils.flushStartingItems('jokers')
     CardUtils.startingItems.jokers = {}
 
-    local memoryBefore = collectgarbage("count")
+    local memoryBefore = Utils.checkMemory()
 
     for j = 1, #deck do
         local center
@@ -173,7 +232,7 @@ function CardUtils.getTarotsFromCustomTarotList(deck)
     CardUtils.flushStartingItems('tarots')
     CardUtils.startingItems.tarots = {}
 
-    local memoryBefore = collectgarbage("count")
+    local memoryBefore = Utils.checkMemory()
 
     for j = 1, #deck do
         local center
@@ -211,7 +270,7 @@ function CardUtils.getPlanetsFromCustomPlanetList(deck)
     CardUtils.flushStartingItems('planets')
     CardUtils.startingItems.planets = {}
 
-    local memoryBefore = collectgarbage("count")
+    local memoryBefore = Utils.checkMemory()
 
     for j = 1, #deck do
         local center
@@ -249,7 +308,7 @@ function CardUtils.getSpectralsFromCustomSpectralList(deck)
     CardUtils.flushStartingItems('spectrals')
     CardUtils.startingItems.spectrals = {}
 
-    local memoryBefore = collectgarbage("count")
+    local memoryBefore = Utils.checkMemory()
 
     for j = 1, #deck do
         local center
@@ -288,7 +347,7 @@ function CardUtils.getVouchersFromCustomVoucherList(deck)
     CardUtils.flushStartingItems('vouchers')
     CardUtils.startingItems.vouchers = {}
 
-    local memoryBefore = collectgarbage("count")
+    local memoryBefore = Utils.checkMemory()
 
     for j = 1, #deck do
         local center
@@ -367,6 +426,9 @@ function CardUtils.addCardToDeck(args)
                 local randomEdition = list[math.random(1, #list)]
                 generatedCard.edition = randomEdition
                 generatedCard.editionKey = randomEdition ~= "None" and string.lower(randomEdition) or nil
+                if generatedCard.editionKey and generatedCard.editionKey == 'holographic' then
+                    generatedCard.editionKey = 'holo'
+                end
             else
                 generatedCard.edition = "None"
             end

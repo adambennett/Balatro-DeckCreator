@@ -16,6 +16,25 @@ function DeckCreator.Enable()
     Persistence.setUnloadedLists()
     GUI.registerModMenuUI()
 
+
+
+    local EndRound = end_round
+    function end_round()
+        EndRound()
+
+        local deck = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config or nil
+        if deck.customDeck then
+            if G.jokers and G.jokers.cards and #G.jokers.cards > 0 and deck.random_sell_value_increase and deck.random_sell_value_increase > 0 then
+                local list = G.jokers.cards
+                local rand = list[math.random(1, #list)]
+                if rand.set_cost then
+                    rand.ability.extra_value = (rand.ability.extra_value or 0) + deck.random_sell_value_increase
+                    rand:set_cost()
+                end
+            end
+        end
+    end
+
     local DrawCard = draw_card
     function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
         if card and from == G.hand and to == G.discard and G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank and G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank > 0 then
@@ -63,7 +82,7 @@ function DeckCreator.Enable()
 
     local DrawFromDeckToHand = G.FUNCS.draw_from_deck_to_hand
     G.FUNCS.draw_from_deck_to_hand = function(e)
-        if G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.draw_to_hand_size and
+        if G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.draw_to_hand_size and G.GAME.selected_back.effect.config.draw_to_hand_size ~= "--" and
                 not (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and
                 (G.GAME.current_round.hands_played > 0 or G.GAME.current_round.discards_used > 0) then
             e = math.min(#G.deck.cards, G.GAME.selected_back.effect.config.draw_to_hand_size)
@@ -179,11 +198,12 @@ function DeckCreator.Enable()
 
             self:remove()
 
-            local memoryBefore = collectgarbage("count")
+            local memoryBefore = Utils.checkMemory()
             GUI.updateAllDeckEditorAreas()
-            local memoryAfter = collectgarbage("count")
-            local diff = memoryAfter - memoryBefore
+
             if Utils.runMemoryChecks then
+                local memoryAfter = collectgarbage("count")
+                local diff = memoryAfter - memoryBefore
                 Utils.log("MEMORY CHECK (UpdateDynamicAreas - Deck Editor): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
             end
             return
@@ -225,7 +245,7 @@ function DeckCreator.Enable()
 
                     self:remove()
 
-                    local memoryBefore = collectgarbage("count")
+                    local memoryBefore = Utils.checkMemory()
                     GUI.updateAllStartingItemsAreas()
 
                     if Utils.runMemoryChecks then
@@ -248,7 +268,7 @@ function DeckCreator.Enable()
 
                     self:remove()
 
-                    local memoryBefore = collectgarbage("count")
+                    local memoryBefore = Utils.checkMemory()
                     GUI.updateAllStartingItemsAreas()
 
                     if Utils.runMemoryChecks then
@@ -271,7 +291,7 @@ function DeckCreator.Enable()
 
                     self:remove()
 
-                    local memoryBefore = collectgarbage("count")
+                    local memoryBefore = Utils.checkMemory()
                     GUI.updateAllStartingItemsAreas()
 
                     if Utils.runMemoryChecks then
@@ -294,7 +314,7 @@ function DeckCreator.Enable()
 
                     self:remove()
 
-                    local memoryBefore = collectgarbage("count")
+                    local memoryBefore = Utils.checkMemory()
                     GUI.updateAllStartingItemsAreas()
 
                     if Utils.runMemoryChecks then
@@ -317,7 +337,7 @@ function DeckCreator.Enable()
 
                     self:remove()
 
-                    local memoryBefore = collectgarbage("count")
+                    local memoryBefore = Utils.checkMemory()
                     GUI.updateAllStartingItemsAreas()
 
                     if Utils.runMemoryChecks then
@@ -381,9 +401,6 @@ function DeckCreator.Enable()
                             end
                         end
                         loopMax = loopMax - 1
-                    end
-                    if loopMax == 0 then
-                        Utils.log("One random voucher: reached loopMax")
                     end
 
                     if randomVouch ~= nil then
@@ -722,11 +739,24 @@ function DeckCreator.Enable()
             if deck.effect.config.custom_cards_set then
                 CardUtils.initializeCustomCardList(deck)
             else
-                local randomizeRanks = deck.effect.config.randomize_ranks
-                local randomizeSuits = deck.effect.config.randomize_suits
-                local noNumbered = deck.effect.config.no_numbered_cards
-                if randomizeRanks or randomizeSuits or noNumbered then
-                    deck.effect.config.customCardList = CardUtils.standardCardSet()
+                local config = deck.effect.config
+                local randomizeRanks = config.randomize_ranks
+                local randomizeSuits = config.randomize_suits
+                local noNumbered = config.no_numbered_cards
+                local poly = config.random_polychrome_cards
+                local holo = config.random_holographic_cards
+                local foil = config.random_foil_cards
+                local edition = config.random_edition_cards
+                local bonus = config.random_bonus_cards
+                local glass = config.random_glass_cards
+                local lucky = config.random_lucky_cards
+                local steel = config.random_steel_cards
+                local stone = config.random_stone_cards
+                local wild = config.random_wild_cards
+                local mult = config.random_mult_cards
+                local enhance = config.random_enhancement_cards
+                if randomizeRanks or randomizeSuits or noNumbered or poly > 0 or holo > 0 or foil > 0 or edition > 0 or bonus > 0 or glass > 0 or lucky > 0 or steel > 0 or stone > 0 or wild > 0 or mult > 0 or enhance > 0 then
+                    config.customCardList = CardUtils.standardCardSet()
                     CardUtils.initializeCustomCardList(deck)
                 end
             end

@@ -1,5 +1,6 @@
 local Utils = {}
 
+Utils.mode = "dev"
 Utils.customDeckList = {}
 Utils.runMemoryChecks = false
 Utils.EditDeckConfig = {
@@ -11,9 +12,16 @@ Utils.EditDeckConfig = {
 Utils.deletedSlugs = {}
 
 function Utils.log(message)
-    if sendDebugMessage ~= nil then
+    if Utils.mode ~= "PROD" and sendDebugMessage ~= nil then
         sendDebugMessage("DeckCreatorMod: " .. message)
     end
+end
+
+function Utils.checkMemory()
+    if Utils.runMemoryChecks then
+        return collectgarbage("count")
+    end
+    return 0
 end
 
 function Utils.modDescription()
@@ -109,6 +117,17 @@ end
 
 function Utils.generateBoundedIntegerList(min, max)
     local list = {}
+    for i = min, max do
+        table.insert(list, i)
+    end
+    return list
+end
+
+function Utils.generateBoundedIntegerListWithNoneOption(min, max, noneString)
+    noneString = noneString or '--'
+    local list = {
+        noneString
+    }
     for i = min, max do
         table.insert(list, i)
     end
