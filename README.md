@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Deck Creator is a small tool for the game Balatro that allows users to create, save, load, and even share custom decks. Currently only some basic options are provided, but future updates should add more functionality. I'm open to suggestions and contributions!
+Deck Creator is a small tool for the game Balatro that allows users to create, save, load, and even share custom decks. I'm open to suggestions and contributions!
 
 ## Requirements
 
@@ -29,7 +29,7 @@ This project is licensed under the GNU General Public License. This ensures that
 
 ## Screenshots
 
-Create Deck Button
+Create Deck Button    
 ![CreateDeckButton](screenshots/CreateDeckButton.PNG)
 
 
@@ -37,8 +37,12 @@ Main Menu
 ![MainMenu](screenshots/MainMenu.PNG)
 
 
+Manage Decks Menu
+![ManageDecksMenu](screenshots/ManageDecksMenu.PNG)
+
+
 General Options
-![General](screenshots/General.PNG)
+![GeneralOptions](screenshots/GeneralOptions.PNG)
 
 
 Money Options
@@ -52,10 +56,16 @@ Hands & Discards Options
 Appearance Rate Options
 ![AppearanceRates](screenshots/AppearanceRates.PNG)
 
+Deck Editor
+![DeckEditor](screenshots/DeckEditor.PNG)
 
-Gameplay Options
-![Gameplay](screenshots/Gameplay.PNG)
+Starting Items
+![StartingItems](screenshots/StartingItems.PNG)
 
 
-Deck Modification Options
-![DeckMods](screenshots/DeckMods.PNG)
+Static Mods
+![StaticMods](screenshots/StaticMods.PNG)
+
+
+Dynamic Mods
+![DynamicMods](screenshots/DynamicMods.PNG)
