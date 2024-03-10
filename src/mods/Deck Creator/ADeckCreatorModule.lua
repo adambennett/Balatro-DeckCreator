@@ -1,6 +1,6 @@
 --- STEAMODDED HEADER
 --- MOD_NAME: Deck Creator
---- MOD_ID: DeckCreatorModule
+--- MOD_ID: ADeckCreatorModule
 --- MOD_AUTHOR: [Nyoxide]
 --- MOD_DESCRIPTION: GUI mod for creating, saving, loading, and sharing your own customizable decks!
 
@@ -26,9 +26,40 @@ local function customLoader(moduleName)
     return "\nNo module found: " .. moduleName
 end
 
+-- Steamodded
+if SMODS == nil or SMODS.INIT == nil then
+    SMODS = {}
+    SMODS.BalamodMode = true
+    SMODS.INIT = {}
+end
 function SMODS.INIT.DeckCreatorModule()
+    SMODS.BalamodMode = false
     table.insert(package.loaders, 1, customLoader)
-    require "DeckCreator".LoadCustomDecks()
+    require "DeckCreator".Enable()
+end
+
+-- Balamod
+if mods ~= nil then
+    table.insert(package.loaders, 1, customLoader)
+
+    local mod = require "DeckCreator"
+    local Utils = require "Utils"
+    table.insert(mods, {
+        mod_id = "ADeckCreatorModule",
+        name = "Deck Creator",
+        version = "1.0.0",
+        author = "Nyoxide",
+        menu = "DeckCreatorModuleOpenMainMenu",
+        description = Utils.modDescription(),
+        enabled = true,
+        on_enable = function()
+            mod.Enable()
+        end,
+        on_disable = function()
+            mod.Disable()
+        end
+    })
+
 end
 
 ----------------------------------------------
