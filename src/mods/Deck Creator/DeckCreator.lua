@@ -17,6 +17,22 @@ function DeckCreator.Enable()
     Persistence.loadAllDeckLists()
     GUI.registerModMenuUI()
 
+    local LoadProfile = G.FUNCS.load_profile
+    G.FUNCS.load_profile = function(delete_prof_data)
+        LoadProfile(delete_prof_data)
+        G.E_MANAGER:add_event(Event({
+            delay = 0.5,
+            no_delete = true,
+            blockable = true,
+            blocking = false,
+            func = function()
+                Persistence.refreshDeckList()
+                Utils.log("Back list after reset list:\n" .. Utils.tableToString(G.P_CENTER_POOLS.Back))
+                return true
+            end
+        }))
+    end
+
     local EndRound = end_round
     function end_round()
         EndRound()
