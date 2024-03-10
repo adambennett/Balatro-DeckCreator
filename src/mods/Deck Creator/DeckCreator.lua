@@ -16,8 +16,6 @@ function DeckCreator.Enable()
     Persistence.setUnloadedLists()
     GUI.registerModMenuUI()
 
-
-
     local EndRound = end_round
     function end_round()
         EndRound()
@@ -780,6 +778,7 @@ function DeckCreator.Enable()
         KeyPress(self, key)
         if key == 'escape' then
             GUI.CloseAllOpenFlags()
+            GUI.ManageDecksConfig.manageDecksOpen = false
         end
         if key == '`' and G.DEBUG then
             G.DEBUG = false

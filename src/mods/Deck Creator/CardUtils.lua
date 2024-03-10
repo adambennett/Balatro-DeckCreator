@@ -39,6 +39,91 @@ local function applyAbilities(deck, abilitiesCount, abilities, isEdition)
     end
 end
 
+local function applyRandomAbilities(card_protos, config)
+    -- Define edition and enhancement abilities
+    local editionAbilities = {'polychrome', 'holographic', 'foil'}
+    local enhancementAbilities = {'m_bonus', 'm_glass', 'm_lucky', 'm_steel', 'm_stone', 'm_wild', 'm_mult', 'm_gold'}
+
+    -- Combine edition and enhancement abilities with their counts
+    local abilities = {
+        {name = 'polychrome', count = config.random_polychrome_cards, isEdition = true},
+        {name = 'holographic', count = config.random_holographic_cards, isEdition = true},
+        {name = 'foil', count = config.random_foil_cards, isEdition = true},
+        {name = 'm_bonus', count = config.random_bonus_cards, isEdition = false},
+        {name = 'm_mult', count = config.random_mult_cards, isEdition = false},
+        {name = 'm_wild', count = config.random_wild_cards, isEdition = false},
+        {name = 'm_glass', count = config.random_glass_cards, isEdition = false},
+        {name = 'm_steel', count = config.random_steel_cards, isEdition = false},
+        {name = 'm_stone', count = config.random_stone_cards, isEdition = false},
+        {name = 'm_gold', count = config.random_gold_cards, isEdition = false},
+        {name = 'm_lucky', count = config.random_lucky_cards, isEdition = false},
+        {name = 'random_edition', count = config.random_edition_cards, pool = editionAbilities, isEdition = true},
+        {name = 'random_enhancement', count = config.random_enhancement_cards, pool = enhancementAbilities, isEdition = false},
+    }
+
+    -- Function to apply a random ability from a pool
+    local function applyRandomAbilityFromPool(card, pool, isEdition)
+        local ability = pool[math.random(#pool)]
+        if isEdition then
+            card.edition = ability
+        else
+            card.enhancement = ability
+        end
+    end
+
+    -- Function to apply an ability to a card
+    local function applyAbilityToCard(card, ability)
+        if ability.pool then -- If it's a random pool selection
+            applyRandomAbilityFromPool(card, ability.pool, ability.isEdition)
+        else -- Directly apply named ability
+            if ability.isEdition then
+                card.edition = ability.name
+            else
+                card.enhancement = ability.name
+            end
+        end
+    end
+
+    -- Function to check if there are still abilities to apply
+    local function remainingAbilities(abilities)
+        for _, ability in ipairs(abilities) do
+            if ability.count > 0 then
+                return true
+            end
+        end
+        return false
+    end
+
+    -- Main loop for applying abilities
+    while remainingAbilities(abilities) do
+        -- Filter for abilities that still have counts > 0
+        local availableAbilities = {}
+        for _, ability in ipairs(abilities) do
+            if ability.count > 0 then
+                table.insert(availableAbilities, ability)
+            end
+        end
+
+        -- Randomly select an ability to apply
+        local abilityToApply = availableAbilities[math.random(#availableAbilities)]
+
+        -- Attempt to apply the selected ability to a random card
+        local applied = false
+        for _, card in ipairs(card_protos) do
+            if abilityToApply.isEdition and not card.edition or not abilityToApply.isEdition and not card.enhancement then
+                applyAbilityToCard(card, abilityToApply)
+                abilityToApply.count = abilityToApply.count - 1
+                applied = true
+                break -- Break after applying to one card to re-evaluate available abilities
+            end
+        end
+
+        if not applied then
+            break -- If we can't apply the ability, exit the loop
+        end
+    end
+end
+
 function CardUtils.initializeCustomCardList(deckObj)
     local config = deckObj.effect.config
     local deck = config.customCardList
@@ -80,33 +165,7 @@ function CardUtils.initializeCustomCardList(deckObj)
     end
 
     shuffleDeck(card_protos)
-
-    local editionAbilities = {'polychrome', 'holographic', 'foil'}
-    local editionCounts = {
-        config.random_polychrome_cards,
-        config.random_holographic_cards,
-        config.random_foil_cards
-    }
-    for i, ability in ipairs(editionAbilities) do
-        applyAbilities(card_protos, editionCounts[i], {ability}, true, true)
-    end
-
-    local enhancementAbilities = {'m_bonus', 'm_glass', 'm_lucky', 'm_steel', 'm_stone', 'm_wild', 'm_mult', 'm_gold'}
-    local enhancementCounts = {
-        config.random_bonus_cards, config.random_glass_cards, config.random_lucky_cards,
-        config.random_steel_cards, config.random_stone_cards, config.random_wild_cards,
-        config.random_mult_cards, config.random_gold_cards
-    }
-    for i, ability in ipairs(enhancementAbilities) do
-        applyAbilities(card_protos, enhancementCounts[i], {ability}, false)
-    end
-
-    if config.random_edition_cards > 0 then
-        applyAbilities(card_protos, config.random_edition_cards, editionAbilities, true)
-    end
-    if config.random_enhancement_cards > 0 then
-        applyAbilities(card_protos, config.random_enhancement_cards, enhancementAbilities, false)
-    end
+    applyRandomAbilities(card_protos, config)
 
     for k, v in ipairs(card_protos) do
         local _card = Card(G.deck.T.x, G.deck.T.y, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])

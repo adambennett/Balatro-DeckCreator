@@ -11,6 +11,7 @@ GUI.DynamicUIManager = {}
 GUI.DeckCreatorOpen = false
 GUI.StartingItemsOpen = false
 GUI.ManageDecksConfig = {
+    manageDecksOpen = false,
     allCustomBacks = {},
     currentIndex = 1
 }
@@ -669,6 +670,7 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleBackToMainMenu = function()
         G.SETTINGS.paused = true
         GUI.CloseAllOpenFlags()
+        GUI.ManageDecksConfig.manageDecksOpen = false
         if SMODS.BalamodMode then
             G.FUNCS.overlay_menu({
                 definition = GUI.createBalamodMenu()
@@ -689,6 +691,7 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleOpenCreateDeck = function()
         G.SETTINGS.paused = true
+        GUI.ManageDecksConfig.manageDecksOpen = false
         Utils.EditDeckConfig.newDeck = true
         Utils.EditDeckConfig.copyDeck = false
         Utils.EditDeckConfig.editDeck = false
@@ -710,6 +713,7 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleOpenManageDecks = function()
         G.SETTINGS.paused = true
+        GUI.ManageDecksConfig.manageDecksOpen = true
         G.FUNCS.overlay_menu({
             definition = GUI.createManageDecksMenu()
         })
@@ -767,6 +771,7 @@ function GUI.registerGlobals()
             Utils.addDeckToList(newDeck)
         end
 
+        GUI.ManageDecksConfig.manageDecksOpen = false
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         GUI.CloseAllOpenFlags()
@@ -1123,7 +1128,7 @@ end
 function GUI.createDecksMenu(chosen)
     chosen = chosen or "Main Menu"
     return create_UIBox_generic_options({
-        back_func = "DeckCreatorModuleBackToMainMenu",
+        back_func = GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
         contents = {
             {
                 n = G.UIT.R,
