@@ -6,6 +6,8 @@ local CardUtils = require "CardUtils"
 local ModloaderHelper = require "ModloaderHelper"
 
 local DeckCreator = {}
+DeckCreator.hadPaintbrush = false
+DeckCreator.hadPalette = false
 
 function DeckCreator.Enable()
 
@@ -410,16 +412,22 @@ function DeckCreator.Enable()
 
         local hadRerollSurplus = false
         local hadRerollGlut = false
+        DeckCreator.hadPaintbrush = false
+        DeckCreator.hadPalette = false
         if self.effect.config.customDeck then
             local config = self.effect.config
             config.vouchers = config.vouchers or {}
             for k,v in pairs(config.customVoucherList) do
-                if v ~= 'v_reroll_surplus' and v ~= 'v_reroll_glut' then
+                if v ~= 'v_reroll_surplus' and v ~= 'v_reroll_glut' and v ~= 'v_paint_brush' and v ~= 'v_palette' then
                     table.insert(config.vouchers, v)
                 elseif v == 'v_reroll_surplus' then
                     hadRerollSurplus = true
                 elseif v == 'v_reroll_glut' then
                     hadRerollGlut = true
+                elseif v == 'v_paint_brush' then
+                    DeckCreator.hadPaintbrush = true
+                elseif v == 'v_palette' then
+                    DeckCreator.hadPalette = true
                 end
             end
 
@@ -444,6 +452,10 @@ function DeckCreator.Enable()
                             hadRerollSurplus = true
                         elseif randomVouch == 'v_reroll_glut' then
                             hadRerollGlut = true
+                        elseif randomVouch == 'v_paint_brush' then
+                            DeckCreator.hadPaintbrush = true
+                        elseif randomVouch == 'v_palette' then
+                            DeckCreator.hadPalette = true
                         else
                             table.insert(config.vouchers, randomVouch)
                         end
@@ -451,7 +463,7 @@ function DeckCreator.Enable()
                 end
             end
 
-            if #config.vouchers == 0 and not hadRerollGlut and not hadRerollSurplus then config.vouchers = nil end
+            if #config.vouchers == 0 and not hadRerollGlut and not hadRerollSurplus and not DeckCreator.hadPaintbrush and not DeckCreator.hadPalette then config.vouchers = nil end
 
             if config.randomize_money_configurable and config.randomize_money_configurable > 0 then
                 local moneyRoll = math.random(0, config.randomize_money_configurable)
@@ -805,6 +817,20 @@ function DeckCreator.Enable()
                 for k, v in pairs(G.GAME.probabilities) do
                     G.GAME.probabilities[k] = v/2
                 end
+            end
+
+            if DeckCreator.hadPaintbrush then
+                local v = 'v_paint_brush'
+                G.GAME.used_vouchers[v] = true
+                G.GAME.starting_voucher_count = (G.GAME.starting_voucher_count or 0) + 1
+                G.hand:change_size(1)
+            end
+
+            if DeckCreator.hadPalette then
+                local v = 'v_palette'
+                G.GAME.used_vouchers[v] = true
+                G.GAME.starting_voucher_count = (G.GAME.starting_voucher_count or 0) + 1
+                G.hand:change_size(1)
             end
         end
 
