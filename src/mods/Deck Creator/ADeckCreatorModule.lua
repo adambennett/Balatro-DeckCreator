@@ -26,31 +26,18 @@ local function customLoader(moduleName)
     return "\nNo module found: " .. moduleName
 end
 
--- Steamodded
-if SMODS == nil or SMODS.INIT == nil then
-    SMODS = {}
-    SMODS.BalamodMode = true
-    SMODS.INIT = {}
-end
-function SMODS.INIT.DeckCreatorModule()
-    SMODS.BalamodMode = false
-    table.insert(package.loaders, 1, customLoader)
-    require "DeckCreator".Enable()
-end
-
 -- Balamod
 if mods ~= nil then
     table.insert(package.loaders, 1, customLoader)
-
     local mod = require "DeckCreator"
-    local Utils = require "Utils"
+    require "ModloaderHelper".BalamodLoaded = true
     table.insert(mods, {
         mod_id = "ADeckCreatorModule",
         name = "Deck Creator",
         version = "1.0.0",
         author = "Nyoxide",
         menu = "DeckCreatorModuleOpenMainMenu",
-        description = Utils.modDescription(),
+        description = require "Utils".modDescription(),
         enabled = true,
         on_enable = function()
             mod.Enable()
@@ -59,7 +46,17 @@ if mods ~= nil then
             mod.Disable()
         end
     })
+end
+if SMODS == nil or SMODS.INIT == nil then
+    SMODS = {}
+    SMODS.INIT = {}
+end
 
+-- Steamodded
+function SMODS.INIT.DeckCreatorModule()
+    table.insert(package.loaders, 1, customLoader)
+    require "ModloaderHelper".SteamoddedLoaded = true
+    require "DeckCreator".Enable()
 end
 
 ----------------------------------------------

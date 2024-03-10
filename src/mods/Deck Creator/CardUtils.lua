@@ -18,27 +18,6 @@ local function shuffleDeck(deck)
     end
 end
 
-local function applyAbilities(deck, abilitiesCount, abilities, isEdition)
-    local applied = 0
-    for _, card in ipairs(deck) do
-        if applied >= abilitiesCount then break end
-        if isEdition then
-            if not card.edition then
-                card.edition = abilities[math.random(#abilities)]
-                if card.edition == 'holographic' then
-                    card.edition = 'holo'
-                end
-                applied = applied + 1
-            end
-        else
-            if not card.enhancement then
-                card.enhancement = abilities[math.random(#abilities)]
-                applied = applied + 1
-            end
-        end
-    end
-end
-
 local function applyRandomAbilities(card_protos, config)
     -- Define edition and enhancement abilities
     local editionAbilities = {'polychrome', 'holographic', 'foil'}
@@ -168,7 +147,8 @@ function CardUtils.initializeCustomCardList(deckObj)
     applyRandomAbilities(card_protos, config)
 
     for k, v in ipairs(card_protos) do
-        local _card = Card(G.deck.T.x, G.deck.T.y, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
+        G.playing_card = (G.playing_card and G.playing_card + 1) or 1
+        local _card = Card(G.deck.T.x, G.deck.T.y, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'], {playing_card = G.playing_card})
         if v.edition then _card:set_edition({[v.edition] = true}, true, true) end
         if v.seal then _card:set_seal(v.seal, true, true) end
         G.deck:emplace(_card)

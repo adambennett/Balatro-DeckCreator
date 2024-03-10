@@ -3,18 +3,37 @@ local GUI = require "GUI"
 local Helper = require "GuiElementHelper"
 local Utils = require "Utils"
 local CardUtils = require "CardUtils"
+local ModloaderHelper = require "ModloaderHelper"
 
 local DeckCreator = {}
-DeckCreator.Unloaded = false
+DeckCreator.hadPaintbrush = false
+DeckCreator.hadPalette = false
 
 function DeckCreator.Enable()
 
+    ModloaderHelper.DeckCreatorLoader = true
+    Utils.disabledSlugs = {}
     Utils.registerGlobals()
     GUI.registerGlobals()
     Helper.registerGlobals()
     Persistence.loadAllDeckLists()
-    Persistence.setUnloadedLists()
     GUI.registerModMenuUI()
+
+    local LoadProfile = G.FUNCS.load_profile
+    G.FUNCS.load_profile = function(delete_prof_data)
+        LoadProfile(delete_prof_data)
+        G.E_MANAGER:add_event(Event({
+            delay = 0.5,
+            no_delete = true,
+            blockable = true,
+            blocking = false,
+            func = function()
+                Persistence.refreshDeckList()
+                Utils.log("Back list after reset list:\n" .. Utils.tableToString(G.P_CENTER_POOLS.Back))
+                return true
+            end
+        }))
+    end
 
     local EndRound = end_round
     function end_round()
@@ -33,30 +52,51 @@ function DeckCreator.Enable()
         end
     end
 
-    local DrawCard = draw_card
-    function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
-        if card and from == G.hand and to == G.discard and G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank and G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank > 0 then
-            local chance = G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank
+    local DrawCardFrom = CardArea.draw_card_from
+    function CardArea:draw_card_from(area, stay_flipped, discarded_only)
+        local isCustomDeckWithRankIncOnDraw = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and G.GAME.selected_back.effect.config.chance_to_increase_drawn_cards_rank and G.GAME.selected_back.effect.config.chance_to_increase_drawn_cards_rank > 0 or false
+        if isCustomDeckWithRankIncOnDraw and (self and area and self == G.hand and area == G.deck) and area:is(CardArea) then
+            local chance = G.GAME.selected_back.effect.config.chance_to_increase_drawn_cards_rank
             local rankIncreaseRoll = chance == 100 and 0 or math.random(1, 100)
             if rankIncreaseRoll <= chance then
-                G.E_MANAGER:add_event(Event({trigger = 'immediate',delay = 0.1,func = function()
-                    local suit_prefix = string.sub(card.base.suit, 1, 1)..'_'
-                    local rank_suffix = card.base.id == 14 and 2 or math.min(card.base.id+1, 14)
-                    if rank_suffix < 10 then rank_suffix = tostring(rank_suffix)
-                    elseif rank_suffix == 10 then rank_suffix = 'T'
-                    elseif rank_suffix == 11 then rank_suffix = 'J'
-                    elseif rank_suffix == 12 then rank_suffix = 'Q'
-                    elseif rank_suffix == 13 then rank_suffix = 'K'
-                    elseif rank_suffix == 14 then rank_suffix = 'A'
+                local card = area:remove_card(nil, discarded_only)
+                if card then
+                    local stay_flipped = G.GAME and G.GAME.blind and G.GAME.blind:stay_flipped(self, card)
+                    if (self == G.hand) and G.GAME.modifiers.flipped_cards then
+                        if pseudorandom(pseudoseed('flipped_card')) < 1/G.GAME.modifiers.flipped_cards then
+                            stay_flipped = true
+                        end
                     end
-                    card:set_base(G.P_CARDS[suit_prefix..rank_suffix])
+
+                    G.E_MANAGER:add_event(Event({trigger = 'immediate',delay = 0.1,func = function()
+                        local suit_prefix = string.sub(card.base.suit, 1, 1)..'_'
+                        local rank_suffix = card.base.id == 14 and 2 or math.min(card.base.id+1, 14)
+                        if rank_suffix < 10 then rank_suffix = tostring(rank_suffix)
+                        elseif rank_suffix == 10 then rank_suffix = 'T'
+                        elseif rank_suffix == 11 then rank_suffix = 'J'
+                        elseif rank_suffix == 12 then rank_suffix = 'Q'
+                        elseif rank_suffix == 13 then rank_suffix = 'K'
+                        elseif rank_suffix == 14 then rank_suffix = 'A'
+                        end
+                        card:set_base(G.P_CARDS[suit_prefix..rank_suffix])
+
+                        return true
+                    end }))
+
+                    self:emplace(card, nil, stay_flipped)
                     return true
-                end }))
+                end
             end
         end
 
-        if card and from == G.deck and to == G.hand and G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.chance_to_increase_drawn_cards_rank and G.GAME.selected_back.effect.config.chance_to_increase_drawn_cards_rank > 0 then
-            local chance = G.GAME.selected_back.effect.config.chance_to_increase_drawn_cards_rank
+        return DrawCardFrom(self, area, stay_flipped, discarded_only)
+    end
+
+    local DrawCard = draw_card
+    function draw_card(from, to, percent, dir, sort, card, delay, mute, stay_flipped, vol, discarded_only)
+
+        if card and from == G.hand and to == G.discard and G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank and G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank > 0 then
+            local chance = G.GAME.selected_back.effect.config.chance_to_increase_discard_cards_rank
             local rankIncreaseRoll = chance == 100 and 0 or math.random(1, 100)
             if rankIncreaseRoll <= chance then
                 G.E_MANAGER:add_event(Event({trigger = 'immediate',delay = 0.1,func = function()
@@ -372,16 +412,22 @@ function DeckCreator.Enable()
 
         local hadRerollSurplus = false
         local hadRerollGlut = false
+        DeckCreator.hadPaintbrush = false
+        DeckCreator.hadPalette = false
         if self.effect.config.customDeck then
             local config = self.effect.config
             config.vouchers = config.vouchers or {}
             for k,v in pairs(config.customVoucherList) do
-                if v ~= 'v_reroll_surplus' and v ~= 'v_reroll_glut' then
+                if v ~= 'v_reroll_surplus' and v ~= 'v_reroll_glut' and v ~= 'v_paint_brush' and v ~= 'v_palette' then
                     table.insert(config.vouchers, v)
                 elseif v == 'v_reroll_surplus' then
                     hadRerollSurplus = true
                 elseif v == 'v_reroll_glut' then
                     hadRerollGlut = true
+                elseif v == 'v_paint_brush' then
+                    DeckCreator.hadPaintbrush = true
+                elseif v == 'v_palette' then
+                    DeckCreator.hadPalette = true
                 end
             end
 
@@ -406,6 +452,10 @@ function DeckCreator.Enable()
                             hadRerollSurplus = true
                         elseif randomVouch == 'v_reroll_glut' then
                             hadRerollGlut = true
+                        elseif randomVouch == 'v_paint_brush' then
+                            DeckCreator.hadPaintbrush = true
+                        elseif randomVouch == 'v_palette' then
+                            DeckCreator.hadPalette = true
                         else
                             table.insert(config.vouchers, randomVouch)
                         end
@@ -413,7 +463,7 @@ function DeckCreator.Enable()
                 end
             end
 
-            if #config.vouchers == 0 and not hadRerollGlut and not hadRerollSurplus then config.vouchers = nil end
+            if #config.vouchers == 0 and not hadRerollGlut and not hadRerollSurplus and not DeckCreator.hadPaintbrush and not DeckCreator.hadPalette then config.vouchers = nil end
 
             if config.randomize_money_configurable and config.randomize_money_configurable > 0 then
                 local moneyRoll = math.random(0, config.randomize_money_configurable)
@@ -672,7 +722,7 @@ function DeckCreator.Enable()
         return chips, mult
     end
 
-    if SMODS.BalamodMode then
+    if ModloaderHelper.BalamodLoaded then
         local RunSetup = G.UIDEF.run_setup
         G.UIDEF.run_setup = function(from_game_over)
             Persistence.refreshDeckList()
@@ -684,7 +734,7 @@ function DeckCreator.Enable()
     function Game:start_run(args)
         local deck = self.GAME.viewed_back
 
-        if deck.effect.config.customDeck then
+        if deck and deck.effect and deck.effect.config and deck.effect.config.customDeck then
             args = args or {}
             args.challenge = {}
             args.challenge.jokers = {}
@@ -768,6 +818,20 @@ function DeckCreator.Enable()
                     G.GAME.probabilities[k] = v/2
                 end
             end
+
+            if DeckCreator.hadPaintbrush then
+                local v = 'v_paint_brush'
+                G.GAME.used_vouchers[v] = true
+                G.GAME.starting_voucher_count = (G.GAME.starting_voucher_count or 0) + 1
+                G.hand:change_size(1)
+            end
+
+            if DeckCreator.hadPalette then
+                local v = 'v_palette'
+                G.GAME.used_vouchers[v] = true
+                G.GAME.starting_voucher_count = (G.GAME.starting_voucher_count or 0) + 1
+                G.hand:change_size(1)
+            end
         end
 
         return originalResult
@@ -779,6 +843,7 @@ function DeckCreator.Enable()
         if key == 'escape' then
             GUI.CloseAllOpenFlags()
             GUI.ManageDecksConfig.manageDecksOpen = false
+            GUI.addCard = GUI.resetAddCard()
         end
         if key == '`' and G.DEBUG then
             G.DEBUG = false
@@ -787,15 +852,18 @@ function DeckCreator.Enable()
         end
     end
 
-    if not SMODS.BalamodMode then
+    if ModloaderHelper.SteamoddedLoaded then
         SMODS.Sprite:new("itemIcons", SMODS.findModByID("ADeckCreatorModule").path, "ItemIcons.png", 18, 18, "asset_atli"):register()
     end
 end
 
 function DeckCreator.Disable()
-    G.P_CENTERS = Persistence.UnloadedCenters
-    G.P_CENTER_POOLS.Back = Persistence.UnloadedDeckList
-    DeckCreator.Unloaded = true
+    ModloaderHelper.DeckCreatorLoader = false
+    Utils.disabledSlugs = {}
+    for k,v in pairs(Utils.customDeckList) do
+        table.insert(Utils.disabledSlugs, { slug = v.slug, order = v.config.centerPosition })
+    end
+    Persistence.refreshDeckList()
 end
 
 return DeckCreator

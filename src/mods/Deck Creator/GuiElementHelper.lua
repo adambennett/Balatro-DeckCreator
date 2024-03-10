@@ -1,4 +1,5 @@
 local CardUtils = require "CardUtils"
+local ModloaderHelper = require "ModloaderHelper"
 
 local Helper = {}
 
@@ -430,7 +431,7 @@ end
 function Helper.tally_item_sprite(pos, value, tooltip, atlas)
     local text_colour = G.C.BLACK
     atlas = atlas or "itemIcons"
-    if SMODS.BalamodMode then
+    if ModloaderHelper.SteamoddedLoaded then
         atlas = "ui_"..(G.SETTINGS.colourblind_option and 2 or 1)
     end
     if type(value) == "table" and value[1].string==value[2].string then
