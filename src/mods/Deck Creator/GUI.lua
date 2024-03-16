@@ -1538,9 +1538,9 @@ function GUI.createDecksMenu(chosen)
                                                     Helper.createOptionSelector({label = "Number of Discards", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNumDiscards', current_option = (
                                                             Utils.getCurrentEditingDeck().config.discards
                                                     ), multiArrows = true }),
-                                                    Helper.createOptionSelector({label = "Hand Size", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 25), opt_callback = 'DeckCreatorModuleChangeHandSize', current_option = (
+                                                    Helper.createOptionSelector({label = "Hand Size", scale = 0.8, options = Utils.generateBoundedIntegerList(1, 9999), opt_callback = 'DeckCreatorModuleChangeHandSize', current_option = (
                                                             Utils.getCurrentEditingDeck().config.hand_size
-                                                    ), multiArrows = true, minorArrows = true, doubleArrowsOnly = true }),
+                                                    ), multiArrows = true }),
                                                 }
                                             }
                                         end
