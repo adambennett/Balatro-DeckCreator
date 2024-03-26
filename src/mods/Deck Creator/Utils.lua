@@ -11,6 +11,35 @@ Utils.EditDeckConfig = {
 }
 Utils.deletedSlugs = {}
 Utils.disabledSlugs = {}
+Utils.redSealMessages = {}
+
+Utils.hoveredTagStartingItemsAddToItemsKey = nil
+Utils.hoveredTagStartingItemsAddToItemsSprite = nil
+Utils.hoveredTagStartingItemsRemoveKey = nil
+Utils.hoveredTagStartingItemsRemoveUUID = nil
+Utils.hoveredTagStartingItemsRemoveSprite = nil
+Utils.startingTagsPerPage = nil
+
+Utils.hoveredTagBanItemsAddToBanKey = nil
+Utils.hoveredTagBanItemsAddToBanSprite = nil
+Utils.hoveredTagBanItemsRemoveKey = nil
+Utils.hoveredTagBanItemsRemoveSprite = nil
+Utils.bannedTagsPerPage = nil
+Utils.hoveredBlindBanItemsAddToBanKey = nil
+Utils.hoveredBlindBanItemsAddToBanSprite = nil
+Utils.hoveredBlindBanItemsRemoveKey = nil
+Utils.hoveredBlindBanItemsRemoveSprite = nil
+Utils.bannedBlindsPerPage = nil
+
+function Utils.resetTagsPerPage()
+    Utils.startingTagsPerPage = 8
+    Utils.bannedTagsPerPage = 8
+end
+function Utils.resetBlindsPerPage()
+    Utils.bannedBlindsPerPage = 8
+end
+Utils.resetTagsPerPage()
+Utils.resetBlindsPerPage()
 
 function Utils.log(message)
     if Utils.mode ~= "PROD" and sendDebugMessage ~= nil then
@@ -284,6 +313,24 @@ function Utils.spectralKeys()
     return output
 end
 
+function Utils.tagKeys()
+    local output = {}
+    for k,v in pairs(G.P_TAGS) do
+        table.insert(output, k)
+    end
+    return output
+end
+
+function Utils.blindKeys()
+    local output = {}
+    for k,v in pairs(G.P_BLINDS) do
+        if v.name ~= 'Big Blind' and v.name ~= 'Small Blind' and v.name ~= 'The Empty' then
+            table.insert(output, v.name)
+        end
+    end
+    return output
+end
+
 function Utils.vouchers(includeLevelTwo)
     local output = {
         { id = "v_overstock_norm", name = "Overstock", pos = {x=0,y=0}, },
@@ -530,6 +577,47 @@ function Utils.fullDeckConversionFunctions(arg)
             end
         }))
     end
+end
+
+function Utils.configureEmptyBlind()
+    local newLocalizationEntry = { name = "The Empty", text = { "No boss effects" }}
+    local newEntry = {
+        key = 'bl_empty',
+        name = 'The Empty',
+        defeated = false,
+        order = 99,
+        dollars = 5,
+        mult = 2,
+        vars = {},
+        debuff = {},
+        pos = {x=0, y=1},
+        boss = {min = 1, max = 99},
+        boss_colour = HEX('c6e0eb')
+    }
+
+    newLocalizationEntry.text_parsed = {}
+    for _, line in ipairs(newLocalizationEntry.text) do
+        newLocalizationEntry.text_parsed[#newLocalizationEntry.text_parsed+1] = loc_parse_string(line)
+    end
+    newLocalizationEntry.name_parsed = {}
+    for _, line in ipairs(type(newLocalizationEntry.name) == 'table' and newLocalizationEntry.name or {newLocalizationEntry.name}) do
+        newLocalizationEntry.name_parsed[#newLocalizationEntry.name_parsed+1] = loc_parse_string(line)
+    end
+
+    G.localization.descriptions.Blind['bl_empty'] = newLocalizationEntry
+    G.P_BLINDS['bl_empty'] = newEntry
+end
+
+function Utils.addTag(tagKey)
+    if tagKey == 'tag_orbital' and G.orbital_hand == nil then
+        local _poker_hands = {}
+        for x, y in pairs(G.GAME.hands) do
+            if y.visible then _poker_hands[#_poker_hands+1] = x end
+        end
+        G.orbital_hand = pseudorandom_element(_poker_hands, pseudoseed('orbital'))
+    end
+    add_tag(Tag(tagKey))
+    G.orbital_hand = nil
 end
 
 return Utils

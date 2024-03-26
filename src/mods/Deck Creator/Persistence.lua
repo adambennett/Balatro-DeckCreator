@@ -4,6 +4,7 @@ local ModloaderHelper = require "ModloaderHelper"
 
 local Persistence = {}
 local filename = "CustomDecks.txt"
+local RedSealFilename = "Red_Seal_Messages.txt"
 
 local function serializeDeck(val, depth)
     local temp = string.rep(" ", depth)
@@ -73,6 +74,16 @@ function Persistence.loadAllDeckLists()
                         end
 
                         local loadedDeck = CustomDeck.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.config, deckConfig.spritePos, deckConfig.loc_txt)
+                        local blankCheck = CustomDeck:blankDeck()
+                        for k,v in pairs(blankCheck.config) do
+                            if loadedDeck.config[k] == nil then
+                                loadedDeck.config[k] = v
+                            end
+                        end
+
+                        if loadedDeck.config.extra_discard_bonus == 0 then
+                            loadedDeck.config.extra_discard_bonus = nil
+                        end
                         Utils.addDeckToList(loadedDeck)
                         loadedUUIDs[loadedDeck.config.uuid] = true
                     end
@@ -172,6 +183,24 @@ function Persistence.refreshDeckList()
         end
         Utils.log("The Deck named " .. deck.name .. " with the slug " .. deck.slug .. " has been registered at the id " .. id .. ".")
     end
+end
+
+function Persistence.loadRedSealMessages()
+    local directory = "Mods/Deck Creator/assets"
+    local filePath = directory .. "/" .. RedSealFilename
+    local messages = { "Mama Liz's Chili Oil" }
+    local fileContent = love.filesystem.read(filePath)
+
+    if fileContent then
+        messages = {}
+        for line in fileContent:gmatch("[^\r\n]+") do
+            table.insert(messages, line)
+        end
+    else
+        Utils.log("Could not open file " .. filePath .. " or file is empty")
+    end
+
+    return messages
 end
 
 return Persistence

@@ -1,5 +1,5 @@
-local CardUtils = require "CardUtils"
 local ModloaderHelper = require "ModloaderHelper"
+local Utils = require "Utils"
 
 local Helper = {}
 
@@ -431,7 +431,7 @@ end
 function Helper.tally_item_sprite(pos, value, tooltip, atlas)
     local text_colour = G.C.BLACK
     atlas = atlas or "itemIcons"
-    if ModloaderHelper.SteamoddedLoaded then
+    if not ModloaderHelper.SteamoddedLoaded then
         atlas = "ui_"..(G.SETTINGS.colourblind_option and 2 or 1)
     end
     if type(value) == "table" and value[1].string==value[2].string then
@@ -452,6 +452,69 @@ function Helper.tally_item_sprite(pos, value, tooltip, atlas)
                     {n=G.UIT.T, config={text = value or 'NIL',colour = text_colour, scale = 0.4, shadow = true}},
         }},
     }}
+end
+
+function Helper.generateTagUI(tag, _size, context)
+    _size = _size or 0.8
+
+    local tag_sprite = Sprite(0,0,_size*1,_size*1,G.ASSET_ATLAS["tags"], tag.pos)
+    tag_sprite.T.scale = 1
+
+    local tag_sprite_tab = {n= G.UIT.C, config={align = "cm", ref_table = tag, group = tag.tally }, nodes={
+        {n=G.UIT.O, config={w=_size*1,h=_size*1, colour = G.C.BLUE, object = tag_sprite, focus_with_object = true}},
+    }}
+    tag_sprite:define_draw_steps({
+        {shader = 'dissolve', shadow_height = 0.05},
+        {shader = 'dissolve'},
+    })
+    tag_sprite.float = true
+    tag_sprite.states.hover.can = true
+    tag_sprite.states.drag.can = false
+    tag_sprite.states.collide.can = true
+    tag_sprite.config = {tag = tag, force_focus = true, pos = tag.pos}
+
+    tag_sprite.hover = function(_self)
+        if not G.CONTROLLER.dragging.target or G.CONTROLLER.using_touch then
+            if not _self.hovering and _self.states.visible then
+                _self.hovering = true
+                Utils[context.key] = tag.key
+                Utils[context.sprite] = tag_sprite
+                if context.key == 'hoveredTagStartingItemsRemoveKey' then
+                    Utils.hoveredTagStartingItemsRemoveUUID = tag.config.uuid
+                end
+                if _self == tag_sprite then
+                    _self.hover_tilt = 3
+                    _self:juice_up(0.05, 0.02)
+                    play_sound('paper1', math.random()*0.1 + 0.55, 0.42)
+                    play_sound('tarot2', math.random()*0.1 + 0.55, 0.09)
+                end
+
+                tag:get_uibox_table(tag_sprite)
+                _self.config.h_popup =  G.UIDEF.card_h_popup(_self)
+                _self.config.h_popup_config ={align = 'cl', offset = {x=-0.1,y=0},parent = _self}
+                Node.hover(_self)
+                if _self.children.alert then
+                    _self.children.alert:remove()
+                    _self.children.alert = nil
+                    if tag.key and G.P_TAGS[tag.key] then G.P_TAGS[tag.key].alerted = true end
+                    G:save_progress()
+                end
+            end
+        end
+    end
+    tag_sprite.stop_hover = function(_self)
+        _self.hovering = false
+        Utils[context.key] = nil
+        Utils[context.sprite] = nil
+        Utils.hoveredTagStartingItemsRemoveUUID = nil
+        Node.stop_hover(_self)
+        _self.hover_tilt = 0
+    end
+
+    -- tag_sprite:juice_up()
+    tag.tag_sprite = tag_sprite
+
+    return tag_sprite_tab, tag_sprite
 end
 
 function Helper.calculateDeckEditorSums()
@@ -540,43 +603,46 @@ function Helper.calculateDeckEditorSums()
     end
 end
 
-function Helper.calculateStartingItemsSums()
+function Helper.calculateStartingItemsSums(list)
 
     Helper.sums.item_tallies = {
         ['Joker']  = 0,
         ['Consumable'] = 0,
-        -- ['Tag'] = 0,
+        ['Tag'] = 0,
         ['Voucher'] = 0,
         ['Tarot'] = 0,
         ['Planet'] = 0,
-        ['Spectral'] = 0
+        ['Spectral'] = 0,
+        ['Other'] = 0
     }
 
-    for k,v in pairs(CardUtils.startingItems.jokers) do
+    for k,v in pairs(list.jokers) do
         Helper.sums.item_tallies["Joker"] = (Helper.sums.item_tallies["Joker"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.tarots) do
+    for k,v in pairs(list.tarots) do
         Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
         Helper.sums.item_tallies["Tarot"] = (Helper.sums.item_tallies["Tarot"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.planets) do
+    for k,v in pairs(list.planets) do
         Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
         Helper.sums.item_tallies["Planet"] = (Helper.sums.item_tallies["Planet"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.spectrals) do
+    for k,v in pairs(list.spectrals) do
         Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
         Helper.sums.item_tallies["Spectral"] = (Helper.sums.item_tallies["Spectral"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.vouchers) do
+    for k,v in pairs(list.vouchers) do
         Helper.sums.item_tallies["Voucher"] = (Helper.sums.item_tallies["Voucher"] or 0) + 1
+        Helper.sums.item_tallies["Other"] = (Helper.sums.item_tallies["Other"] or 0) + 1
     end
-    --[[for k,v in pairs(CardUtils.startingItems.tags) do
+    for k,v in pairs(list.tags) do
         Helper.sums.item_tallies["Tag"] = (Helper.sums.item_tallies["Tag"] or 0) + 1
-    end]]
+        Helper.sums.item_tallies["Other"] = (Helper.sums.item_tallies["Other"] or 0) + 1
+    end
 
     Helper.sums.start_item_cols = {}
     for k,v in pairs(Helper.sums.item_tallies) do
-        if k ~= 'Consumable' then
+        if k ~= 'Consumable' and k ~= 'Other' then
             Helper.sums.start_item_cols[#Helper.sums.start_item_cols+1] = {
                 n=G.UIT.R,
                 config={align = "cm", padding = 0.07},
@@ -585,8 +651,78 @@ function Helper.calculateStartingItemsSums()
                         n=G.UIT.C,
                         config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
                         nodes={
-                            --{n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
-                            {n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            --{n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                        }
+                    },
+                    {
+                        n=G.UIT.C,
+                        config={align = "cr", minw = 0.4},
+                        nodes={
+                            {n=G.UIT.T, config={text = tostring(v) or 'NIL',colour = G.C.WHITE, scale = 0.45, shadow = true}},
+                        }
+                    }
+                }
+            }
+        end
+    end
+end
+
+function Helper.calculateBannedItemsSums(list)
+
+    Helper.sums.banned_item_tallies = {
+        ['Joker']  = 0,
+        ['Consumable'] = 0,
+        ['Tag'] = 0,
+        ['Blind'] = 0,
+        ['Voucher'] = 0,
+        ['Tarot'] = 0,
+        ['Planet'] = 0,
+        ['Spectral'] = 0,
+        ['Other'] = 0
+    }
+
+    for k,v in pairs(list.jokers) do
+        Helper.sums.banned_item_tallies["Joker"] = (Helper.sums.banned_item_tallies["Joker"] or 0) + 1
+    end
+    for k,v in pairs(list.tarots) do
+        Helper.sums.banned_item_tallies["Consumable"] = (Helper.sums.banned_item_tallies["Consumable"] or 0) + 1
+        Helper.sums.banned_item_tallies["Tarot"] = (Helper.sums.banned_item_tallies["Tarot"] or 0) + 1
+    end
+    for k,v in pairs(list.planets) do
+        Helper.sums.banned_item_tallies["Consumable"] = (Helper.sums.banned_item_tallies["Consumable"] or 0) + 1
+        Helper.sums.banned_item_tallies["Planet"] = (Helper.sums.banned_item_tallies["Planet"] or 0) + 1
+    end
+    for k,v in pairs(list.spectrals) do
+        Helper.sums.banned_item_tallies["Consumable"] = (Helper.sums.banned_item_tallies["Consumable"] or 0) + 1
+        Helper.sums.banned_item_tallies["Spectral"] = (Helper.sums.banned_item_tallies["Spectral"] or 0) + 1
+    end
+    for k,v in pairs(list.vouchers) do
+        Helper.sums.banned_item_tallies["Voucher"] = (Helper.sums.banned_item_tallies["Voucher"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
+    for k,v in pairs(list.tags) do
+        Helper.sums.banned_item_tallies["Tag"] = (Helper.sums.banned_item_tallies["Tag"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
+    for k,v in pairs(list.blinds) do
+        Helper.sums.banned_item_tallies["Blind"] = (Helper.sums.banned_item_tallies["Blind"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
+
+    Helper.sums.ban_item_cols = {}
+    for k,v in pairs(Helper.sums.banned_item_tallies) do
+        if k ~= 'Consumable' and k ~= 'Other' then
+            Helper.sums.ban_item_cols[#Helper.sums.ban_item_cols+1] = {
+                n=G.UIT.R,
+                config={align = "cm", padding = 0.07},
+                nodes={
+                    {
+                        n=G.UIT.C,
+                        config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
+                        nodes={
+                            {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            --{n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
                         }
                     },
                     {
