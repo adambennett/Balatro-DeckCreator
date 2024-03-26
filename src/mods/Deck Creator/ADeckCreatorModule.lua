@@ -55,8 +55,11 @@ end
 -- Steamodded
 function SMODS.INIT.DeckCreatorModule()
     table.insert(package.loaders, 1, customLoader)
-    require "ModloaderHelper".SteamoddedLoaded = true
-    require "DeckCreator".Enable()
+    local Loader = require "ModloaderHelper"
+    Loader.SteamoddedLoaded = true
+    if Loader.BalamodLoaded == false then
+        require "DeckCreator".Enable()
+    end
 end
 
 ----------------------------------------------
