@@ -21,6 +21,13 @@ function CustomDeck:blankDeck()
     }
 
     o.config = {
+        replace_broken_glass_with_random_cards_chance = 0,
+        replace_broken_glass_with_stones_chance = 0,
+        gain_ten_dollars_glass_break_chance = 0,
+        triple_mult_cards_chance = 0,
+        disable_mult_cards_chance = 0,
+        multiply_probabilities = 1,
+        divide_probabilities = 1,
         extra_hand_level_upgrades = 0,
         reroll_boosters = false,
         gain_dollars_when_skip_booster = 0,
@@ -94,6 +101,7 @@ function CustomDeck:blankDeck()
         bannedVoucherList = {},
         bannedTagList = {},
         bannedBlindList = {},
+        bannedBoosterList = {},
         customDeck = true,
         custom_cards_set = false,
         dollars = 4,
@@ -238,7 +246,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
                             chip_reduction_percent, mult_reduction_percent, draw_to_hand_size, chance_to_increase_discard_cards_rank, chance_to_increase_drawn_cards_rank, random_sell_value_increase, random_gold_cards,
                             random_polychrome_cards, random_holographic_cards, random_foil_cards, random_edition_cards, random_bonus_cards, random_glass_cards, random_lucky_cards, random_steel_cards, random_stone_cards,
                             random_wild_cards, random_mult_cards, random_enhancement_cards,
-                            bannedJokerList, bannedTarotList, bannedPlanetList, bannedSpectralList, bannedVoucherList, bannedTagList, bannedBlindList, blindScaling, rawDescription, no_aces,
+                            bannedJokerList, bannedTarotList, bannedPlanetList, bannedSpectralList, bannedVoucherList, bannedTagList, bannedBlindList, bannedBoosterList, blindScaling, rawDescription, no_aces,
                             skip_shop_chance_small_blind, skip_shop_chance_big_blind, skip_shop_chance_boss, skip_shop_chance_any,
                             skip_blind_disabled_chance_small_blind, skip_blind_disabled_chance_big_blind, skip_blind_disabled_chance_any, allow_legendary_jokers_everywhere, allow_duplicate_jokers,
                             edition_rate, spectral_cards_in_arcana, always_telescoping, allow_black_hole, allow_soul, never_telescoping,
@@ -247,7 +255,8 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
                             orbital_tag_percent, economy_tag_percent, skip_tag_percent, top_up_tag_percent, d6_tag_percent, juggle_tag_percent, coupon_tag_percent, ethereal_tag_percent, garbage_tag_percent,
                             handy_tag_percent, buffoon_tag_percent, meteor_tag_percent, charm_tag_percent, boss_tag_percent, voucher_tag_percent, investment_tag_percent, polychrome_tag_percent, holographic_tag_percent,
                             foil_tag_percent, uncommon_tag_percent, rare_tag_percent, blue_seal_switch_trigger, blue_seal_always_most_played, red_seal_silly_messages, extra_red_seal_repetitions, chance_to_double_gold_seal,
-                            make_sevens_lucky, aces_are_faces, gain_dollars_when_skip_booster, reroll_boosters, extra_hand_level_upgrades, sevens_are_faces)
+                            make_sevens_lucky, aces_are_faces, gain_dollars_when_skip_booster, reroll_boosters, extra_hand_level_upgrades, sevens_are_faces, multiply_probabilities, divide_probabilities,
+                            triple_mult_cards_chance, disable_mult_cards_chance, gain_ten_dollars_glass_break_chance, replace_broken_glass_with_stones_chance, replace_broken_glass_with_random_cards_chance)
     o = {}
     local newUUID = uuid or Utils.uuid()
     setmetatable(o, self)
@@ -285,6 +294,13 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.discovered = true
 
     o.config = {
+        replace_broken_glass_with_random_cards_chance = replace_broken_glass_with_random_cards_chance,
+        replace_broken_glass_with_stones_chance = replace_broken_glass_with_stones_chance,
+        gain_ten_dollars_glass_break_chance = gain_ten_dollars_glass_break_chance,
+        triple_mult_cards_chance = triple_mult_cards_chance,
+        disable_mult_cards_chance = disable_mult_cards_chance,
+        multiply_probabilities = multiply_probabilities,
+        divide_probabilities = divide_probabilities,
         extra_hand_level_upgrades = extra_hand_level_upgrades,
         reroll_boosters = reroll_boosters,
         gain_dollars_when_skip_booster = gain_dollars_when_skip_booster,
@@ -361,6 +377,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         bannedVoucherList = bannedVoucherList,
         bannedTagList = bannedTagList,
         bannedBlindList = bannedBlindList,
+        bannedBoosterList = bannedBoosterList,
         invert_back = true,
         uuid = newUUID,
         customCardList = customCardList,
@@ -506,10 +523,18 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         o.config.discard_cost = discardCost
     end
 
+    if doubled_probabilities == true and multiply_probabilities == 1 then
+        o.config.multiply_probabilities = 2
+    end
+
+    if halved_probabilities == true and divide_probabilities == 1 then
+        o.config.divide_probabilities = 2
+    end
+
     return o
 end
 
-function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, updateUUID)
+function CustomDeck.fullNewFromExisting(deck, descTable, updateUUID)
 
     if not deck.config and deck.effect and deck.effect.config then
         deck.config = deck.effect.config
@@ -517,9 +542,7 @@ function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, update
 
     return CustomDeck:fullNew(
             deck.name,
-            {name = deck.name, text = {
-                [1] = desc1 or "", [2] = desc2 or "", [3] = desc3 or "", [4] = desc4 or ""
-            }},
+            {name = deck.name, text = descTable },
             deck.config.dollars,
             deck.config.hand_size,
             deck.config.discards,
@@ -633,6 +656,7 @@ function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, update
             deck.config.bannedVoucherList,
             deck.config.bannedTagList,
             deck.config.bannedBlindList,
+            deck.config.bannedBoosterList,
             deck.config.blind_scaling,
             deck.config.rawDescription,
             deck.config.no_aces,
@@ -690,7 +714,14 @@ function CustomDeck.fullNewFromExisting(deck, desc1, desc2, desc3, desc4, update
             deck.config.gain_dollars_when_skip_booster,
             deck.config.reroll_boosters,
             deck.config.extra_hand_level_upgrades,
-            deck.config.sevens_are_faces
+            deck.config.sevens_are_faces,
+            deck.config.multiply_probabilities,
+            deck.config.divide_probabilities,
+            deck.config.triple_mult_cards_chance,
+            deck.config.disable_mult_cards_chance,
+            deck.config.gain_ten_dollars_glass_break_chance,
+            deck.config.replace_broken_glass_with_stones_chance,
+            deck.config.replace_broken_glass_with_random_cards_chance
     )
 end
 

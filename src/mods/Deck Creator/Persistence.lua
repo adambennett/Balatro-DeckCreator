@@ -84,6 +84,7 @@ function Persistence.loadAllDeckLists()
                         if loadedDeck.config.extra_discard_bonus == 0 then
                             loadedDeck.config.extra_discard_bonus = nil
                         end
+                        -- loadedDeck = CustomDeck.fullNewFromExisting(loadedDeck, { [1] = loadedDeck.config.rawDescription }, false)
                         Utils.addDeckToList(loadedDeck)
                         loadedUUIDs[loadedDeck.config.uuid] = true
                     end

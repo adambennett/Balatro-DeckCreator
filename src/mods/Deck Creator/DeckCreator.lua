@@ -19,12 +19,34 @@ function DeckCreator.Enable()
     Helper.registerGlobals()
     Persistence.loadAllDeckLists()
     GUI.registerModMenuUI()
+    GUI.initializeStaticMods()
 
     local LevelUpHand = level_up_hand
     function level_up_hand(card, hand, instant, amount)
         local extraLevels = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and G.GAME.selected_back.effect.config.extra_hand_level_upgrades or 0
-        local finalAmount = (amount or 0) > 0 and amount + extraLevels or amount
-        LevelUpHand(card, hand, instant, finalAmount)
+        amount = amount or 0
+        local finalAmount = amount
+        if amount >= 0 and extraLevels > 0 then
+            local totalLevels = amount + extraLevels
+            if totalLevels > 5 then
+                local iterations = math.min(5, totalLevels)
+                local baseLevelsPerIteration = math.floor(totalLevels / iterations)
+                local extraLevelsToDistribute = totalLevels % iterations
+                for i = 1, iterations do
+                    local currentIterationLevels = baseLevelsPerIteration
+                    if i <= extraLevelsToDistribute then
+                        currentIterationLevels = currentIterationLevels + 1
+                    end
+                    LevelUpHand(card, hand, instant, currentIterationLevels)
+                end
+            else
+                for i = 1, finalAmount do
+                    LevelUpHand(card, hand, instant, 1)
+                end
+            end
+        else
+            LevelUpHand(card, hand, instant, amount)
+        end
     end
 
     local function getRerollPack(_key, _type)
@@ -163,9 +185,52 @@ function DeckCreator.Enable()
         end
     end
 
+    local GetChipMult = Card.get_chip_mult
+    function Card:get_chip_mult()
+        local getChipMultOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.make_sevens_lucky > 0 or G.GAME.selected_back.effect.config.triple_mult_cards_chance > 0 or G.GAME.selected_back.effect.config.disable_mult_cards_chance > 0) or false
+        local sevenCheck = getChipMultOptionsEnabled and G.GAME.selected_back.effect.config.make_sevens_lucky > 0 and self:get_id() == 7
+        if getChipMultOptionsEnabled == false then
+            return GetChipMult(self)
+        end
+
+        local isLucky = self.ability.effect == "Lucky Card"
+        if isLucky == false and sevenCheck then
+            local luckyRoll = math.random(1, 100)
+            if G.GAME.selected_back.effect.config.make_sevens_lucky >= luckyRoll then
+                isLucky = true
+                self.ability.mult = 20
+            end
+        end
+
+
+        if self.debuff then return 0 end
+        if self.ability.set == 'Joker' then return 0 end
+        if isLucky then
+            if pseudorandom('lucky_mult') < G.GAME.probabilities.normal/5 then
+                self.lucky_trigger = true
+                return self.ability.mult
+            else
+                return 0
+            end
+        else
+            if self.ability.effect == "Mult Card" and G.GAME.selected_back.effect.config.triple_mult_cards_chance > 0 then
+                local roll = math.random(1, 100)
+                if G.GAME.selected_back.effect.config.triple_mult_cards_chance >= roll then
+                   return self.ability.mult * 3
+                end
+            end
+            if self.ability.effect == "Mult Card" and G.GAME.selected_back.effect.config.disable_mult_cards_chance > 0 then
+                local roll = math.random(1, 100)
+                if G.GAME.selected_back.effect.config.disable_mult_cards_chance >= roll then
+                    return 0
+                end
+            end
+            return self.ability.mult
+        end
+    end
+
     local GPDollars = Card.get_p_dollars
     function Card:get_p_dollars()
-
         local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.chance_to_double_gold_seal > 0 or G.GAME.selected_back.effect.config.make_sevens_lucky > 0) or false
         if isSkipBlindOptionsEnabled == false then
             return GPDollars(self)
@@ -191,6 +256,7 @@ function DeckCreator.Enable()
                 local luckyRoll = math.random(1, 100)
                 if G.GAME.selected_back.effect.config.make_sevens_lucky >= luckyRoll then
                     isLucky = true
+                    self.ability.p_dollars = 20
                 end
             end
             if isLucky then
@@ -647,7 +713,6 @@ function DeckCreator.Enable()
 
             local edition = poll_edition('edi'..(key_append or '')..G.GAME.round_resets.ante)
             card:set_edition(edition)
-            check_for_unlock({type = 'have_edition'})
         end
         return card
     end
@@ -800,28 +865,6 @@ function DeckCreator.Enable()
         end
 
         return nil
-
-        --[[G.GAME.round_resets.blind_tags = G.GAME.round_resets.blind_tags or {}
-        if not G.GAME.round_resets.blind_tags[blind_choice] then return nil end
-        local _tag = Tag(G.GAME.round_resets.blind_tags[blind_choice], nil, blind_choice)
-        local _tag_ui, _tag_sprite = _tag:generate_UI()
-        _tag_sprite.states.collide.can = not not run_info
-        return
-        {n=G.UIT.R, config={id = 'tag_container', ref_table = _tag, align = "cm"}, nodes={
-            {n=G.UIT.R, config={align = 'tm', minh = 0.65}, nodes={
-                {n=G.UIT.T, config={text = localize('k_or'), scale = 0.55, colour = disabled and G.C.UI.TEXT_INACTIVE or G.C.WHITE, shadow = not disabled}},
-            }},
-            {n=G.UIT.R, config={id = 'tag_'..blind_choice, align = "cm", r = 0.1, padding = 0.1, minw = 1, can_collide = true, ref_table = _tag_sprite}, nodes={
-                {n=G.UIT.C, config={id = 'tag_desc', align = "cm", minh = 1}, nodes={
-                    _tag_ui
-                }},
-                not run_info and {n=G.UIT.C, config={align = "cm", colour = G.C.UI.BACKGROUND_INACTIVE, minh = 0.6, minw = 2, maxw = 2, padding = 0.07, r = 0.1, shadow = true, hover = true, one_press = true, button = 'skip_blind', func = 'hover_tag_proxy', ref_table = _tag}, nodes={
-                    {n=G.UIT.T, config={text = localize('b_skip_blind'), scale = 0.4, colour = G.C.UI.TEXT_INACTIVE}}
-                }} or {n=G.UIT.C, config={align = "cm", padding = 0.1, emboss = 0.05, colour = mix_colours(G.C.BLUE, G.C.BLACK, 0.4), r = 0.1, maxw = 2}, nodes={
-                    {n=G.UIT.T, config={text = localize('b_skip_reward'), scale = 0.35, colour = G.C.WHITE}},
-                }},
-            }}
-        }}]]
     end
 
     local CashOut = G.FUNCS.cash_out
@@ -1107,8 +1150,20 @@ function DeckCreator.Enable()
         CardShatter(self)
         local deck = G.GAME.selected_back
         if deck and deck.effect.config.customDeck then
+            local totalDollars = 0
             if deck.effect.config.broken_glass_money and deck.effect.config.broken_glass_money > 0 then
-                ease_dollars(deck.effect.config.broken_glass_money, true)
+                totalDollars = totalDollars + deck.effect.config.broken_glass_money
+            end
+            if deck.effect.config.gain_ten_dollars_glass_break_chance and deck.effect.config.gain_ten_dollars_glass_break_chance > 0 then
+                local roll = math.random(1, 100)
+                if deck.effect.config.gain_ten_dollars_glass_break_chance >= roll then
+                    totalDollars = totalDollars + 10
+
+                end
+            end
+
+            if totalDollars > 0 then
+                ease_dollars(totalDollars, true)
             end
 
             if deck.effect.config.negative_joker_for_broken_glass then
@@ -1124,6 +1179,61 @@ function DeckCreator.Enable()
                         return true
                     end
                 }))
+            end
+
+            if deck.effect.config.replace_broken_glass_with_random_cards_chance and deck.effect.config.replace_broken_glass_with_random_cards_chance > 0 then
+                local roll = math.random(1, 100)
+                if deck.effect.config.replace_broken_glass_with_random_cards_chance >= roll then
+
+                    local randomProto, key = CardUtils.generateCardProto({
+                        rank = "Random",
+                        suit = "Random",
+                        edition = "Random",
+                        enhancement = "Random",
+                        seal = "Random",
+                        copies = 1
+                    })
+                    local card = CardUtils.cardProtoToCardObject(randomProto, key, G.play.T.x + G.play.T.w/2, G.play.T.y)
+
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            G.playing_card = (G.playing_card and G.playing_card + 1) or 1
+                            card:start_materialize({G.C.SECONDARY_SET.Enhanced})
+                            G.play:emplace(card)
+                            table.insert(G.playing_cards, card)
+                            return true
+                        end
+                    }))
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            G.deck.config.card_limit = G.deck.config.card_limit + 1
+                            return true
+                        end}))
+                    draw_card(G.play,G.deck, 90,'up', nil)
+                end
+            end
+
+            if deck.effect.config.replace_broken_glass_with_stones_chance and deck.effect.config.replace_broken_glass_with_stones_chance > 0 then
+                local roll = math.random(1, 100)
+                if deck.effect.config.replace_broken_glass_with_stones_chance >= roll then
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            local front = pseudorandom_element(G.P_CARDS, pseudoseed('marb_fr'))
+                            G.playing_card = (G.playing_card and G.playing_card + 1) or 1
+                            local card = Card(G.play.T.x + G.play.T.w/2, G.play.T.y, G.CARD_W, G.CARD_H, front, G.P_CENTERS.m_stone, {playing_card = G.playing_card})
+                            card:start_materialize({G.C.SECONDARY_SET.Enhanced})
+                            G.play:emplace(card)
+                            table.insert(G.playing_cards, card)
+                            return true
+                        end
+                    }))
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            G.deck.config.card_limit = G.deck.config.card_limit + 1
+                            return true
+                        end}))
+                    draw_card(G.play,G.deck, 90,'up', nil)
+                end
             end
         end
     end
@@ -1318,10 +1428,13 @@ function DeckCreator.Enable()
                     added = CardUtils.banItem({ planet = true, ref = 'bannedPlanetList', addCard = self.config.center.key})
                 elseif GUI.OpenBannedItemConfig.openItemType == 'spectral' then
                     added = CardUtils.banItem({ spectral = true, ref = 'bannedSpectralList', addCard = self.config.center.key})
+                elseif GUI.OpenBannedItemConfig.openItemType == 'booster' then
+                    added = CardUtils.banItem({ booster = true, ref = 'bannedBoosterList', addCard = self.config.center.key})
                 end
 
                 if added then
                     self:start_materialize(nil, true)
+                    self:flip()
                 end
 
             -- Unban individual item by clicking
@@ -1347,7 +1460,7 @@ function DeckCreator.Enable()
                     if Utils.runMemoryChecks then
                         local memoryAfter = collectgarbage("count")
                         local diff = memoryAfter - memoryBefore
-                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Vouchers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Banned Items[Vouchers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
                     end
                 elseif self.uuid and self.uuid.type == 'joker' then
                     local removeIndex
@@ -1370,7 +1483,7 @@ function DeckCreator.Enable()
                     if Utils.runMemoryChecks then
                         local memoryAfter = collectgarbage("count")
                         local diff = memoryAfter - memoryBefore
-                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Jokers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Banned Items[Jokers]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
                     end
                 elseif self.uuid and self.uuid.type == 'tarot' then
                     local removeIndex
@@ -1393,7 +1506,7 @@ function DeckCreator.Enable()
                     if Utils.runMemoryChecks then
                         local memoryAfter = collectgarbage("count")
                         local diff = memoryAfter - memoryBefore
-                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Tarots]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Banned Items[Tarots]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
                     end
                 elseif self.uuid and self.uuid.type == 'planet' then
                     local removeIndex
@@ -1416,7 +1529,7 @@ function DeckCreator.Enable()
                     if Utils.runMemoryChecks then
                         local memoryAfter = collectgarbage("count")
                         local diff = memoryAfter - memoryBefore
-                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Planets]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Banned Items[Planets]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
                     end
                 elseif self.uuid and self.uuid.type == 'spectral' then
                     local removeIndex
@@ -1439,7 +1552,30 @@ function DeckCreator.Enable()
                     if Utils.runMemoryChecks then
                         local memoryAfter = collectgarbage("count")
                         local diff = memoryAfter - memoryBefore
-                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Starting Items[Spectrals]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Banned Items[Spectrals]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+                    end
+                elseif self.uuid and self.uuid.type == 'booster' then
+                    local removeIndex
+                    for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedBoosterList) do
+                        if v.key == self.uuid.key and v.uuid == self.uuid.uuid then
+                            removeIndex = k
+                            break
+                        end
+                    end
+
+                    if removeIndex then
+                        table.remove(Utils.getCurrentEditingDeck().config.bannedBoosterList, removeIndex)
+                    end
+
+                    self:remove()
+
+                    local memoryBefore = Utils.checkMemory()
+                    GUI.updateAllBannedItemsAreas()
+
+                    if Utils.runMemoryChecks then
+                        local memoryAfter = collectgarbage("count")
+                        local diff = memoryAfter - memoryBefore
+                        Utils.log("MEMORY CHECK (UpdateDynamicAreas - Banned Items[Boosters]): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
                     end
                 end
             end
@@ -1710,14 +1846,12 @@ function DeckCreator.Enable()
                 end
             end
 
-            local triggeredEitherReduction = false
             if self.effect.config.chip_reduction_percent and self.effect.config.chip_reduction_percent > 0 and self.effect.config.chip_reduction_percent < 100 then
                 local mod = self.effect.config.chip_reduction_percent / 100
                 local reduce = 1 - mod
                 local chip = chips or args.chips
                 chips = chip * reduce
                 args.chips = chips
-                triggeredEitherReduction = true
             end
 
             if self.effect.config.mult_reduction_percent and self.effect.config.mult_reduction_percent > 0 and self.effect.config.mult_reduction_percent < 100 then
@@ -1726,50 +1860,7 @@ function DeckCreator.Enable()
                 local mul = mult or args.mult
                 mult = mul * reduce
                 args.mult = mult
-                triggeredEitherReduction = true
             end
-
-            --[[if triggeredEitherReduction then
-                update_hand_text({delay = 0}, { mult = args.mult, chips = args.chips})
-                G.E_MANAGER:add_event(Event({
-                    func = (function()
-                        play_sound('gong', 0.94, 0.3)
-                        play_sound('gong', 0.94*1.5, 0.2)
-                        play_sound('tarot1', 1.5)
-                        ease_colour(G.C.UI_CHIPS, {0.8, 0.45, 0.85, 1})
-                        ease_colour(G.C.UI_MULT, {0.8, 0.45, 0.85, 1})
-                        -- delay(1)
-                        attention_text({
-                            scale = 1.4, text = "Reduced", hold = 2, align = 'cm', offset = {x = 0,y = -0.7},major = G.play
-                        })
-                        G.E_MANAGER:add_event(Event({
-                            trigger = 'after',
-                            blockable = false,
-                            blocking = false,
-                            delay =  4.3,
-                            func = (function()
-                                ease_colour(G.C.UI_CHIPS, G.C.BLUE, 2)
-                                ease_colour(G.C.UI_MULT, G.C.RED, 2)
-                                return true
-                            end)
-                        }))
-                        G.E_MANAGER:add_event(Event({
-                            trigger = 'after',
-                            blockable = false,
-                            blocking = false,
-                            no_delete = true,
-                            delay =  6.3,
-                            func = (function()
-                                G.C.UI_CHIPS[1], G.C.UI_CHIPS[2], G.C.UI_CHIPS[3], G.C.UI_CHIPS[4] = G.C.BLUE[1], G.C.BLUE[2], G.C.BLUE[3], G.C.BLUE[4]
-                                G.C.UI_MULT[1], G.C.UI_MULT[2], G.C.UI_MULT[3], G.C.UI_MULT[4] = G.C.RED[1], G.C.RED[2], G.C.RED[3], G.C.RED[4]
-                                return true
-                            end)
-                        }))
-                        return true
-                    end)
-                }))
-                delay(0.6)
-            end]]
         end
         return chips, mult
     end
@@ -1788,7 +1879,7 @@ function DeckCreator.Enable()
         local saveTable = args.savetext or nil
         local deck = self.GAME.viewed_back
 
-        if deck and deck.effect and deck.effect.config and deck.effect.config.customDeck then
+        if deck and deck.effect and deck.effect.config and deck.effect.config.customDeck and not saveTable then
             args = args or {}
             args.challenge = {}
             args.challenge.jokers = {}
@@ -1820,6 +1911,9 @@ function DeckCreator.Enable()
             for k,v in pairs(deck.effect.config.bannedSpectralList) do
                 table.insert(args.challenge.restrictions.banned_cards, {id = v.key })
             end
+            for k,v in pairs(deck.effect.config.bannedBoosterList) do
+                table.insert(args.challenge.restrictions.banned_cards, {id = v.key })
+            end
             for k,v in pairs(deck.effect.config.bannedVoucherList) do
                 table.insert(args.challenge.restrictions.banned_cards, {id = v })
             end
@@ -1827,7 +1921,7 @@ function DeckCreator.Enable()
                 table.insert(args.challenge.restrictions.banned_tags, {id = v.key })
             end
 
-            if not saveTable and G.GAME.stake < 6 and (deck.effect.config.blind_scaling == 2 or deck.effect.config.blind_scaling == 3) then
+            if G.GAME.stake < 6 and (deck.effect.config.blind_scaling == 2 or deck.effect.config.blind_scaling == 3) then
                 G.GAME.modifiers.scaling = deck.effect.config.blind_scaling
             end
 
@@ -1842,13 +1936,15 @@ function DeckCreator.Enable()
             args = args or {}
             args.challenge = args.challenge or {}
             args.challenge.consumables = args.challenge.consumables or {}
-            for k, v in ipairs(args.challenge.consumables) do
-                G.E_MANAGER:add_event(Event({
-                    func = function()
-                        add_joker(v.id, v.edition, k ~= 1)
-                        return true
-                    end
-                }))
+            if not saveTable then
+                for k, v in ipairs(args.challenge.consumables) do
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            add_joker(v.id, v.edition, k ~= 1)
+                            return true
+                        end
+                    }))
+                end
             end
 
             if deck.effect.config.random_starting_jokers and deck.effect.config.random_starting_jokers > 0 then
@@ -1892,13 +1988,14 @@ function DeckCreator.Enable()
                 end
             end
 
-            if deck.effect.config.doubled_probabilities and not deck.effect.config.halved_probabilities then
+            if deck.effect.config.multiply_probabilities ~= 1 then
                 for k, v in pairs(G.GAME.probabilities) do
-                    G.GAME.probabilities[k] = v*2
+                    G.GAME.probabilities[k] = v * deck.effect.config.multiply_probabilities
                 end
-            elseif deck.effect.config.halved_probabilities and not deck.effect.config.doubled_probabilities then
+            end
+            if deck.effect.config.divide_probabilities ~= 1 then
                 for k, v in pairs(G.GAME.probabilities) do
-                    G.GAME.probabilities[k] = v/2
+                    G.GAME.probabilities[k] = v / deck.effect.config.divide_probabilities
                 end
             end
 
@@ -1916,8 +2013,10 @@ function DeckCreator.Enable()
                 G.hand:change_size(1)
             end
 
-            for k,v in pairs(deck.effect.config.customTagList) do
-                Utils.addTag(v.key)
+            if not saveTable then
+                for k,v in pairs(deck.effect.config.customTagList) do
+                    Utils.addTag(v.key)
+                end
             end
         end
 

@@ -679,7 +679,8 @@ function Helper.calculateBannedItemsSums(list)
         ['Tarot'] = 0,
         ['Planet'] = 0,
         ['Spectral'] = 0,
-        ['Other'] = 0
+        ['Other'] = 0,
+        ['Booster'] = 0
     }
 
     for k,v in pairs(list.jokers) do
@@ -709,10 +710,15 @@ function Helper.calculateBannedItemsSums(list)
         Helper.sums.banned_item_tallies["Blind"] = (Helper.sums.banned_item_tallies["Blind"] or 0) + 1
         Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
     end
+    for k,v in pairs(list.boosters) do
+        Helper.sums.banned_item_tallies["Booster"] = (Helper.sums.banned_item_tallies["Booster"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
 
     Helper.sums.ban_item_cols = {}
     for k,v in pairs(Helper.sums.banned_item_tallies) do
         if k ~= 'Consumable' and k ~= 'Other' then
+            local letterText = (k == 'Tarot' and 'R') or (k == 'Booster' and 'O') or string.sub(k, 1, 1)
             Helper.sums.ban_item_cols[#Helper.sums.ban_item_cols+1] = {
                 n=G.UIT.R,
                 config={align = "cm", padding = 0.07},
@@ -721,8 +727,7 @@ function Helper.calculateBannedItemsSums(list)
                         n=G.UIT.C,
                         config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
                         nodes={
-                            {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
-                            --{n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            {n=G.UIT.T, config={text = letterText, colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
                         }
                     },
                     {

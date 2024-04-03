@@ -4,6 +4,7 @@ local CustomDeck = require "CustomDeck"
 local Helper = require "GuiElementHelper"
 local CardUtils = require "CardUtils"
 local ModloaderHelper = require "ModloaderHelper"
+local StaticMod = require "StaticMod"
 
 local GUI = {}
 
@@ -25,6 +26,10 @@ GUI.ManageDecksConfig = {
     allCustomBacks = {},
     currentIndex = 1
 }
+GUI.StaticModsCurrentPageName = "Gameplay";
+GUI.StaticModsObjects = {}
+GUI.StaticMods = {}
+GUI.JokersPerPage = 10
 
 function GUI.closeAllHoveredObjects()
     Utils.hoveredTagStartingItemsAddToItemsKey = nil
@@ -105,6 +110,114 @@ function GUI.registerGlobals()
         end
     end
 
+    G.FUNCS.DeckCreatorModuleStartingJokersChangePage = function(args)
+        if not args or not args.cycle_config then return end
+        for j = 1, #G.your_collection do
+            for i = #G.your_collection[j].cards,1, -1 do
+                local c = G.your_collection[j]:remove_card(G.your_collection[j].cards[i])
+                c:remove()
+                c = nil
+            end
+        end
+        for i = 1, GUI.JokersPerPage do
+            for j = 1, #G.your_collection do
+                local center = G.P_CENTER_POOLS["Joker"][i+(j-1)*GUI.JokersPerPage + (GUI.JokersPerPage*#G.your_collection*(args.cycle_config.current_option - 1))]
+                if not center then break end
+                local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, center)
+                card.sticker = get_joker_win_sticker(center)
+                G.your_collection[j]:emplace(card)
+                GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedJokerList'), card)
+            end
+        end
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeVoucherPage = function(args)
+        if not args or not args.cycle_config then return end
+        for j = 1, #G.your_collection do
+            for i = #G.your_collection[j].cards,1, -1 do
+                local c = G.your_collection[j]:remove_card(G.your_collection[j].cards[i])
+                c:remove()
+                c = nil
+            end
+        end
+        for i = 1, 4 do
+            for j = 1, #G.your_collection do
+                local center = G.P_CENTER_POOLS["Voucher"][i+(j-1)*4 + (8*(args.cycle_config.current_option - 1))]
+                if not center then break end
+                local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, center)
+                card:start_materialize(nil, i>1 or j>1)
+                G.your_collection[j]:emplace(card)
+                GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedVoucherList'), card)
+            end
+        end
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeTarotPage = function(args)
+        if not args or not args.cycle_config then return end
+        for j = 1, #G.your_collection do
+            for i = #G.your_collection[j].cards,1, -1 do
+                local c = G.your_collection[j]:remove_card(G.your_collection[j].cards[i])
+                c:remove()
+                c = nil
+            end
+        end
+
+        for j = 1, #G.your_collection do
+            for i = 1, 4+j do
+                local center = G.P_CENTER_POOLS["Tarot"][i+(j-1)*(5) + (11*(args.cycle_config.current_option - 1))]
+                if not center then break end
+                local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, center)
+                card:start_materialize(nil, i>1 or j>1)
+                G.your_collection[j]:emplace(card)
+                GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedTarotList'), card)
+            end
+        end
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeSpectralPage = function(args)
+        if not args or not args.cycle_config then return end
+        for j = 1, #G.your_collection do
+            for i = #G.your_collection[j].cards,1, -1 do
+                local c = G.your_collection[j]:remove_card(G.your_collection[j].cards[i])
+                c:remove()
+                c = nil
+            end
+        end
+
+        for j = 1, #G.your_collection do
+            for i = 1, 3+j do
+                local center = G.P_CENTER_POOLS["Spectral"][i+(j-1)*(4) + (9*(args.cycle_config.current_option - 1))]
+                if not center then break end
+                local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, center)
+                card:start_materialize(nil, i>1 or j>1)
+                G.your_collection[j]:emplace(card)
+                GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedSpectralList'), card)
+            end
+        end
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeBoosterPage = function(args)
+        if not args or not args.cycle_config then return end
+        for j = 1, #G.your_collection do
+            for i = #G.your_collection[j].cards,1, -1 do
+                local c = G.your_collection[j]:remove_card(G.your_collection[j].cards[i])
+                c:remove()
+                c = nil
+            end
+        end
+
+        for j = 1, #G.your_collection do
+            for i = 1, 4 do
+                local center = G.P_CENTER_POOLS["Booster"][i+(j-1)*4 + (8*(args.cycle_config.current_option - 1))]
+                if not center then break end
+                local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W*1.27, G.CARD_H*1.27, nil, center)
+                card:start_materialize(nil, i>1 or j>1)
+                G.your_collection[j]:emplace(card)
+                GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedBoosterList'), card)
+            end
+        end
+    end
+
     G.FUNCS.DeckCreatorModuleCopyDeck = function(args)
         local copyFrom
         local matchUUID = G.GAME.viewed_back.effect.config.uuid
@@ -115,12 +228,7 @@ function GUI.registerGlobals()
             end
         end
 
-        local desc1 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 0 and copyFrom.loc_txt.text[1] or ""
-        local desc2 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 1 and copyFrom.loc_txt.text[2] or ""
-        local desc3 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 2 and copyFrom.loc_txt.text[3] or ""
-        local desc4 = copyFrom.loc_txt and copyFrom.loc_txt.text and #copyFrom.loc_txt.text > 3 and copyFrom.loc_txt.text[4] or ""
-        local joinedDesc = desc1 .. " " .. desc2 .. " " .. desc3 .. " " .. desc4
-        local copy = CustomDeck.fullNewFromExisting(copyFrom, joinedDesc, "", "", "", true)
+        local copy = CustomDeck.fullNewFromExisting(copyFrom, { [1] = copyFrom.config.rawDescription }, true)
 
         copy.config.dollars = copy.config.dollars + 8
         copy.config.hand_size = copy.config.hand_size + 16
@@ -153,11 +261,7 @@ function GUI.registerGlobals()
         end
 
         local deck = Utils.EditDeckConfig.deck
-        local desc1 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 0 and deck.loc_txt.text[1] or ""
-        local desc2 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 1 and deck.loc_txt.text[2] ~= "" and "<n" .. deck.loc_txt.text[2] or ""
-        local desc3 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 2 and deck.loc_txt.text[3] ~= "" and "<n" .. deck.loc_txt.text[3] or ""
-        local desc4 = deck.loc_txt and deck.loc_txt.text and #deck.loc_txt.text > 3 and deck.loc_txt.text[4] ~= "" and "<n" .. deck.loc_txt.text[4] or ""
-        Utils.EditDeckConfig.deck = CustomDeck.fullNewFromExisting(deck, deck.config.rawDescription, "", "", "", false)
+        Utils.EditDeckConfig.deck = CustomDeck.fullNewFromExisting(deck, { [1] = deck.config.rawDescription }, false)
 
         Utils.EditDeckConfig.deck.config.dollars = Utils.EditDeckConfig.deck.config.dollars + 8
         Utils.EditDeckConfig.deck.config.hand_size = Utils.EditDeckConfig.deck.config.hand_size + 16
@@ -347,15 +451,21 @@ function GUI.registerGlobals()
         })
     end
 
+    G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsTitle = function(args)
+        GUI.DynamicUIManager.updateDynamicAreas({
+            ["staticModsTitle"] = GUI.dynamicStaticModsTitle()
+        })
+    end
+
     G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnOne = function(args)
         GUI.DynamicUIManager.updateDynamicAreas({
-            ["staticModsColumnOne"] = GUI.dynamicStaticModsColumnOne()
+            ["staticModsColumnOne"] = GUI.dynamicStaticModsGenerateColumn(1)
         })
     end
 
     G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnTwo = function(args)
         GUI.DynamicUIManager.updateDynamicAreas({
-            ["staticModsColumnTwo"] = GUI.dynamicStaticModsColumnTwo()
+            ["staticModsColumnTwo"] = GUI.dynamicStaticModsGenerateColumn(2)
         })
     end
 
@@ -372,7 +482,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleAddCard = function()
-        CardUtils.addCardToDeck({ addCard = GUI.addCard })
+        CardUtils.addCardToDeck(GUI.addCard)
         Utils.getCurrentEditingDeck().config.custom_cards_set = true
         G.FUNCS.overlay_menu({
             definition = GUI.createDecksMenu("Base Deck")
@@ -505,16 +615,23 @@ function GUI.registerGlobals()
         }
     end
 
+    G.FUNCS.DeckCreatorModuleBanBoosterMenu = function()
+        GUI.OpenBannedItemConfig.openItemType = 'booster'
+        G.SETTINGS.paused = true
+        G.FUNCS.overlay_menu{
+            definition = GUI.addBannedBoosterMenu()
+        }
+    end
+
     G.FUNCS.DeckCreatorModuleGenerateCard = function()
-        local addCard = {
+        CardUtils.addCardToDeck({
             rank = "Random",
             suit = "Random",
             edition = "Random",
             enhancement = "Random",
             seal = "Random",
             copies = 1
-        }
-        CardUtils.addCardToDeck({ addCard = addCard })
+        })
         Utils.getCurrentEditingDeck().config.custom_cards_set = true
         GUI.updateAllDeckEditorAreas()
     end
@@ -651,6 +768,7 @@ function GUI.registerGlobals()
         Utils.getCurrentEditingDeck().config.bannedSpectralList = {}
         Utils.getCurrentEditingDeck().config.bannedTagList = {}
         Utils.getCurrentEditingDeck().config.bannedBlindList = {}
+        Utils.getCurrentEditingDeck().config.bannedBoosterList = {}
         if CardUtils.bannedItems.vouchers and #CardUtils.bannedItems.vouchers > 0 then
             for j = 1, #CardUtils.bannedItems.vouchers do
                 local c = CardUtils.bannedItems.vouchers[j]
@@ -714,6 +832,15 @@ function GUI.registerGlobals()
                 end
             end
         end
+        if CardUtils.bannedItems.boosters and #CardUtils.bannedItems.boosters > 0 then
+            for j = 1, #CardUtils.bannedItems.boosters do
+                local c = CardUtils.bannedItems.boosters[j]
+                if c then
+                    c:remove()
+                    c = nil
+                end
+            end
+        end
         CardUtils.bannedItems.vouchers = {}
         CardUtils.bannedItems.jokers = {}
         CardUtils.bannedItems.tarots = {}
@@ -721,6 +848,7 @@ function GUI.registerGlobals()
         CardUtils.bannedItems.spectrals = {}
         CardUtils.bannedItems.tags = {}
         CardUtils.bannedItems.blinds = {}
+        CardUtils.bannedItems.boosters = {}
         GUI.updateAllBannedItemsAreas()
     end
 
@@ -885,6 +1013,10 @@ function GUI.registerGlobals()
 
     G.FUNCS.DeckCreatorModuleChangeChanceToDoubleGoldSeal = function(args)
         Utils.getCurrentEditingDeck().config.chance_to_double_gold_seal = args.to_val
+    end
+
+    G.FUNCS.DeckCreatorModuleChangeChanceMakeSevensLucky = function(args)
+        Utils.getCurrentEditingDeck().config.make_sevens_lucky = args.to_val
     end
 
     G.FUNCS.DeckCreatorModuleChangeExtraHandLevelUpgrades  = function(args)
@@ -1184,14 +1316,16 @@ function GUI.registerGlobals()
 
         Utils.getCurrentEditingDeck().config.rawDescription = desc1
 
+        local descTable = {}
+
         if desc1 == "" then
-            desc1 = "Custom Deck"
-            desc2 = "created at"
-            desc3 = "{C:attention}" .. Utils.timestamp() .. "{}"
-            Utils.getCurrentEditingDeck().config.rawDescription = desc1 .. "<n" .. desc2 .. "<n" .. "<:attention<" .. Utils.timestamp() .. "<"
+            local time = Utils.timestamp()
+            table.insert(descTable, "Custom Deck")
+            table.insert(descTable, "created at")
+            table.insert(descTable, "{C:attention}" .. time .. "{}")
+            Utils.getCurrentEditingDeck().config.rawDescription = "Custom Deck<ncreated at<n<:attention<" .. time .. "<"
         else
             -- Split the input string on "<n" and assign to parts
-            local parts = {}
             for part in string.gmatch(desc1 .. "<n", "(.-)<n") do
                 -- Replace "<:key<< with "{C:key}" and handle subsequent text
                 local modifiedPart = string.gsub(part, "<:([^<]+)<", function(key)
@@ -1200,25 +1334,11 @@ function GUI.registerGlobals()
                 -- Now, replace any single "<" left with "{}"
                 modifiedPart = string.gsub(modifiedPart, "<", "{}")
 
-                table.insert(parts, modifiedPart)
-            end
-
-            -- Distribute the parts across desc1 to desc4
-            desc1 = parts[1] or desc1
-            desc2 = parts[2] or ""
-            desc3 = parts[3] or ""
-            desc4 = parts[4] or ""
-
-            -- If there are more than 4 parts, concatenate the rest with desc4
-            if #parts > 4 then
-                desc4 = parts[4] -- Start with the 4th part
-                for i = 5, #parts do
-                    desc4 = desc4 .. "<n" .. parts[i] -- Append remaining parts with "<n"
-                end
+                table.insert(descTable, modifiedPart)
             end
         end
 
-        local newDeck = CustomDeck.fullNewFromExisting(Utils.getCurrentEditingDeck(), desc1, desc2, desc3, desc4)
+        local newDeck = CustomDeck.fullNewFromExisting(Utils.getCurrentEditingDeck(), descTable)
         newDeck:register()
 
         Utils.log("New deck created\n" .. Utils.tableToStringIgnoreKeys(newDeck, { "customCardList" }))
@@ -1245,6 +1365,25 @@ function GUI.registerGlobals()
         GUI.redrawMainMenu()
         GUI.addCard = GUI.resetAddCard()
         G.FUNCS:exit_overlay_menu()
+    end
+end
+
+function GUI.checkBannedForFlips(center, list)
+    local isBanned = false
+    for k,v in pairs(Utils.getCurrentEditingDeck().config[list]) do
+        if v.key == center.key or v == center.key then
+            isBanned = true
+            break
+        end
+    end
+    return isBanned
+end
+
+function GUI.runBannedFlips(isBanned, card)
+    if isBanned and card.facing == 'front' then
+        card:flip()
+    elseif isBanned == false and card.facing == 'back' then
+        card:flip()
     end
 end
 
@@ -2116,8 +2255,9 @@ function GUI.createDecksMenu(chosen)
                                                     init = GUI.staticModsPreUpdate
                                                 },
                                                 updateFunctions = {
+                                                    staticModsTitle = G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsTitle,
                                                     staticModsColumnOne = G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnOne,
-                                                    staticModsColumnTwo = G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnTwo
+                                                    staticModsColumnTwo = G.FUNCS.DeckCreatorModuleUpdateDynamicStaticModsColumnTwo,
                                                 },
                                                 postUpdateFunctions = {
                                                     post = GUI.staticModsPostUpdate
@@ -3101,12 +3241,12 @@ function GUI.addJokerMenu()
     local deck_tables = {}
 
     G.your_collection = {}
-    for j = 1, 3 do
+    for j = 1, 2 do
         G.your_collection[j] = CardArea(
                 G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
-                5*G.CARD_W,
+                GUI.JokersPerPage*G.CARD_W,
                 0.95*G.CARD_H,
-                {card_limit = 5, type = 'title', highlight_limit = 0, collection = true})
+                {card_limit = GUI.JokersPerPage, type = 'title', highlight_limit = 0, collection = true})
         table.insert(deck_tables,
                 {n=G.UIT.R, config={align = "cm", padding = 0.07, no_fill = true}, nodes={
                     {n=G.UIT.O, config={object = G.your_collection[j]}}
@@ -3115,13 +3255,13 @@ function GUI.addJokerMenu()
     end
 
     local joker_options = {}
-    for i = 1, math.ceil(#G.P_CENTER_POOLS.Joker/(5*#G.your_collection)) do
-        table.insert(joker_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.ceil(#G.P_CENTER_POOLS.Joker/(5*#G.your_collection))))
+    for i = 1, math.ceil(#G.P_CENTER_POOLS.Joker/(GUI.JokersPerPage*#G.your_collection)) do
+        table.insert(joker_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.ceil(#G.P_CENTER_POOLS.Joker/(GUI.JokersPerPage*#G.your_collection))))
     end
 
-    for i = 1, 5 do
+    for i = 1, GUI.JokersPerPage do
         for j = 1, #G.your_collection do
-            local center = G.P_CENTER_POOLS["Joker"][i+(j-1)*5]
+            local center = G.P_CENTER_POOLS["Joker"][i+(j-1)*GUI.JokersPerPage]
             local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
             card.sticker = get_joker_win_sticker(center)
             G.your_collection[j]:emplace(card)
@@ -3136,7 +3276,7 @@ function GUI.addJokerMenu()
                 config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
                 nodes = {
                     {n=G.UIT.R, config={align = "cm"}, nodes={
-                        create_option_cycle({options = joker_options, w = 2.5, cycle_shoulders = true, opt_callback = 'your_collection_joker_page', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true, nav = 'wide'}})
+                        create_option_cycle({options = joker_options, w = 2.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleStartingJokersChangePage', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true, nav = 'wide'}})
                     }}
                 }
             },
@@ -3265,7 +3405,7 @@ function GUI.addPlanetMenu()
 
     local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
-        {n=G.UIT.R, config={align = "cm", padding = 0.7}, nodes={
+        {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
             {
                 n = G.UIT.C,
                 config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
@@ -3428,6 +3568,7 @@ function GUI.dynamicBannedItemsPreUpdate()
     local voucherList = Utils.getCurrentEditingDeck().config.bannedVoucherList
     local tagList = Utils.getCurrentEditingDeck().config.bannedTagList
     local blindList = Utils.getCurrentEditingDeck().config.bannedBlindList
+    local boosterList = Utils.getCurrentEditingDeck().config.bannedBoosterList
     CardUtils.getBannedJokersFromBannedJokerList(jokerList)
     CardUtils.getBannedTarotsFromBannedTarotList(tarotList)
     CardUtils.getBannedPlanetsFromBannedPlanetList(planetList)
@@ -3435,6 +3576,7 @@ function GUI.dynamicBannedItemsPreUpdate()
     CardUtils.getBannedVouchersFromBannedVoucherList(voucherList)
     CardUtils.getBannedTagsFromBannedTagList(tagList)
     CardUtils.getBannedBlindsFromBannedBlindList(blindList)
+    CardUtils.getBannedBoostersFromBannedBoosterList(boosterList)
     remove_nils(CardUtils.bannedItems.jokers)
     remove_nils(CardUtils.bannedItems.tarots)
     remove_nils(CardUtils.bannedItems.planets)
@@ -3442,6 +3584,7 @@ function GUI.dynamicBannedItemsPreUpdate()
     remove_nils(CardUtils.bannedItems.vouchers)
     remove_nils(CardUtils.bannedItems.tags)
     remove_nils(CardUtils.bannedItems.blinds)
+    remove_nils(CardUtils.bannedItems.boosters)
 end
 
 function GUI.dynamicBannedItemsPostUpdate()
@@ -3559,6 +3702,7 @@ function GUI.dynamicBannedItemsAreaCards()
                         { n = G.UIT.R, config = { align = "cm", minh = 0.05, padding = 0.1 }, nodes = {
                             Helper.tally_item_sprite({ x = 3, y = 0 }, { { string = Helper.sums.banned_item_tallies['Tag'], colour = flip_col }, { string = Helper.sums.banned_item_tallies['Tag'], colour = G.C.BLUE } }, { "Tags" }),
                             Helper.tally_item_sprite({ x = 3, y = 0 }, { { string = Helper.sums.banned_item_tallies['Blind'], colour = flip_col }, { string = Helper.sums.banned_item_tallies['Blind'], colour = G.C.BLUE } }, { "Blinds" }),
+                            Helper.tally_item_sprite({ x = 3, y = 0 }, { { string = Helper.sums.banned_item_tallies['Booster'], colour = flip_col }, { string = Helper.sums.banned_item_tallies['Booster'], colour = G.C.BLUE } }, { "Boosters" }),
                         } },
                     } }
                 }
@@ -3807,6 +3951,20 @@ function GUI.dynamicBannedItemsAreaDeckTables()
             table.insert(CardUtils.allCardsEverMade, copy)
         end
     end
+    for i = 1, #CardUtils.bannedItems.boosters do
+        if CardUtils.bannedItems.boosters[i] then
+            local base = CardUtils.bannedItems.boosters[i]
+            local _scale = 0.7
+            local copy = copy_card(base, nil, _scale)
+            copy.uuid = base.uuid
+            copy.greyed = nil
+            copy.T.x = consumableArea.T.x + consumableArea.T.w/2
+            copy.T.y = consumableArea.T.y
+            copy:hard_set_T()
+            consumableArea:emplace(copy)
+            table.insert(CardUtils.allCardsEverMade, copy)
+        end
+    end
 
     -- jokers
     local jokerArea = CardArea(
@@ -3865,6 +4023,7 @@ function GUI.createSelectBanItemTypeMenu()
                 UIBox_button({button = 'DeckCreatorModuleBanTagMenu', label = {localize('b_tags')}, count = G.DISCOVER_TALLIES.tags, minw = 5, id = 'your_collection_tags'}),
                 UIBox_button({button = 'DeckCreatorModuleBanVoucherMenu', label = {localize('b_vouchers')}, count = G.DISCOVER_TALLIES.vouchers, minw = 5, id = 'your_collection_vouchers'}),
                 UIBox_button({button = 'DeckCreatorModuleBanBlindMenu', label = {localize('b_blinds')}, count = G.DISCOVER_TALLIES.blinds, minw = 5, id = 'your_collection_blinds', focus_args = {snap_to = true}}),
+                UIBox_button({button = 'DeckCreatorModuleBanBoosterMenu', label = {localize('b_booster_packs')}, count = G.DISCOVER_TALLIES.boosters, minw = 5, id = 'your_collection_boosters'}),
                 {n=G.UIT.R, config={align = "cm", padding = 0.1, r=0.2, colour = G.C.BLACK}, nodes={
                     {n=G.UIT.C, config={align = "cm", maxh=2.9}, nodes={
                         {n=G.UIT.T, config={text = localize('k_cap_consumables'), scale = 0.45, colour = G.C.L_BLACK, vert = true, maxh=2.2}},
@@ -3909,13 +4068,14 @@ function GUI.addBannedVoucherMenu()
             card.ability.order = i+(j-1)*4
             card:start_materialize(nil, i>1 or j>1)
             G.your_collection[j]:emplace(card)
+            GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedVoucherList'), card)
         end
     end
 
     return create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenBanItem', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm"}, nodes={
-            create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_voucher_page', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
+            create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeVoucherPage', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
         }}
     }})
 end
@@ -3924,12 +4084,12 @@ function GUI.addBannedJokerMenu()
     local deck_tables = {}
 
     G.your_collection = {}
-    for j = 1, 3 do
+    for j = 1, 2 do
         G.your_collection[j] = CardArea(
                 G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
-                5*G.CARD_W,
+                GUI.JokersPerPage*G.CARD_W,
                 0.95*G.CARD_H,
-                {card_limit = 5, type = 'title', highlight_limit = 0, collection = true})
+                {card_limit = GUI.JokersPerPage, type = 'title', highlight_limit = 0, collection = true})
         table.insert(deck_tables,
                 {n=G.UIT.R, config={align = "cm", padding = 0.07, no_fill = true}, nodes={
                     {n=G.UIT.O, config={object = G.your_collection[j]}}
@@ -3938,16 +4098,17 @@ function GUI.addBannedJokerMenu()
     end
 
     local joker_options = {}
-    for i = 1, math.ceil(#G.P_CENTER_POOLS.Joker/(5*#G.your_collection)) do
-        table.insert(joker_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.ceil(#G.P_CENTER_POOLS.Joker/(5*#G.your_collection))))
+    for i = 1, math.ceil(#G.P_CENTER_POOLS.Joker/(GUI.JokersPerPage*#G.your_collection)) do
+        table.insert(joker_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.ceil(#G.P_CENTER_POOLS.Joker/(GUI.JokersPerPage*#G.your_collection))))
     end
 
-    for i = 1, 5 do
+    for i = 1, GUI.JokersPerPage do
         for j = 1, #G.your_collection do
-            local center = G.P_CENTER_POOLS["Joker"][i+(j-1)*5]
+            local center = G.P_CENTER_POOLS["Joker"][i+(j-1)*GUI.JokersPerPage]
             local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
             card.sticker = get_joker_win_sticker(center)
             G.your_collection[j]:emplace(card)
+            GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedJokerList'), card)
         end
     end
 
@@ -3955,7 +4116,7 @@ function GUI.addBannedJokerMenu()
         {n=G.UIT.R, config={align = "cm", r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm"}, nodes={
             {n=G.UIT.R, config={align = "cm"}, nodes={
-                create_option_cycle({options = joker_options, w = 2.5, cycle_shoulders = true, opt_callback = 'your_collection_joker_page', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true, nav = 'wide'}})
+                create_option_cycle({options = joker_options, w = 2.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleStartingJokersChangePage', current_option = 1, colour = G.C.RED, no_pips = true, focus_args = {snap_to = true, nav = 'wide'}})
             }}
         }}
     }})
@@ -3990,13 +4151,14 @@ function GUI.addBannedTarotMenu()
             local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
             card:start_materialize(nil, i>1 or j>1)
             G.your_collection[j]:emplace(card)
+            GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedTarotList'), card)
         end
     end
 
     local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenBanItem', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm"}, nodes={
-            create_option_cycle({options = tarot_options, w = 2.5, cycle_shoulders = true, opt_callback = 'your_collection_tarot_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+            create_option_cycle({options = tarot_options, w = 2.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeTarotPage', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
         }}
     }})
     return t
@@ -4025,6 +4187,7 @@ function GUI.addBannedPlanetMenu()
             local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
             card:start_materialize(nil, i>1 or j>1)
             G.your_collection[j]:emplace(card)
+            GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedPlanetList'), card)
         end
     end
 
@@ -4058,18 +4221,19 @@ function GUI.addBannedSpectralMenu()
             local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W, G.CARD_H, nil, center)
             card:start_materialize(nil, i>1 or j>1)
             G.your_collection[j]:emplace(card)
+            GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedSpectralList'), card)
         end
     end
 
     local spectral_options = {}
-    for i = 1, math.floor(#G.P_CENTER_POOLS.Tarot/9) do
+    for i = 1, math.floor(#G.P_CENTER_POOLS.Spectral/9) do
         table.insert(spectral_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.floor(#G.P_CENTER_POOLS.Spectral/9)))
     end
 
     local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenBanItem', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm", padding = 0}, nodes={
-            create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_spectral_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+            create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeSpectralPage', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
         }}
     }})
     return t
@@ -4294,7 +4458,784 @@ function GUI.addBannedBlindMenu()
     return t
 end
 
+function GUI.addBannedBoosterMenu()
+
+    local deck_tables = {}
+
+    G.your_collection = {}
+    for j = 1, 2 do
+        G.your_collection[j] = CardArea(
+                G.ROOM.T.x + 0.2*G.ROOM.T.w/2,G.ROOM.T.h,
+                (5.25)*G.CARD_W,
+                1.3*G.CARD_H,
+                {card_limit = 4, type = 'title', highlight_limit = 0, collection = true})
+        table.insert(deck_tables,
+                {n=G.UIT.R, config={align = "cm", padding = 0, no_fill = true}, nodes={
+                    {n=G.UIT.O, config={object = G.your_collection[j]}}
+                }}
+        )
+    end
+
+    local booster_options = {}
+    for i = 1, math.ceil(#G.P_CENTER_POOLS.Booster/8) do
+        table.insert(booster_options, localize('k_page')..' '..tostring(i)..'/'..tostring(math.ceil(#G.P_CENTER_POOLS.Booster/8)))
+    end
+
+    for j = 1, #G.your_collection do
+        for i = 1, 4 do
+            local center = G.P_CENTER_POOLS["Booster"][i+(j-1)*4]
+            local card = Card(G.your_collection[j].T.x + G.your_collection[j].T.w/2, G.your_collection[j].T.y, G.CARD_W*1.27, G.CARD_H*1.27, nil, center)
+            card:start_materialize(nil, i>1 or j>1)
+            G.your_collection[j]:emplace(card)
+            GUI.runBannedFlips(GUI.checkBannedForFlips(center, 'bannedBoosterList'), card)
+        end
+    end
+
+    local t = create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenBanItem', contents = {
+        {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
+        {n=G.UIT.R, config={align = "cm"}, nodes={
+            create_option_cycle({options = booster_options, w = 4.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeBoosterPage', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+        }}
+    }})
+    return t
+end
+
+
 -- Static Mods
+function GUI.initializeStaticMods()
+
+    local groupsOrder = {"Gameplay", "Money", "Shop", "Booster Packs", "Blind", "Seals", "Enhancements", "Glass Break"}
+
+    local allGroups = {}
+    local gameplayMods = {
+        {
+            group = "Gameplay",
+            label = "Aces are considered Face cards",
+            property = 'aces_are_faces'
+        },
+        {
+            group = "Gameplay",
+            label = "7s are considered Face cards",
+            property = 'sevens_are_faces'
+        },
+        {
+            group = "Gameplay",
+            label = "Chips cannot exceed current $",
+            property = 'chips_dollar_cap'
+        },
+        {
+            group = "Gameplay",
+            label = "Hold -1 cards in hand per $5",
+            property = 'minus_hand_size_per_X_dollar'
+        },
+        {
+            group = "Gameplay",
+            label = "All played cards become debuffed after scoring",
+            property = 'debuff_played_cards'
+        },
+        {
+            group = "Gameplay",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Gameplay",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Gameplay",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Gameplay",
+            label = "Chance to Balance Chips and Mult",
+            property = "balance_percent",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "1 in X cards are drawn face down",
+            property = "flipped_cards",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Number of Cards to Draw on Play or Discard",
+            property = "draw_to_hand_size",
+            options = Utils.generateBoundedIntegerListWithNoneOption(1, 9999),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Gain X extra levels whenever a hand is upgraded",
+            property = "extra_hand_level_upgrades",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Chance to Increase Rank of Discarded Cards by 1",
+            property = "chance_to_increase_discard_cards_rank",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Chance to Increase Rank of Drawn Cards by 1",
+            property = "chance_to_increase_drawn_cards_rank",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Mult Reduced by X Percent",
+            property = "mult_reduction_percent",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Chips Reduced by X Percent",
+            property = "chip_reduction_percent",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Multiply all probabilities by X",
+            property = "multiply_probabilities",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Divide all probabilities by X",
+            property = "divide_probabilities",
+            options = Utils.generateBoundedIntegerList(1, 9999),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "Edition Rate",
+            property = "edition_rate",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Gameplay",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        }
+    }
+    local moneyMods = {
+        {
+            group = "Money",
+            label = "Raise prices by $1 on every purchase",
+            property = "inflation"
+        },
+        {
+            group = "Money",
+            label = "Jokers sell for full price",
+            property = "full_price_jokers"
+        },
+        {
+            group = "Money",
+            label = "Consumables sell for full price",
+            property = "full_price_consumables"
+        },
+        {
+            group = "Money",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Money",
+            label = "Boosters cost $X more per Ante",
+            property = "booster_ante_scaling",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Money",
+            label = "Lose $X per round for each Negative Joker",
+            property = "negative_joker_money",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Money",
+            label = "Gain $X per round for each Enhanced card",
+            property = "enhanced_dollars_per_round",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Money",
+            label = "Gain $X when any Booster Pack is skipped",
+            property = "gain_dollars_when_skip_booster",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Money",
+            label = "Add $X of Sell Value to a random Joker at the end of round",
+            property = "random_sell_value_increase",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Money",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+    }
+    local shopMods = {
+        {
+            group = "Shop",
+            label = "Reroll also replaces Booster Packs",
+            property = "reroll_boosters"
+        },
+        {
+            group = "Shop",
+            label = "Allow Legendary Jokers to appear",
+            property = "allow_legendary_jokers_everywhere"
+        },
+        {
+            group = "Shop",
+            label = "Allow Duplicate Items to appear",
+            property = "allow_duplicate_jokers"
+        },
+        {
+            group = "Shop",
+            label = "Allow Black Hole to Appear",
+            property = "allow_black_hole"
+        },
+        {
+            group = "Shop",
+            label = "Allow The Soul to Appear",
+            property = "allow_soul"
+        },
+        {
+            group = "Shop",
+            label = "All Jokers Eternal",
+            property = "all_eternal"
+        },
+        {
+            group = "Shop",
+            label = "Eternal Jokers appear in shop",
+            property = "enable_eternals_in_shop"
+        },
+        {
+            group = "Shop",
+            label = "???",
+            property = "???"
+        }
+    }
+    local boosterMods = {
+        {
+            group = "Booster Packs",
+            label = "Celestial packs always contain most played hand",
+            property = "always_telescoping"
+        },
+        {
+            group = "Booster Packs",
+            label = "Celestial Packs never contain most played hand",
+            property = "never_telescoping"
+        },
+        {
+            group = "Booster Packs",
+            label = "Allow Spectral cards to appear in Arcana Packs",
+            property = "spectral_cards_in_arcana"
+        },
+        {
+            group = "Booster Packs",
+            label = "Allow Planet cards to appear in Arcana Packs",
+            property = "planet_cards_in_arcana"
+        },
+        {
+            group = "Booster Packs",
+            label = "Allow Tarot cards to appear in Spectral Packs",
+            property = "tarot_cards_in_spectral"
+        },
+        {
+            group = "Booster Packs",
+            label = "Allow Planet cards to appear in Spectral Packs",
+            property = "planet_cards_in_spectral"
+        },
+        {
+            group = "Booster Packs",
+            label = "Allow Tarot cards to appear in Celestial Packs",
+            property = "tarot_cards_in_celestial"
+        },
+        {
+            group = "Booster Packs",
+            label = "Allow Spectral cards to appear in Celestial Packs",
+            property = "spectral_cards_in_celestial"
+        },
+        {
+            group = "Booster Packs",
+            label = "Standard Pack Enhancement Rate",
+            property = "standard_pack_enhancement_rate",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Booster Packs",
+            label = "Standard Pack Edition Rate",
+            property = "standard_pack_edition_rate",
+            options = Utils.generateBoundedIntegerList(0, 300),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Booster Packs",
+            label = "Standard Pack Seal Rate",
+            property = "standard_pack_seal_rate",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Booster Packs",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Booster Packs",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Booster Packs",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+    }
+    local blindMods = {
+        {
+            group = "Blind",
+            label = "Chance to Autoskip Shop after Small Blind",
+            property = "skip_shop_chance_small_blind",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "Chance to Autoskip Shop after Big Blind",
+            property = "skip_shop_chance_big_blind",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "Chance to Autoskip Shop after Boss",
+            property = "skip_shop_chance_boss",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "Chance to Autoskip Shop after Every Blind",
+            property = "skip_shop_chance_any",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+
+        {
+            group = "Blind",
+            label = "Chance to Disable Skip on Small Blind",
+            property = "skip_blind_disabled_chance_small_blind",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "Chance to Disable Skip on Big Blind",
+            property = "skip_blind_disabled_chance_big_blind",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+
+        {
+            group = "Blind",
+            label = "Chance to Disable Skip on Every Blind",
+            property = "skip_blind_disabled_chance_any",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Blind",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+    }
+    local sealMods = {
+        {
+            group = "Seals",
+            label = "On Blue Seal trigger switch to another random Seal",
+            property = 'blue_seal_switch_trigger'
+        },
+        {
+            group = "Seals",
+            label = "Blue Seals always generate Planet of most played hand",
+            property = 'blue_seal_always_most_played'
+        },
+        {
+            group = "Seals",
+            label = "Replace Red Seal 'Again!' text with messages from file",
+            property = 'red_seal_silly_messages'
+        },
+        {
+            group = "Seals",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Seals",
+            label = "Extra Red Seal Repetitions",
+            property = "extra_red_seal_repetitions",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Seals",
+            label = "Chance to Double Gold Seal Money",
+            property = "chance_to_double_gold_seal",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Seals",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Seals",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Seals",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Seals",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        }
+    }
+    local enhanceMods = {
+        {
+            group = "Enhancements",
+            label = "Chance to consider 7s as Lucky Cards",
+            property = "make_sevens_lucky",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Enhancements",
+            label = "Chance to triple mult from Mult cards",
+            property = "triple_mult_cards_chance",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Enhancements",
+            label = "Chance to disable mult from Mult cards",
+            property = "disable_mult_cards_chance",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Enhancements",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Enhancements",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Enhancements",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+    }
+    local glassBreakMods = {
+        {
+            group = "Glass Break",
+            label = "Receive random Negative Joker when a Glass card breaks",
+            property = 'negative_joker_for_broken_glass'
+        },
+        {
+            group = "Glass Break",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Glass Break",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Glass Break",
+            label = "???",
+            property = '???'
+        },
+        {
+            group = "Glass Break",
+            label = "Gain $X when a Glass card breaks",
+            property = "broken_glass_money",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Glass Break",
+            label = "Chance to gain $10 when a Glass card breaks",
+            property = "gain_ten_dollars_glass_break_chance",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Glass Break",
+            label = "Chance to replace broken Glass cards with Stones",
+            property = "replace_broken_glass_with_stones_chance",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Glass Break",
+            label = "Chance to replace broken Glass cards with random cards",
+            property = "replace_broken_glass_with_random_cards_chance",
+            options = Utils.generateBoundedIntegerList(0, 100),
+            multiArrows = true,
+            minorArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Glass Break",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+        {
+            group = "Glass Break",
+            label = "???",
+            property = "???",
+            options = Utils.generateBigIntegerList(),
+            multiArrows = true,
+            isToggle = false
+        },
+    }
+
+    table.insert(allGroups, gameplayMods)
+    table.insert(allGroups, moneyMods)
+    table.insert(allGroups, shopMods)
+    table.insert(allGroups, boosterMods)
+    table.insert(allGroups, blindMods)
+    table.insert(allGroups, sealMods)
+    table.insert(allGroups, enhanceMods)
+    table.insert(allGroups, glassBreakMods)
+
+    for x,y in pairs(allGroups) do
+        for k,v in pairs(y) do
+            table.insert(GUI.StaticModsObjects, StaticMod:new(v))
+        end
+    end
+    GUI.StaticMods = GUI.prepareMods(GUI.StaticModsObjects, groupsOrder)
+end
+
+function GUI.prepareMods(modList, groupsOrder)
+    local groups = {} -- Stores mods categorized
+
+    for _, groupName in ipairs(groupsOrder) do
+        groups[groupName] = {toggles = {}, selectors = {}}
+    end
+
+    -- Categorize mods into toggles and selectors within their groups
+    for _, mod in ipairs(modList) do
+        if mod.isToggle then
+            table.insert(groups[mod.group].toggles, mod)
+        else
+            table.insert(groups[mod.group].selectors, mod)
+        end
+    end
+
+    local pages = {}
+    local currentPage = 1
+    for _, groupName in ipairs(groupsOrder) do
+        local group = groups[groupName]
+
+        -- Process toggles with a maximum of 8 per page
+        for i = 1, #group.toggles, 8 do
+            local pageMods = {}
+            for j = i, math.min(i + 7, #group.toggles) do
+                local column = ((j - i) % 2) + 1 -- Balance across two columns
+                table.insert(pageMods, {mod = group.toggles[j], column = column})
+            end
+            pages[currentPage] = pageMods
+            currentPage = currentPage + 1
+        end
+
+        -- Process selectors with a maximum of 6 per page
+        for i = 1, #group.selectors, 6 do
+            local pageMods = {}
+            for j = i, math.min(i + 5, #group.selectors) do
+                local column = ((j - i) % 2) + 1 -- Balance across two columns
+                table.insert(pageMods, {mod = group.selectors[j], column = column})
+            end
+            pages[currentPage] = pageMods
+            currentPage = currentPage + 1
+        end
+    end
+
+    return pages
+end
+
 function GUI.staticModsPreUpdate()
     if GUI.OpenTab ~= "Static Mods" then
         return
@@ -4307,9 +5248,8 @@ end
 
 function GUI.staticModsPageStatic()
     local pages = {}
-    local max = 13
-    for i = 1, max do
-        table.insert(pages, "Page " .. i .. "/" .. max)
+    for i = 1, #GUI.StaticMods do
+        table.insert(pages, "Page " .. i .. "/" .. #GUI.StaticMods)
     end
     return {
         n = G.UIT.ROOT,
@@ -4321,7 +5261,12 @@ function GUI.staticModsPageStatic()
             minw = 22
         },
         nodes = {
+            {n=G.UIT.R, config={align = "cm", padding = 0.1 }, nodes={
+                {n=G.UIT.O, config={padding = 2, id = 'staticModsTitle', object = Moveable()}}
+            }},
+            {n=G.UIT.R, config={align = "cm", padding = 0.5 }, nodes={
 
+            }},
             {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
                 {
                     n = G.UIT.C,
@@ -4352,51 +5297,16 @@ function GUI.staticModsPageStatic()
     }
 end
 
-function GUI.dynamicStaticModsColumnOne(page)
-
-    if GUI.OpenTab ~= "Static Mods" then
-        return {
-            n=G.UIT.ROOT,
-            config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
-            nodes={}
-        }
+function GUI.staticModsSetPage(page)
+    page = page or 1
+    if page > #GUI.StaticMods then
+        page = 1
     end
-
-    local output = GUI.staticModsPageOneColumnOne()
-    if page == 2 then
-        output = GUI.staticModsPageTwoColumnOne()
-    elseif page == 3 then
-        output = GUI.staticModsPageThreeColumnOne()
-    elseif page == 4 then
-        output = GUI.staticModsPageFourColumnOne()
-    elseif page == 5 then
-        output = GUI.staticModsPageFiveColumnOne()
-    elseif page == 6 then
-        output = GUI.staticModsPageSixColumnOne()
-    elseif page == 7 then
-        output = GUI.staticModsPageSevenColumnOne()
-    elseif page == 8 then
-        output = GUI.staticModsPageEightColumnOne()
-    elseif page == 9 then
-        output = GUI.staticModsPageNineColumnOne()
-    elseif page == 10 then
-        output = GUI.staticModsPageTenColumnOne()
-    elseif page == 11 then
-        output = GUI.staticModsPageElevenColumnOne()
-    elseif page == 12 then
-        output = GUI.staticModsPageTwelveColumnOne()
-    elseif page == 13 then
-        output = GUI.staticModsPageThirteenColumnOne()
-    end
-
-    return {
-        n=G.UIT.ROOT,
-        config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
-        nodes=output
-    }
+    GUI.StaticModsCurrentPageName = GUI.StaticMods[page][1].mod.group
+    return page
 end
 
-function GUI.dynamicStaticModsColumnTwo(page)
+function GUI.dynamicStaticModsTitle(page)
 
     if GUI.OpenTab ~= "Static Mods" then
         return {
@@ -4406,1136 +5316,63 @@ function GUI.dynamicStaticModsColumnTwo(page)
         }
     end
 
-    local output = GUI.staticModsPageOneColumnTwo()
-    if page == 2 then
-        output = GUI.staticModsPageTwoColumnTwo()
-    elseif page == 3 then
-        output = GUI.staticModsPageThreeColumnTwo()
-    elseif page == 4 then
-        output = GUI.staticModsPageFourColumnTwo()
-    elseif page == 5 then
-        output = GUI.staticModsPageFiveColumnTwo()
-    elseif page == 6 then
-        output = GUI.staticModsPageSixColumnTwo()
-    elseif page == 7 then
-        output = GUI.staticModsPageSevenColumnTwo()
-    elseif page == 8 then
-        output = GUI.staticModsPageEightColumnTwo()
-    elseif page == 9 then
-        output = GUI.staticModsPageNineColumnTwo()
-    elseif page == 10 then
-        output = GUI.staticModsPageTenColumnTwo()
-    elseif page == 11 then
-        output = GUI.staticModsPageElevenColumnTwo()
-    elseif page == 12 then
-        output = GUI.staticModsPageTwelveColumnTwo()
-    elseif page == 13 then
-        output = GUI.staticModsPageThirteenColumnTwo()
+    page = GUI.staticModsSetPage(page)
+    return {n=G.UIT.T, config={text = GUI.StaticModsCurrentPageName, scale = 0.5, colour = G.C.UI.TEXT_LIGHT}}
+end
+
+function GUI.dynamicStaticModsGetColumnMods(page, column)
+    page = GUI.staticModsSetPage(page)
+    local pageMods = GUI.StaticMods[page]
+    local columnMods = {}
+    for k,v in ipairs(pageMods) do
+        if v.column == column then
+            table.insert(columnMods, {
+                n = G.UIT.R,
+                config = {
+                    align = "cm",
+                    padding = 0.1
+                },
+                nodes = {
+                    v.mod:generate_ui_element()
+                }
+            })
+        end
     end
+    return columnMods
+end
+
+function GUI.dynamicStaticModsGenerateColumn(column, page)
+
+    if GUI.OpenTab ~= "Static Mods" then
+        return {
+            n=G.UIT.ROOT,
+            config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
+            nodes={}
+        }
+    end
+    page = GUI.staticModsSetPage(page)
+    local columnMods = GUI.dynamicStaticModsGetColumnMods(page, column)
 
     return {
         n=G.UIT.ROOT,
         config={align = "cm", padding = 0, colour = G.C.BLACK, r = 0.1, minw = 8, minh = 5},
-        nodes=output
+        nodes=columnMods
     }
 end
 
 function GUI.updateAllStaticModAreas(page)
+    page = GUI.staticModsSetPage(page)
     GUI.staticModsPreUpdate()
     GUI.DynamicUIManager.updateDynamicAreas({
-        ["staticModsColumnOne"] = GUI.dynamicStaticModsColumnOne(page)
+        ["staticModsTitle"] = GUI.dynamicStaticModsTitle(page)
     })
     GUI.DynamicUIManager.updateDynamicAreas({
-        ["staticModsColumnTwo"] = GUI.dynamicStaticModsColumnTwo(page)
+        ["staticModsColumnOne"] = GUI.dynamicStaticModsGenerateColumn(1, page)
+    })
+    GUI.DynamicUIManager.updateDynamicAreas({
+        ["staticModsColumnTwo"] = GUI.dynamicStaticModsGenerateColumn(2, page)
     })
     GUI.staticModsPostUpdate()
-end
-
-function GUI.staticModsPageOneColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Balance Chips and Mult", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeBalancePercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.balance_percent
-                ), multiArrows = true, minorArrows = true }),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Boosters cost $X more per Ante", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeBoosterAnteScaling', current_option = (
-                        Utils.getCurrentEditingDeck().config.booster_ante_scaling
-                ), multiArrows = true }),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Lose $X per round for each Negative Joker", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeNegativeJokerMoney', current_option = (
-                        Utils.getCurrentEditingDeck().config.negative_joker_money
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageOneColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "1 in X cards are drawn face down", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeFlippedCards', current_option = (
-                        Utils.getCurrentEditingDeck().config.flipped_cards
-                ), multiArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Gain $X per round for each Enhanced card", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeEnhancedDollarsPerRound', current_option = (
-                        Utils.getCurrentEditingDeck().config.enhanced_dollars_per_round
-                ), multiArrows = true })
-
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Gain $X when a Glass card breaks", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeBrokenGlassMoney', current_option = (
-                        Utils.getCurrentEditingDeck().config.broken_glass_money
-                ), multiArrows = true })
-
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageTwoColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "On Blue Seal trigger switch to another random Seal", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'blue_seal_switch_trigger'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Hold -1 cards in hand per $5", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'minus_hand_size_per_X_dollar'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "All played cards become debuffed after scoring", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'debuff_played_cards'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Eternal Jokers appear in shop", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'enable_eternals_in_shop'}),
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageTwoColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Chips cannot exceed current $", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'chips_dollar_cap'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Raise prices by $1 on every purchase", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'inflation'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "All Jokers Eternal", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'all_eternal'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Receive random Negative Joker when a Glass card breaks", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'negative_joker_for_broken_glass'}),
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageThreeColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Blue Seals always generate Planet of most played hand", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'blue_seal_always_most_played'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Replace Red Seal 'Again!' message with silly messages", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'red_seal_silly_messages'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Aces are considered Face cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'aces_are_faces'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageThreeColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Reroll also replaces Booster Packs", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'reroll_boosters'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "7s are considered Face cards", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'sevens_are_faces'}),
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageFourColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Extra Red Seal Repetitions", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeExtraRedSealRepetitions', current_option = (
-                        Utils.getCurrentEditingDeck().config.extra_red_seal_repetitions
-                ), multiArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Double Gold Seal Money on Trigger", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeChanceToDoubleGoldSeal', current_option = (
-                        Utils.getCurrentEditingDeck().config.chance_to_double_gold_seal
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to consider 7s as Lucky Cards", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeChanceMakeSevensLucky', current_option = (
-                        Utils.getCurrentEditingDeck().config.make_sevens_lucky
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageFourColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Gain $X when any Booster Pack is skipped", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeGainDollarsWhenSkipBooster', current_option = (
-                        Utils.getCurrentEditingDeck().config.gain_dollars_when_skip_booster
-                ), multiArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Gain X extra levels whenever a hand is upgraded", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeExtraHandLevelUpgrades', current_option = (
-                        Utils.getCurrentEditingDeck().config.extra_hand_level_upgrades
-                ), multiArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageFiveColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Mult Reduced by X Percent", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeMultReductionPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.mult_reduction_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Edition Rate", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeEditionRate', current_option = (
-                        Utils.getCurrentEditingDeck().config.edition_rate
-                ), multiArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Standard Pack Edition Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 300), opt_callback = 'DeckCreatorModuleChangeStandardPackEditionRate', current_option = (
-                        Utils.getCurrentEditingDeck().config.standard_pack_edition_rate
-                ), multiArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageFiveColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chips Reduced by X Percent", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeChipReductionPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.chip_reduction_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Standard Pack Enhancement Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeStandardPackEnhancementRate', current_option = (
-                        Utils.getCurrentEditingDeck().config.standard_pack_enhancement_rate
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Standard Pack Seal Rate", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeStandardPackSealRate', current_option = (
-                        Utils.getCurrentEditingDeck().config.standard_pack_seal_rate
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageSixColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Increase Rank of Discarded Cards by 1", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeChanceToIncreaseDiscardCardsRank', current_option = (
-                        Utils.getCurrentEditingDeck().config.chance_to_increase_discard_cards_rank
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Add $X of Sell Value to a random Joker at the end of round", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeRandomSellValueIncrease', current_option = (
-                        Utils.getCurrentEditingDeck().config.random_sell_value_increase
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Autoskip Shop after Small Blind", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeSkipShopSmallBlind', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_shop_chance_small_blind
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageSixColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-
-                Helper.createOptionSelector({label = "Chance to Increase Rank of Drawn Cards by 1", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeChanceToIncreaseDrawnCardsRank', current_option = (
-                        Utils.getCurrentEditingDeck().config.chance_to_increase_drawn_cards_rank
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Number of Cards to Draw on Play or Discard", scale = 0.8, options = Utils.generateBoundedIntegerListWithNoneOption(1, 9999), opt_callback = 'DeckCreatorModuleChangeDrawToHandSize', current_option = (
-                        Utils.getCurrentEditingDeck().config.draw_to_hand_size
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Autoskip Shop after Big Blind", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeSkipShopBigBlind', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_shop_chance_big_blind
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageSevenColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Autoskip Shop after Boss", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeSkipShopBoss', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_shop_chance_boss
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Disable Skip on Small Blind", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeDisableBlindSmallBlind', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_blind_disabled_chance_small_blind
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Disable Skip on Any Blind", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeDisableBlindAnyBlind', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_blind_disabled_chance_any
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageSevenColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Autoskip Shop after Any Blind", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeSkipShopAny', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_shop_chance_any
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Disable Skip on Big Blind", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeDisableBlindBigBlind', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_blind_disabled_chance_big_blind
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageEightColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Legendary Jokers to Appear", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'allow_legendary_jokers_everywhere'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Duplicate Items to Appear", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'allow_duplicate_jokers'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Jokers sell for full price", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'full_price_jokers'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Celestial Packs always contain most played hand", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'always_telescoping'}),
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageEightColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Black Hole to Appear", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'allow_black_hole'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow The Soul to Appear", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'allow_soul'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Consumables sell for full price", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'full_price_consumables'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Celestial Packs never contain most played hand", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'never_telescoping'}),
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageNineColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Spectral cards to appear in Arcana Packs", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'spectral_cards_in_arcana'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Tarot cards to appear in Spectral Packs", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'tarot_cards_in_spectral'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Tarot cards to appear in Celestial Packs", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'tarot_cards_in_celestial'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Double all Probabilities", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'doubled_probabilities'}),
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageNineColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Planet cards to appear in Arcana Packs", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'planet_cards_in_arcana'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Planet cards to appear in Spectral Packs", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'planet_cards_in_spectral'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Allow Spectral cards to appear in Celestial Packs", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'spectral_cards_in_celestial'}),
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                create_toggle({label = "Half all Probabilities", ref_table = Utils.getCurrentEditingDeck().config, ref_value = 'halved_probabilities'}),
-            }
-        },
-    }
-end
-
-function GUI.staticModsPageTenColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Uncommon Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeUncommonTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.uncommon_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Rare Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeRareTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.rare_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Foil Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeFoilTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.foil_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageTenColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Negative Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeNegativeTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.negative_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Holographic Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeHolographicTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.holographic_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Polychrome Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangePolychromeTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.polychrome_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageElevenColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Investment Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeInvestmentTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.investment_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Voucher Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeVoucherTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.voucher_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Boss Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeBossTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.boss_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageElevenColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Standard Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeMegaStandardTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.mega_standard_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Charm Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeCharmTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.charm_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Meteor Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeMeteorTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.meteor_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageTwelveColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Buffoon Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeBuffoonTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.buffoon_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Handy Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeHandyTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.handy_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Garbage Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeGarbageTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.garbage_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageTwelveColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Ethereal Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeEtherealTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.ethereal_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Coupon Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeCouponTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.coupon_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Double Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeDoubleTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.double_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageThirteenColumnOne()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Juggle Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeJuggleTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.juggle_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain D6 Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeD6TagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.d6_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Top-up Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeTopUpTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.top_up_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
-end
-
-function GUI.staticModsPageThirteenColumnTwo()
-    return {
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Skip Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeSkipTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.skip_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Orbital Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeOrbitalTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.orbital_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                align = "cm",
-                padding = 0.1
-            },
-            nodes = {
-                Helper.createOptionSelector({label = "Chance to Gain Economy Tag on Boss Win", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 100), opt_callback = 'DeckCreatorModuleChangeEconomyTagPercent', current_option = (
-                        Utils.getCurrentEditingDeck().config.economy_tag_percent
-                ), multiArrows = true, minorArrows = true })
-            }
-        }
-    }
 end
 
 -- Dynamic Mods

@@ -31,6 +31,10 @@ Utils.hoveredBlindBanItemsRemoveKey = nil
 Utils.hoveredBlindBanItemsRemoveSprite = nil
 Utils.bannedBlindsPerPage = nil
 
+Utils.runtimeConstants = {
+    boosterPacks = 0
+}
+
 function Utils.resetTagsPerPage()
     Utils.startingTagsPerPage = 8
     Utils.bannedTagsPerPage = 8
@@ -43,7 +47,7 @@ Utils.resetBlindsPerPage()
 
 function Utils.log(message)
     if Utils.mode ~= "PROD" and sendDebugMessage ~= nil then
-        sendDebugMessage("DeckCreatorMod: " .. message)
+        sendDebugMessage(message, "DeckCreatorModule")
     end
 end
 
@@ -326,6 +330,18 @@ function Utils.blindKeys()
     for k,v in pairs(G.P_BLINDS) do
         if v.name ~= 'Big Blind' and v.name ~= 'Small Blind' and v.name ~= 'The Empty' then
             table.insert(output, v.name)
+        end
+    end
+    return output
+end
+
+function Utils.boosterKeys()
+    Utils.runtimeConstants.boosterPacks = 0
+    local output = {}
+    for k,v in pairs(G.P_CENTERS) do
+        if v.set == 'Booster' then
+            Utils.runtimeConstants.boosterPacks = Utils.runtimeConstants.boosterPacks + 1
+            table.insert(output, k)
         end
     end
     return output
