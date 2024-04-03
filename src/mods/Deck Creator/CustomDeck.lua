@@ -21,6 +21,7 @@ function CustomDeck:blankDeck()
     }
 
     o.config = {
+        stones_are_faces = false,
         replace_broken_glass_with_random_cards_chance = 0,
         replace_broken_glass_with_stones_chance = 0,
         gain_ten_dollars_glass_break_chance = 0,
@@ -256,7 +257,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
                             handy_tag_percent, buffoon_tag_percent, meteor_tag_percent, charm_tag_percent, boss_tag_percent, voucher_tag_percent, investment_tag_percent, polychrome_tag_percent, holographic_tag_percent,
                             foil_tag_percent, uncommon_tag_percent, rare_tag_percent, blue_seal_switch_trigger, blue_seal_always_most_played, red_seal_silly_messages, extra_red_seal_repetitions, chance_to_double_gold_seal,
                             make_sevens_lucky, aces_are_faces, gain_dollars_when_skip_booster, reroll_boosters, extra_hand_level_upgrades, sevens_are_faces, multiply_probabilities, divide_probabilities,
-                            triple_mult_cards_chance, disable_mult_cards_chance, gain_ten_dollars_glass_break_chance, replace_broken_glass_with_stones_chance, replace_broken_glass_with_random_cards_chance)
+                            triple_mult_cards_chance, disable_mult_cards_chance, gain_ten_dollars_glass_break_chance, replace_broken_glass_with_stones_chance, replace_broken_glass_with_random_cards_chance, stones_are_faces)
     o = {}
     local newUUID = uuid or Utils.uuid()
     setmetatable(o, self)
@@ -294,6 +295,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.discovered = true
 
     o.config = {
+        stones_are_faces = stones_are_faces,
         replace_broken_glass_with_random_cards_chance = replace_broken_glass_with_random_cards_chance,
         replace_broken_glass_with_stones_chance = replace_broken_glass_with_stones_chance,
         gain_ten_dollars_glass_break_chance = gain_ten_dollars_glass_break_chance,
@@ -721,7 +723,8 @@ function CustomDeck.fullNewFromExisting(deck, descTable, updateUUID)
             deck.config.disable_mult_cards_chance,
             deck.config.gain_ten_dollars_glass_break_chance,
             deck.config.replace_broken_glass_with_stones_chance,
-            deck.config.replace_broken_glass_with_random_cards_chance
+            deck.config.replace_broken_glass_with_random_cards_chance,
+            deck.config.stones_are_faces
     )
 end
 

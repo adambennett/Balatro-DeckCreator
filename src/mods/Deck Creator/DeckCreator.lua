@@ -172,7 +172,7 @@ function DeckCreator.Enable()
     local IsFace = Card.is_face
     function Card:is_face(from_boss)
 
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.aces_are_faces or G.GAME.selected_back.effect.config.sevens_are_faces) or false
+        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.aces_are_faces or G.GAME.selected_back.effect.config.sevens_are_faces or G.GAME.selected_back.effect.config.stones_are_faces) or false
         if isSkipBlindOptionsEnabled == false then
             return IsFace(self, from_boss)
         end
@@ -180,7 +180,7 @@ function DeckCreator.Enable()
         if self.debuff and not from_boss then return end
 
         local id = self:get_id()
-        if id == 11 or id == 12 or id == 13 or next(find_joker("Pareidolia")) or (id == 14 and G.GAME.selected_back.effect.config.aces_are_faces) or (id == 7 and G.GAME.selected_back.effect.config.sevens_are_faces) then
+        if id == 11 or id == 12 or id == 13 or next(find_joker("Pareidolia")) or (id == 14 and G.GAME.selected_back.effect.config.aces_are_faces) or (id == 7 and G.GAME.selected_back.effect.config.sevens_are_faces) or (G.GAME.selected_back.effect.config.stones_are_faces and CardUtils.isStone(self)) then
             return true
         end
     end

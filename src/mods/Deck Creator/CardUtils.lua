@@ -1325,4 +1325,8 @@ function CardUtils.standardCardSet()
     }
 end
 
+function CardUtils.isStone(card)
+    return card.ability.effect == 'Stone Card' and not card.vampired
+end
+
 return CardUtils

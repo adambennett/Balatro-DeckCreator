@@ -4520,6 +4520,11 @@ function GUI.initializeStaticMods()
         },
         {
             group = "Gameplay",
+            label = "Stone cards are considered Face cards",
+            property = "stones_are_faces"
+        },
+        {
+            group = "Gameplay",
             label = "Chips cannot exceed current $",
             property = 'chips_dollar_cap'
         },
@@ -4532,11 +4537,6 @@ function GUI.initializeStaticMods()
             group = "Gameplay",
             label = "All played cards become debuffed after scoring",
             property = 'debuff_played_cards'
-        },
-        {
-            group = "Gameplay",
-            label = "???",
-            property = '???'
         },
         {
             group = "Gameplay",
