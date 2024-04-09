@@ -21,6 +21,43 @@ function CustomDeck:blankDeck()
     }
 
     o.config = {
+        chance_for_negative_joker_on_blue_seal_trigger = 0,
+        death_targets_random_card = false,
+        voucher_is_free = false,
+        one_free_booster_in_shop = false,
+        one_free_item_in_shop = false,
+        purple_seal_switch_trigger = false,
+        chance_purple_seal_rolls_spectral = 0,
+        chance_to_disable_red_seal_retriggers = 0,
+        chance_for_two_purple_tarots = 0,
+        chance_to_disable_gold_money = 0,
+        chance_to_triple_gold_money = 0,
+        chance_for_free_booster = 0,
+        extra_arcana_pack_cards = 0,
+        extra_spectral_pack_cards = 0,
+        extra_celestial_pack_cards = 0,
+        extra_standard_pack_cards = 0,
+        extra_buffoon_pack_cards = 0,
+        extra_booster_pack_choices = 0,
+        enable_perishables_in_shop = false,
+        enable_rentals_in_shop = false,
+        perishable_rate = 30,
+        rental_rate = 30,
+        one_free_card_in_shop = false,
+        negative_fifty_dollars_allowed = false,
+        chance_for_five_dollars_on_skip_disable = 0,
+        chance_for_fifteen_dollars_on_skip_disable = 0,
+        chance_for_negative_joker_on_skip_disable = 0,
+        chance_for_random_negative_joker_on_shop_skip = 0,
+        chance_for_twenty_dollars_on_shop_skip = 0,
+        eternal_rate = 30,
+        booster_pack_slots = 2,
+        voucher_slots = 1,
+        destroy_random_joker_after_ante_four = 0,
+        spectral_cards_cannot_destroy_jokers = false,
+        destroy_joker_on_broken_glass = 0,
+        make_stones_lucky = 0,
+        random_sell_value_decrease = 0,
         stones_are_faces = false,
         replace_broken_glass_with_random_cards_chance = 0,
         replace_broken_glass_with_stones_chance = 0,
@@ -155,7 +192,7 @@ function CustomDeck:blankDeck()
         debuff_played_cards = false,
         flipped_cards = false,
         negative_joker_money = 0,
-        negative_joker_for_broken_glass = false,
+        negative_joker_for_broken_glass = 0,
         balance_percent = 0,
         double_tag_percent = 0,
         randomize_ranks = false,
@@ -257,7 +294,9 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
                             handy_tag_percent, buffoon_tag_percent, meteor_tag_percent, charm_tag_percent, boss_tag_percent, voucher_tag_percent, investment_tag_percent, polychrome_tag_percent, holographic_tag_percent,
                             foil_tag_percent, uncommon_tag_percent, rare_tag_percent, blue_seal_switch_trigger, blue_seal_always_most_played, red_seal_silly_messages, extra_red_seal_repetitions, chance_to_double_gold_seal,
                             make_sevens_lucky, aces_are_faces, gain_dollars_when_skip_booster, reroll_boosters, extra_hand_level_upgrades, sevens_are_faces, multiply_probabilities, divide_probabilities,
-                            triple_mult_cards_chance, disable_mult_cards_chance, gain_ten_dollars_glass_break_chance, replace_broken_glass_with_stones_chance, replace_broken_glass_with_random_cards_chance, stones_are_faces)
+                            triple_mult_cards_chance, disable_mult_cards_chance, gain_ten_dollars_glass_break_chance, replace_broken_glass_with_stones_chance, replace_broken_glass_with_random_cards_chance, stones_are_faces,
+                            random_sell_value_decrease, make_stones_lucky, destroy_joker_on_broken_glass, spectral_cards_cannot_destroy_jokers, destroy_random_joker_after_ante_four,
+                            booster_pack_slots, voucher_slots, eternal_rate, extension)
     o = {}
     local newUUID = uuid or Utils.uuid()
     setmetatable(o, self)
@@ -294,7 +333,51 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
     o.unlocked = true
     o.discovered = true
 
+    local negative = negative_joker_for_broken_glass
+    if negative == false then
+        negative = 0
+    elseif negative == true then
+        negative = 100
+    end
+
     o.config = {
+        chance_for_negative_joker_on_blue_seal_trigger = extension.chance_for_negative_joker_on_blue_seal_trigger,
+        death_targets_random_card = extension.death_targets_random_card,
+        voucher_is_free = extension.voucher_is_free,
+        one_free_booster_in_shop = extension.one_free_booster_in_shop,
+        one_free_item_in_shop = extension.one_free_item_in_shop,
+        purple_seal_switch_trigger = extension.purple_seal_switch_trigger,
+        chance_purple_seal_rolls_spectral = extension.chance_purple_seal_rolls_spectral,
+        chance_to_disable_red_seal_retriggers = extension.chance_to_disable_red_seal_retriggers,
+        chance_for_two_purple_tarots = extension.chance_for_two_purple_tarots,
+        chance_to_disable_gold_money = extension.chance_to_disable_gold_money,
+        chance_to_triple_gold_money = extension.chance_to_triple_gold_money,
+        chance_for_free_booster = extension.chance_for_free_booster,
+        extra_arcana_pack_cards = extension.extra_arcana_pack_cards,
+        extra_spectral_pack_cards = extension.extra_spectral_pack_cards,
+        extra_celestial_pack_cards = extension.extra_celestial_pack_cards,
+        extra_standard_pack_cards = extension.extra_standard_pack_cards,
+        extra_buffoon_pack_cards = extension.extra_buffoon_pack_cards,
+        extra_booster_pack_choices = extension.extra_booster_pack_choices,
+        enable_perishables_in_shop = extension.enable_perishables_in_shop,
+        enable_rentals_in_shop = extension.enable_rentals_in_shop,
+        perishable_rate = extension.perishable_rate,
+        rental_rate = extension.rental_rate,
+        one_free_card_in_shop = extension.one_free_card_in_shop,
+        negative_fifty_dollars_allowed = extension.negative_fifty_dollars_allowed,
+        chance_for_five_dollars_on_skip_disable = extension.chance_for_five_dollars_on_skip_disable,
+        chance_for_fifteen_dollars_on_skip_disable = extension.chance_for_fifteen_dollars_on_skip_disable,
+        chance_for_negative_joker_on_skip_disable = extension.chance_for_negative_joker_on_skip_disable,
+        chance_for_random_negative_joker_on_shop_skip = extension.chance_for_random_negative_joker_on_shop_skip,
+        chance_for_twenty_dollars_on_shop_skip = extension.chance_for_twenty_dollars_on_shop_skip,
+        eternal_rate = eternal_rate,
+        booster_pack_slots = booster_pack_slots,
+        voucher_slots = voucher_slots,
+        destroy_random_joker_after_ante_four = destroy_random_joker_after_ante_four,
+        spectral_cards_cannot_destroy_jokers = spectral_cards_cannot_destroy_jokers,
+        destroy_joker_on_broken_glass = destroy_joker_on_broken_glass,
+        make_stones_lucky = make_stones_lucky,
+        random_sell_value_decrease = random_sell_value_decrease,
         stones_are_faces = stones_are_faces,
         replace_broken_glass_with_random_cards_chance = replace_broken_glass_with_random_cards_chance,
         replace_broken_glass_with_stones_chance = replace_broken_glass_with_stones_chance,
@@ -434,7 +517,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         broken_glass_money = broken_glass_money,
         enahnced_dollars_per_round = enhanced_dollars_per_round,
         negative_joker_money = negative_joker_money,
-        negative_joker_for_broken_glass = negative_joker_for_broken_glass,
+        negative_joker_for_broken_glass = negative,
         balance_percent = balanceChips and 100 or balance_percent,
         double_tag_percent = doubleTag and 100 or double_tag_percent,
         randomize_ranks = randomize_ranks,
@@ -724,7 +807,46 @@ function CustomDeck.fullNewFromExisting(deck, descTable, updateUUID)
             deck.config.gain_ten_dollars_glass_break_chance,
             deck.config.replace_broken_glass_with_stones_chance,
             deck.config.replace_broken_glass_with_random_cards_chance,
-            deck.config.stones_are_faces
+            deck.config.stones_are_faces,
+            deck.config.random_sell_value_decrease,
+            deck.config.make_stones_lucky,
+            deck.config.destroy_joker_on_broken_glass,
+            deck.config.spectral_cards_cannot_destroy_jokers,
+            deck.config.destroy_random_joker_after_ante_four,
+            deck.config.booster_pack_slots,
+            deck.config.voucher_slots,
+            deck.config.eternal_rate,
+            {
+                chance_for_random_negative_joker_on_shop_skip = deck.config.chance_for_random_negative_joker_on_shop_skip,
+                chance_for_twenty_dollars_on_shop_skip = deck.config.chance_for_twenty_dollars_on_shop_skip,
+                chance_for_five_dollars_on_skip_disable = deck.config.chance_for_five_dollars_on_skip_disable,
+                chance_for_fifteen_dollars_on_skip_disable = deck.config.chance_for_fifteen_dollars_on_skip_disable,
+                chance_for_negative_joker_on_skip_disable = deck.config.chance_for_negative_joker_on_skip_disable,
+                negative_fifty_dollars_allowed = deck.config.negative_fifty_dollars_allowed,
+                one_free_card_in_shop = deck.config.one_free_card_in_shop,
+                perishable_rate = deck.config.perishable_rate,
+                rental_rate = deck.config.rental_rate,
+                enable_perishables_in_shop = deck.config.enable_perishables_in_shop,
+                enable_rentals_in_shop = deck.config.enable_rentals_in_shop,
+                extra_booster_pack_choices = deck.config.extra_booster_pack_choices,
+                extra_arcana_pack_cards = deck.config.extra_arcana_pack_cards,
+                extra_spectral_pack_cards = deck.config.extra_spectral_pack_cards,
+                extra_celestial_pack_cards = deck.config.extra_celestial_pack_cards,
+                extra_standard_pack_cards = deck.config.extra_standard_pack_cards,
+                extra_buffoon_pack_cards = deck.config.extra_buffoon_pack_cards,
+                chance_for_free_booster = deck.config.chance_for_free_booster,
+                chance_to_triple_gold_money = deck.config.chance_to_triple_gold_money,
+                chance_to_disable_gold_money = deck.config.chance_to_disable_gold_money,
+                chance_for_two_purple_tarots = deck.config.chance_for_two_purple_tarots,
+                chance_to_disable_red_seal_retriggers = deck.config.chance_to_disable_red_seal_retriggers,
+                chance_purple_seal_rolls_spectral = deck.config.chance_purple_seal_rolls_spectral,
+                purple_seal_switch_trigger = deck.config.purple_seal_switch_trigger,
+                voucher_is_free = deck.config.voucher_is_free,
+                one_free_booster_in_shop = deck.config.one_free_booster_in_shop,
+                one_free_item_in_shop = deck.config.one_free_item_in_shop,
+                death_targets_random_card = deck.config.death_targets_random_card,
+                chance_for_negative_joker_on_blue_seal_trigger = deck.config.chance_for_negative_joker_on_blue_seal_trigger,
+            }
     )
 end
 
@@ -836,6 +958,21 @@ function CustomDeck.getAllDeckBackNames()
         "Blue Seal",
         "Random"
     }
+end
+
+function CustomDeck.parseRawDescription(rawDescription)
+    local descTable = {}
+    for part in string.gmatch(rawDescription .. "<n", "(.-)<n") do
+        -- Replace "<:key<< with "{C:key}" and handle subsequent text
+        local modifiedPart = string.gsub(part, "<:([^<]+)<", function(key)
+            return "{C:" .. key .. "}"
+        end)
+        -- Now, replace any single "<" left with "{}"
+        modifiedPart = string.gsub(modifiedPart, "<", "{}")
+
+        table.insert(descTable, modifiedPart)
+    end
+    return descTable
 end
 
 return CustomDeck

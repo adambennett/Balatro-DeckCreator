@@ -12,6 +12,7 @@ function Helper.registerGlobals()
         local from_key = e.config.ref_table.current_option
         local old_pip = e.UIBox:get_UIE_by_ID('pip_'..e.config.ref_table.current_option, e.parent.parent)
         local cycle_main = e.UIBox:get_UIE_by_ID('cycle_main', e.parent.parent)
+        e.config.increments = e.config.increments or {}
 
         if cycle_main and cycle_main.config.h_popup then
             cycle_main:stop_hover()
@@ -25,13 +26,20 @@ function Helper.registerGlobals()
 
         if e.config.ref_value == 'l' then
             --cycle left
-            e.config.ref_table.current_option = e.config.ref_table.current_option - 1
+            local inc = 1
+            if e.config.increments.l ~= nil then
+                inc = e.config.increments.l
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
         elseif e.config.ref_value == 'll' then
             --cycle left x10
             local inc = 10
             if e.config.minorArrows then
                 inc = 5
+            end
+            if e.config.increments.ll ~= nil then
+                inc = e.config.increments.ll
             end
             e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
@@ -41,17 +49,27 @@ function Helper.registerGlobals()
             if e.config.minorArrows then
                 inc = 10
             end
+            if e.config.increments.lll ~= nil then
+                inc = e.config.increments.lll
+            end
             e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
         elseif e.config.ref_value == 'r' then
             --cycle right
-            e.config.ref_table.current_option = e.config.ref_table.current_option + 1
+            local inc = 1
+            if e.config.increments.r ~= nil then
+                inc = e.config.increments.r
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
         elseif e.config.ref_value == 'rr' then
             --cycle right x10
             local inc = 10
             if e.config.minorArrows then
                 inc = 5
+            end
+            if e.config.increments.rr ~= nil then
+                inc = e.config.increments.rr
             end
             e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
@@ -60,6 +78,9 @@ function Helper.registerGlobals()
             local inc = 100
             if e.config.minorArrows then
                 inc = 10
+            end
+            if e.config.increments.rrr ~= nil then
+                inc = e.config.increments.rrr
             end
             e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
@@ -520,12 +541,7 @@ end
 function Helper.calculateDeckEditorSums()
     local unplayed_only = false
     local flip_col = G.C.WHITE
-    Helper.sums.total_cards = 0
-    Helper.sums.suit_tallies = {['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0}
-    Helper.sums.mod_suit_tallies = {['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0}
-    Helper.sums.rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-    Helper.sums.mod_rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-    Helper.sums.rank_name_mapping = {2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K', 'A'}
+
     Helper.sums.face_tally = 0
     Helper.sums.mod_face_tally = 0
     Helper.sums.num_tally = 0
@@ -533,51 +549,126 @@ function Helper.calculateDeckEditorSums()
     Helper.sums.ace_tally = 0
     Helper.sums.mod_ace_tally = 0
     Helper.sums.wheel_flipped = 0
+    Helper.sums.total_cards = 0
 
-    for k, v in ipairs(G.playing_cards) do
-        Helper.sums.total_cards = Helper.sums.total_cards + 1
-        if v.ability.name ~= 'Stone Card' and (not unplayed_only or ((v.area and v.area == G.deck) or v.ability.wheel_flipped)) then
-            if v.ability.wheel_flipped and unplayed_only then Helper.wheel_flipped = Helper.wheel_flipped + 1 end
-            --For the suits
-            Helper.sums.suit_tallies[v.base.suit] = (Helper.sums.suit_tallies[v.base.suit] or 0) + 1
-            Helper.sums.mod_suit_tallies['Spades'] = (Helper.sums.mod_suit_tallies['Spades'] or 0) + (v:is_suit('Spades') and 1 or 0)
-            Helper.sums.mod_suit_tallies['Hearts'] = (Helper.sums.mod_suit_tallies['Hearts'] or 0) + (v:is_suit('Hearts') and 1 or 0)
-            Helper.sums.mod_suit_tallies['Clubs'] = (Helper.sums.mod_suit_tallies['Clubs'] or 0) + (v:is_suit('Clubs') and 1 or 0)
-            Helper.sums.mod_suit_tallies['Diamonds'] = (Helper.sums.mod_suit_tallies['Diamonds'] or 0) + (v:is_suit('Diamonds') and 1 or 0)
-
-            --for face cards/numbered cards/aces
-            local card_id = v:get_id()
-            Helper.sums.face_tally = Helper.sums.face_tally + ((card_id ==11 or card_id ==12 or card_id ==13) and 1 or 0)
-            Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
-            if card_id > 1 and card_id < 11 then
-                Helper.sums.num_tally = Helper.sums.num_tally + 1
-                if not v.debuff then Helper.sums.mod_num_tally = Helper.sums.mod_num_tally + 1 end
-            end
-            if card_id == 14 then
-                Helper.sums.ace_tally = Helper.sums.ace_tally + 1
-                if not v.debuff then Helper.sums.mod_ace_tally = Helper.sums.mod_ace_tally + 1 end
-            end
-
-            --ranks
-            Helper.sums.rank_tallies[card_id - 1] = Helper.sums.rank_tallies[card_id - 1] + 1
-            if not v.debuff then Helper.sums.mod_rank_tallies[card_id - 1] = Helper.sums.mod_rank_tallies[card_id - 1] + 1 end
+    if ModloaderHelper.SteamoddedLoaded then
+        local suit_list = SMODS.Card.SUIT_LIST
+        Helper.sums.suit_tallies = {}
+        Helper.sums.mod_suit_tallies = {}
+        for _, v in ipairs(suit_list) do
+            Helper.sums.suit_tallies[v] = 0
+            Helper.sums.mod_suit_tallies[v] = 0
         end
+        Helper.sums.rank_tallies = {}
+        Helper.sums.mod_rank_tallies = {}
+        Helper.sums.rank_name_mapping = SMODS.Card.RANK_LIST
+        Helper.sums.id_index_mapping = {}
+        for i, v in ipairs(SMODS.Card.RANK_LIST) do
+            local rank_data = SMODS.Card.RANKS[SMODS.Card.RANK_SHORTHAND_LOOKUP[v] or v]
+            Helper.sums.id_index_mapping[rank_data.id] = i
+            Helper.sums.rank_tallies[i] = 0
+            Helper.sums.mod_rank_tallies[i] = 0
+        end
+
+        for _, v in ipairs(G.playing_cards) do
+            Helper.sums.total_cards = Helper.sums.total_cards + 1
+            if v.ability.name ~= 'Stone Card' and (not unplayed_only or ((v.area and v.area == G.deck) or v.ability.wheel_flipped)) then
+                if v.ability.wheel_flipped and unplayed_only then Helper.sums.wheel_flipped = Helper.sums.wheel_flipped + 1 end
+                --For the suits
+                if v.base.suit ~= nil then
+                    Helper.sums.suit_tallies[v.base.suit] = (Helper.sums.suit_tallies[v.base.suit] or 0) + 1
+                    for kk, vv in pairs(Helper.sums.mod_suit_tallies) do
+                        Helper.sums.mod_suit_tallies[kk] = (vv or 0) + (v:is_suit(kk) and 1 or 0)
+                    end
+
+                    --for face cards/numbered cards/aces
+                    local card_id = v:get_id()
+                    Helper.sums.face_tally = Helper.sums.face_tally + ((SMODS.Card.RANKS[v.base.value].face) and 1 or 0)
+                    Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
+                    if not SMODS.Card.RANKS[v.base.value].face and card_id ~= 14 then
+                        Helper.sums.num_tally = Helper.sums.num_tally + 1
+                        if not v.debuff then Helper.sums.mod_num_tally = Helper.sums.mod_num_tally + 1 end
+                    end
+                    if card_id == 14 then
+                        Helper.sums.ace_tally = Helper.sums.ace_tally + 1
+                        if not v.debuff then Helper.sums.mod_ace_tally = Helper.sums.mod_ace_tally + 1 end
+                    end
+
+                    --ranks
+                    Helper.sums.rank_tallies[Helper.sums.id_index_mapping[card_id]] = Helper.sums.rank_tallies[Helper.sums.id_index_mapping[card_id]] + 1
+                    if not v.debuff then Helper.sums.mod_rank_tallies[Helper.sums.id_index_mapping[card_id]] = Helper.sums.mod_rank_tallies[Helper.sums.id_index_mapping[card_id]] + 1 end
+                else
+                    Helper.sums.total_cards = Helper.sums.total_cards - 1
+                end
+            end
+        end
+
+        local modded = (Helper.sums.face_tally ~= Helper.sums.mod_face_tally)
+        for kk, vv in pairs(Helper.sums.mod_suit_tallies) do
+            if vv ~= Helper.sums.suit_tallies[kk] then modded = true end
+        end
+
+        if Helper.sums.wheel_flipped > 0 then flip_col = mix_colours(G.C.FILTER, G.C.WHITE, 0.7) end
+    else
+        Helper.sums.suit_tallies = {
+            ['Spades']  = 0,
+            ['Hearts'] = 0,
+            ['Clubs'] = 0,
+            ['Diamonds'] = 0
+        }
+        Helper.sums.mod_suit_tallies = {
+            ['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0
+        }
+
+        Helper.sums.rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        Helper.sums.mod_rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        Helper.sums.rank_name_mapping = {2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K', 'A'}
+
+        for k, v in ipairs(G.playing_cards) do
+            Helper.sums.total_cards = Helper.sums.total_cards + 1
+            if v.ability.name ~= 'Stone Card' and (not unplayed_only or ((v.area and v.area == G.deck) or v.ability.wheel_flipped)) then
+                if v.ability.wheel_flipped and unplayed_only then Helper.wheel_flipped = Helper.wheel_flipped + 1 end
+                --For the suits
+                Helper.sums.suit_tallies[v.base.suit] = (Helper.sums.suit_tallies[v.base.suit] or 0) + 1
+                Helper.sums.mod_suit_tallies['Spades'] = (Helper.sums.mod_suit_tallies['Spades'] or 0) + (v:is_suit('Spades') and 1 or 0)
+                Helper.sums.mod_suit_tallies['Hearts'] = (Helper.sums.mod_suit_tallies['Hearts'] or 0) + (v:is_suit('Hearts') and 1 or 0)
+                Helper.sums.mod_suit_tallies['Clubs'] = (Helper.sums.mod_suit_tallies['Clubs'] or 0) + (v:is_suit('Clubs') and 1 or 0)
+                Helper.sums.mod_suit_tallies['Diamonds'] = (Helper.sums.mod_suit_tallies['Diamonds'] or 0) + (v:is_suit('Diamonds') and 1 or 0)
+
+                --for face cards/numbered cards/aces
+                local card_id = v:get_id()
+                Helper.sums.face_tally = Helper.sums.face_tally + ((card_id ==11 or card_id ==12 or card_id ==13) and 1 or 0)
+                Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
+                if card_id > 1 and card_id < 11 then
+                    Helper.sums.num_tally = Helper.sums.num_tally + 1
+                    if not v.debuff then Helper.sums.mod_num_tally = Helper.sums.mod_num_tally + 1 end
+                end
+                if card_id == 14 then
+                    Helper.sums.ace_tally = Helper.sums.ace_tally + 1
+                    if not v.debuff then Helper.sums.mod_ace_tally = Helper.sums.mod_ace_tally + 1 end
+                end
+
+                --ranks
+                Helper.sums.rank_tallies[card_id - 1] = Helper.sums.rank_tallies[card_id - 1] + 1
+                if not v.debuff then Helper.sums.mod_rank_tallies[card_id - 1] = Helper.sums.mod_rank_tallies[card_id - 1] + 1 end
+            end
+        end
+
+        Helper.sums.modded = (Helper.sums.face_tally ~= Helper.sums.mod_face_tally) or
+                (Helper.sums.mod_suit_tallies['Spades'] ~= Helper.sums.suit_tallies['Spades']) or
+                (Helper.sums.mod_suit_tallies['Hearts'] ~= Helper.sums.suit_tallies['Hearts']) or
+                (Helper.sums.mod_suit_tallies['Clubs'] ~= Helper.sums.suit_tallies['Clubs']) or
+                (Helper.sums.mod_suit_tallies['Diamonds'] ~= Helper.sums.suit_tallies['Diamonds'])
+
+        if Helper.sums.wheel_flipped > 0 then flip_col = mix_colours(G.C.FILTER, G.C.WHITE,0.7) end
     end
-
-    Helper.sums.modded = (Helper.sums.face_tally ~= Helper.sums.mod_face_tally) or
-            (Helper.sums.mod_suit_tallies['Spades'] ~= Helper.sums.suit_tallies['Spades']) or
-            (Helper.sums.mod_suit_tallies['Hearts'] ~= Helper.sums.suit_tallies['Hearts']) or
-            (Helper.sums.mod_suit_tallies['Clubs'] ~= Helper.sums.suit_tallies['Clubs']) or
-            (Helper.sums.mod_suit_tallies['Diamonds'] ~= Helper.sums.suit_tallies['Diamonds'])
-
-    if Helper.sums.wheel_flipped > 0 then flip_col = mix_colours(G.C.FILTER, G.C.WHITE,0.7) end
 
     Helper.sums.rank_cols = {}
     Helper.sums.rank_tallies_strings = {}
     for i = #Helper.sums.rank_tallies, 1, -1 do
         Helper.sums.rank_tallies_strings[i] = tostring(Helper.sums.rank_tallies[i])
     end
-    for i = 13, 1, -1 do
+    for i = #Helper.sums.rank_name_mapping, 1, -1 do
         local mod_delta = Helper.sums.mod_rank_tallies[i] ~= Helper.sums.rank_tallies[i]
         Helper.sums.rank_cols[#Helper.sums.rank_cols+1] = {
             n=G.UIT.R,

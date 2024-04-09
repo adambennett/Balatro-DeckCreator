@@ -20,16 +20,501 @@ function DeckCreator.Enable()
     Persistence.loadAllDeckLists()
     GUI.registerModMenuUI()
     GUI.initializeStaticMods()
+    Utils.boosterKeys()
+
+    --[[local Shop = G.UIDEF.shop
+    function G.UIDEF.shop()
+        local shopChangesNeeded = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.shop.joker_max > 4 or G.GAME.selected_back.effect.config.booster_pack_slots ~= 2 or G.GAME.selected_back.effect.config.voucher_slots ~= 1) or false
+        if shopChangesNeeded == false then
+            return Shop()
+        end
+
+        local areaSize = G.GAME.shop.joker_max
+        if areaSize > 4 then areaSize = 3 end
+
+        G.shop_jokers = CardArea(
+                G.hand.T.x+0,
+                G.hand.T.y+G.ROOM.T.y + 9,
+                areaSize*1.02*G.CARD_W,
+                1.05*G.CARD_H,
+                {card_limit = areaSize, type = 'shop', highlight_limit = 1})
+
+        G.DeckCreatorModuleAllShopJokersArea = CardArea(
+                G.hand.T.x+0,
+                G.hand.T.y+G.ROOM.T.y + 9,
+                G.GAME.shop.joker_max*1.02*G.CARD_W,
+                1.05*G.CARD_H,
+                {card_limit = G.GAME.shop.joker_max, type = 'shop', highlight_limit = 1})
+
+
+        G.shop_vouchers = CardArea(
+                G.hand.T.x+0,
+                G.hand.T.y+G.ROOM.T.y + 9,
+                2.1*G.CARD_W,
+                1.05*G.CARD_H,
+                {card_limit = 1, type = 'shop', highlight_limit = 1})
+
+        G.shop_booster = CardArea(
+                G.hand.T.x+0,
+                G.hand.T.y+G.ROOM.T.y + 9,
+                2.4*G.CARD_W,
+                1.15*G.CARD_H,
+                {card_limit = 2, type = 'shop', highlight_limit = 1, card_w = 1.27*G.CARD_W})
+
+        local shop_sign = AnimatedSprite(0,0, 4.4, 2.2, G.ANIMATION_ATLAS['shop_sign'])
+        shop_sign:define_draw_steps({
+            {shader = 'dissolve', shadow_height = 0.05},
+            {shader = 'dissolve'}
+        })
+        G.SHOP_SIGN = UIBox{
+            definition =
+            {n=G.UIT.ROOT, config = {colour = G.C.DYN_UI.MAIN, emboss = 0.05, align = 'cm', r = 0.1, padding = 0.1}, nodes={
+                {n=G.UIT.R, config={align = "cm", padding = 0.1, minw = 4.72, minh = 3.1, colour = G.C.DYN_UI.DARK, r = 0.1}, nodes={
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        {n=G.UIT.O, config={object = shop_sign}}
+                    }},
+                    {n=G.UIT.R, config={align = "cm"}, nodes={
+                        {n=G.UIT.O, config={object = DynaText({string = {localize('ph_improve_run')}, colours = {lighten(G.C.GOLD, 0.3)},shadow = true, rotate = true, float = true, bump = true, scale = 0.5, spacing = 1, pop_in = 1.5, maxw = 4.3})}}
+                    }},
+                }},
+            }},
+            config = {
+                align="cm",
+                offset = {x=0,y=-15},
+                major = G.HUD:get_UIE_by_ID('row_blind'),
+                bond = 'Weak'
+            }
+        }
+        G.E_MANAGER:add_event(Event({
+            trigger = 'immediate',
+            func = (function()
+                G.SHOP_SIGN.alignment.offset.y = 0
+                return true
+            end)
+        }))
+
+        local jokerRow
+        if G.GAME.shop.joker_max > 4 then
+            jokerRow = {
+                {
+                    n = G.UIT.C,
+                    config = {
+                        align = "cm",
+                        r = 0.1,
+                        minw = 0.4,
+                        colour = G.C.BLACK,
+                        button = 'DeckCreatorModuleChangeShopJokersPageLeft',
+                        focus_args = {type = 'none'}
+                    },
+                    nodes = {
+                        { n=G.UIT.T, config = { text = '<', scale = 0.3, colour = G.C.UI.TEXT_LIGHT } }
+                    }
+                },
+                {
+                    n=G.UIT.C,
+                    config={align = "cm", padding = 0.1},
+                    nodes={
+                        {n=G.UIT.O, config={object = G.shop_jokers}}
+                    }
+                },
+                {
+                    n = G.UIT.C,
+                    config = {
+                        align = "cm",
+                        r = 0.1,
+                        minw = 0.4,
+                        colour = G.C.BLACK,
+                        button = 'DeckCreatorModuleChangeShopJokersPageRight',
+                        focus_args = {type = 'none'}
+                    },
+                    nodes = {
+                        { n=G.UIT.T, config = { text = '>', scale = 0.3, colour = G.C.UI.TEXT_LIGHT } }
+                    }
+                }
+            }
+        else
+            jokerRow = {
+                {n=G.UIT.O, config={object = G.shop_jokers}}
+            }
+        end
+
+        local t = {n=G.UIT.ROOT, config = {align = 'cl', colour = G.C.CLEAR}, nodes={
+            UIBox_dyn_container({
+                {n=G.UIT.C, config={align = "cm", padding = 0.1, emboss = 0.05, r = 0.1, colour = G.C.DYN_UI.BOSS_MAIN}, nodes={
+                    {n=G.UIT.R, config={align = "cm", padding = 0.05}, nodes={
+                        {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
+                            {n=G.UIT.R,config={id = 'next_round_button', align = "cm", minw = 2.8, minh = 1.5, r=0.15,colour = G.C.RED, one_press = true, button = 'toggle_shop', hover = true,shadow = true}, nodes = {
+                                {n=G.UIT.R, config={align = "cm", padding = 0.07, focus_args = {button = 'y', orientation = 'cr'}, func = 'set_button_pip'}, nodes={
+                                    {n=G.UIT.R, config={align = "cm", maxw = 1.3}, nodes={
+                                        {n=G.UIT.T, config={text = localize('b_next_round_1'), scale = 0.4, colour = G.C.WHITE, shadow = true}}
+                                    }},
+                                    {n=G.UIT.R, config={align = "cm", maxw = 1.3}, nodes={
+                                        {n=G.UIT.T, config={text = localize('b_next_round_2'), scale = 0.4, colour = G.C.WHITE, shadow = true}}
+                                    }}
+                                }},
+                            }},
+                            {n=G.UIT.R, config={align = "cm", minw = 2.8, minh = 1.6, r=0.15,colour = G.C.GREEN, button = 'reroll_shop', func = 'can_reroll', hover = true,shadow = true}, nodes = {
+                                {n=G.UIT.R, config={align = "cm", padding = 0.07, focus_args = {button = 'x', orientation = 'cr'}, func = 'set_button_pip'}, nodes={
+                                    {n=G.UIT.R, config={align = "cm", maxw = 1.3}, nodes={
+                                        {n=G.UIT.T, config={text = localize('k_reroll'), scale = 0.4, colour = G.C.WHITE, shadow = true}},
+                                    }},
+                                    {n=G.UIT.R, config={align = "cm", maxw = 1.3, minw = 1}, nodes={
+                                        {n=G.UIT.T, config={text = localize('$'), scale = 0.7, colour = G.C.WHITE, shadow = true}},
+                                        {n=G.UIT.T, config={ref_table = G.GAME.current_round, ref_value = 'reroll_cost', scale = 0.75, colour = G.C.WHITE, shadow = true}},
+                                    }}
+                                }}
+                            }},
+                        }},
+                        {n=G.UIT.C, config={align = "cm", padding = 0.2, r=0.2, colour = G.C.L_BLACK, emboss = 0.05, minw = 8.2}, nodes={
+                            {n=G.UIT.R, config={align = "cm"}, nodes=jokerRow},
+                        }},
+                    }},
+                    {n=G.UIT.R, config={align = "cm", minh = 0.2}, nodes={}},
+                    {n=G.UIT.R, config={align = "cm", padding = 0.1}, nodes={
+                        {n=G.UIT.C, config={align = "cm", padding = 0.15, r=0.2, colour = G.C.L_BLACK, emboss = 0.05}, nodes={
+                            {n=G.UIT.C, config={align = "cm", padding = 0.2, r=0.2, colour = G.C.BLACK, maxh = G.shop_vouchers.T.h+0.4}, nodes={
+                                {n=G.UIT.T, config={text = localize{type = 'variable', key = 'ante_x_voucher', vars = {G.GAME.round_resets.ante}}, scale = 0.45, colour = G.C.L_BLACK, vert = true}},
+                                {n=G.UIT.O, config={object = G.shop_vouchers}},
+                            }},
+                        }},
+                        {n=G.UIT.C, config={align = "cm", padding = 0.15, r=0.2, colour = G.C.L_BLACK, emboss = 0.05}, nodes={
+                            {n=G.UIT.O, config={object = G.shop_booster}},
+                        }},
+                    }}
+                }
+                },
+
+            }, false)
+        }}
+        return t
+    end]]
+
+    local UseConsumeable = Card.use_consumeable
+    function Card:use_consumeable(area, copier)
+        local consumableChangesNeeded = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.death_targets_random_card or G.GAME.selected_back.effect.config.spectral_cards_cannot_destroy_jokers) or false
+
+        if consumableChangesNeeded == false then
+            UseConsumeable(self, area, copier)
+            return
+        end
+
+        local deathChanges = (self.ability.consumeable.mod_conv or self.ability.consumeable.suit_conv) and self.ability.name == 'Death' and G.GAME.selected_back.effect.config.death_targets_random_card
+        local spectralChanges = G.GAME.selected_back.effect.config.spectral_cards_cannot_destroy_jokers and (self.ability.name == 'Ankh' or self.ability.name == 'Hex')
+        local anyOverrides = deathChanges or spectralChanges
+        local used_tarot
+        if anyOverrides then
+            stop_use()
+            if not copier then set_consumeable_usage(self) end
+            if self.debuff then return nil end
+            used_tarot = copier or self
+
+            if self.ability.consumeable.max_highlighted then
+                update_hand_text({immediate = true, nopulse = true, delay = 0}, {mult = 0, chips = 0, level = '', handname = ''})
+            end
+        end
+        if deathChanges then
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                play_sound('tarot1')
+                used_tarot:juice_up(0.3, 0.5)
+                return true end }))
+            for i=1, #G.hand.highlighted do
+                local percent = 1.15 - (i-0.999)/(#G.hand.highlighted-0.998)*0.3
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+            end
+            delay(0.2)
+
+            local leftmost = G.hand.highlighted[1]
+            local rightmost = G.hand.highlighted[1]
+            for i = 1, #G.hand.highlighted do
+                if G.hand.highlighted[i].T.x < leftmost.T.x then
+                    leftmost = G.hand.highlighted[i]
+                elseif G.hand.highlighted[i].T.x > rightmost.T.x then
+                    rightmost = G.hand.highlighted[i]
+                end
+            end
+
+            local eligibleCards = {}
+            for i = 1, #G.hand.cards do
+                if G.hand.cards[i] ~= leftmost and G.hand.cards[i] ~= rightmost then
+                    table.insert(eligibleCards, G.hand.cards[i])
+                end
+            end
+
+            local randomCard
+            if #eligibleCards > 0 then
+                local randomIndex = math.random(#eligibleCards)
+                randomCard = eligibleCards[randomIndex]
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.1, func = function()
+                    copy_card(rightmost, randomCard)
+                    return true
+                end}))
+            end
+
+            local percent = 0.85 + (1-0.999)/(#G.hand.highlighted-0.998)*0.3
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function()
+                rightmost:flip()
+                play_sound('tarot2', percent, 0.6)
+                rightmost:juice_up(0.3, 0.3)
+                return true end
+            }))
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function()
+                randomCard:flip()
+                randomCard:flip()
+                play_sound('tarot2', percent, 0.6)
+                randomCard:juice_up(0.3, 0.3)
+                return true end
+            }))
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function()
+                leftmost:flip()
+                return true end
+            }))
+
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
+            delay(0.5)
+        elseif spectralChanges then
+            if self.ability.name == 'Ankh' then
+                local chosen_joker = pseudorandom_element(G.jokers.cards, pseudoseed('ankh_choice'))
+                G.E_MANAGER:add_event(Event({trigger = 'before', delay = 0.4, func = function()
+                    local card = copy_card(chosen_joker, nil, nil, nil, chosen_joker.edition and chosen_joker.edition.negative)
+                    card:start_materialize()
+                    card:add_to_deck()
+                    if card.edition and card.edition.negative then
+                        card:set_edition(nil, true)
+                    end
+                    G.jokers:emplace(card)
+                    return true end
+                }))
+            elseif self.ability.name == 'Hex' then
+                local temp_pool =   (self.ability.name == 'The Wheel of Fortune' and self.eligible_strength_jokers) or
+                        ((self.ability.name == 'Ectoplasm' or self.ability.name == 'Hex') and self.eligible_editionless_jokers) or {}
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                    local eligible_card = pseudorandom_element(temp_pool, pseudoseed('hex'))
+                    local edition = {polychrome = true}
+                    eligible_card:set_edition(edition, true)
+                    check_for_unlock({type = 'have_edition'})
+                    used_tarot:juice_up(0.3, 0.5)
+                    return true end
+                }))
+            end
+        else
+            UseConsumeable(self, area, copier)
+            return
+        end
+    end
+
+    local function nextVoucherKey(_from_tag)
+        local _pool, _pool_key = get_current_pool('Voucher')
+        if _from_tag then _pool_key = 'Voucher_fromtag' end
+        local center = pseudorandom_element(_pool, pseudoseed(_pool_key))
+        local it = 1
+        while center == 'UNAVAILABLE' and it < 99 do
+            it = it + 1
+            center = pseudorandom_element(_pool, pseudoseed(_pool_key..'_resample'..it))
+        end
+
+        return center
+    end
+    local UpdateShop = Game.update_shop
+    function Game:update_shop(dt)
+        local shopChangesNeeded = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.booster_pack_slots ~= 2 or G.GAME.selected_back.effect.config.voucher_slots ~= 1 or G.GAME.selected_back.effect.config.one_free_card_in_shop or G.GAME.selected_back.effect.config.voucher_is_free or G.GAME.selected_back.effect.config.one_free_booster_in_shop or #G.GAME.selected_back.effect.config.bannedBoosterList >= Utils.runtimeConstants.boosterPacks or G.GAME.selected_back.effect.config.one_free_item_in_shop) or false
+        if shopChangesNeeded == false then
+            UpdateShop(self, dt)
+            return
+        end
+
+        local boosterSlots = G.GAME.selected_back.effect.config.booster_pack_slots or 2
+        local voucherSlots = G.GAME.selected_back.effect.config.voucher_slots or 1
+        local freeItem
+        if G.GAME.selected_back.effect.config.one_free_item_in_shop then
+            local roll = math.random(1, 3)
+            if roll == 1 then freeItem = 'card'
+            elseif roll == 2 then freeItem = 'booster'
+            else freeItem = 'voucher'
+            end
+        end
+
+        local voucherIsFree = freeItem ~= nil and freeItem == 'voucher'
+        if G.GAME.selected_back.effect.config.voucher_is_free then voucherIsFree = true end
+
+        local oneFreeBooster = freeItem ~= nil and freeItem == 'booster'
+        if G.GAME.selected_back.effect.config.one_free_booster_in_shop then oneFreeBooster = true end
+
+        if not G.STATE_COMPLETE then
+            stop_use()
+            ease_background_colour_blind(G.STATES.SHOP)
+            local shop_exists = not not G.shop
+            G.shop = G.shop or UIBox{
+                definition = G.UIDEF.shop(),
+                config = {align='tmi', offset = {x=0,y=G.ROOM.T.y+11},major = G.hand, bond = 'Weak'}
+            }
+            G.E_MANAGER:add_event(Event({
+                func = function()
+                    G.shop.alignment.offset.y = -5.3
+                    G.shop.alignment.offset.x = 0
+                    G.E_MANAGER:add_event(Event({
+                        trigger = 'after',
+                        delay = 0.2,
+                        blockable = false,
+                        func = function()
+                            if math.abs(G.shop.T.y - G.shop.VT.y) < 3 then
+                                G.ROOM.jiggle = G.ROOM.jiggle + 3
+                                play_sound('cardFan2')
+                                for i = 1, #G.GAME.tags do
+                                    G.GAME.tags[i]:apply_to_run({type = 'shop_start'})
+                                end
+                                local nosave_shop = nil
+                                if not shop_exists then
+
+                                    if G.load_shop_jokers then
+                                        nosave_shop = true
+                                        G.shop_jokers:load(G.load_shop_jokers)
+                                        for k, v in ipairs(G.shop_jokers.cards) do
+                                            create_shop_card_ui(v)
+                                            if v.ability.consumeable then v:start_materialize() end
+                                            for _kk, vvv in ipairs(G.GAME.tags) do
+                                                if vvv:apply_to_run({type = 'store_joker_modify', card = v}) then break end
+                                            end
+                                        end
+                                        G.load_shop_jokers = nil
+                                    else
+                                        --CardUtils.setupBigJokerShop(false)
+                                        for i = 1, G.GAME.shop.joker_max - #G.shop_jokers.cards do
+                                            G.shop_jokers:emplace(create_card_for_shop(G.shop_jokers))
+                                        end
+                                    end
+
+                                    if G.GAME.selected_back.effect.config.one_free_card_in_shop and #G.shop_jokers.cards > 0 then
+                                        local rollIndex = math.random(1, #G.shop_jokers.cards)
+                                        local chosen = G.shop_jokers.cards[rollIndex]
+                                        if chosen ~= nil then
+                                            chosen.ability.couponed = true
+                                            chosen:set_cost()
+                                        end
+                                    end
+
+                                    if freeItem ~= nil and freeItem == 'card' then
+                                        local nonFree = {}
+                                        for k,v in pairs(G.shop_jokers.cards) do
+                                            if not v.ability.couponed then
+                                                table.insert(nonFree, v)
+                                            end
+                                        end
+
+                                        if #nonFree > 0 then
+                                            local rollIndex = math.random(1, #nonFree)
+                                            local chosen = nonFree[rollIndex]
+                                            if chosen ~= nil then
+                                                chosen.ability.couponed = true
+                                                chosen:set_cost()
+                                            end
+                                        end
+                                    end
+
+                                    if G.load_shop_vouchers then
+                                        nosave_shop = true
+                                        G.shop_vouchers:load(G.load_shop_vouchers)
+                                        for k, v in ipairs(G.shop_vouchers.cards) do
+                                            create_shop_card_ui(v)
+                                            v:start_materialize()
+                                        end
+                                        G.load_shop_vouchers = nil
+                                    else
+                                        if voucherSlots > 0 and G.GAME.current_round.voucher and G.P_CENTERS[G.GAME.current_round.voucher] then
+                                            local card = Card(G.shop_vouchers.T.x + G.shop_vouchers.T.w/2,
+                                                    G.shop_vouchers.T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, G.P_CENTERS[G.GAME.current_round.voucher],{bypass_discovery_center = true, bypass_discovery_ui = true})
+                                            card.shop_voucher = true
+                                            create_shop_card_ui(card, 'Voucher', G.shop_vouchers)
+                                            card:start_materialize()
+                                            if voucherIsFree then
+                                                card.ability.couponed = true
+                                                card:set_cost()
+                                                card.cost = 0
+                                            end
+                                            G.shop_vouchers:emplace(card)
+                                        end
+                                    end
+
+
+                                    if G.load_shop_booster then
+                                        nosave_shop = true
+                                        G.shop_booster:load(G.load_shop_booster)
+                                        for k, v in ipairs(G.shop_booster.cards) do
+                                            create_shop_card_ui(v)
+                                            v:start_materialize()
+                                        end
+                                        G.load_shop_booster = nil
+                                    else
+                                        if boosterSlots > 0 then
+                                            for i = 1, boosterSlots do
+                                                G.GAME.current_round.used_packs = G.GAME.current_round.used_packs or {}
+                                                if not G.GAME.current_round.used_packs[i] then
+                                                    local pack = get_pack('shop_pack')
+                                                    if pack == nil then
+                                                        break
+                                                    end
+                                                    G.GAME.current_round.used_packs[i] = pack.key
+                                                end
+
+                                                if G.GAME.current_round.used_packs[i] ~= 'USED' then
+                                                    local card = Card(G.shop_booster.T.x + G.shop_booster.T.w/2,
+                                                            G.shop_booster.T.y, G.CARD_W*1.27, G.CARD_H*1.27, G.P_CARDS.empty, G.P_CENTERS[G.GAME.current_round.used_packs[i]], {bypass_discovery_center = true, bypass_discovery_ui = true})
+                                                    create_shop_card_ui(card, 'Booster', G.shop_booster)
+                                                    card.ability.booster_pos = i
+                                                    card:start_materialize()
+                                                    if oneFreeBooster and i == 1 then
+                                                        card.ability.couponed = true
+                                                        card:set_cost()
+                                                        card.cost = 0
+                                                    end
+                                                    G.shop_booster:emplace(card)
+                                                end
+                                            end
+                                        end
+
+                                        for i = 1, #G.GAME.tags do
+                                            G.GAME.tags[i]:apply_to_run({type = 'voucher_add'})
+                                        end
+                                        for i = 1, #G.GAME.tags do
+                                            G.GAME.tags[i]:apply_to_run({type = 'shop_final_pass'})
+                                        end
+                                    end
+
+                                    if voucherSlots > 1 then
+                                        for i = 1, (voucherSlots - 1) do
+                                            G.ARGS.voucher_tag = G.ARGS.voucher_tag or {}
+                                            local voucher_key = nextVoucherKey(true)
+                                            G.ARGS.voucher_tag[voucher_key] = true
+                                            G.shop_vouchers.config.card_limit = G.shop_vouchers.config.card_limit + 1
+                                            local card = Card(G.shop_vouchers.T.x + G.shop_vouchers.T.w/2, G.shop_vouchers.T.y, G.CARD_W, G.CARD_H, G.P_CARDS.empty, G.P_CENTERS[voucher_key],{bypass_discovery_center = true, bypass_discovery_ui = true})
+                                            create_shop_card_ui(card, 'Voucher', G.shop_vouchers)
+                                            card:start_materialize()
+                                            G.shop_vouchers:emplace(card)
+                                            G.ARGS.voucher_tag = nil
+                                        end
+                                    end
+                                end
+
+                                G.CONTROLLER:snap_to({node = G.shop:get_UIE_by_ID('next_round_button')})
+                                if not nosave_shop then G.E_MANAGER:add_event(Event({ func = function() save_run(); return true end})) end
+                                return true
+                            end
+                        end}))
+                    return true
+                end
+            }))
+            G.STATE_COMPLETE = true
+        end
+        if self.buttons then self.buttons:remove(); self.buttons = nil end
+    end
 
     local LevelUpHand = level_up_hand
     function level_up_hand(card, hand, instant, amount)
         local extraLevels = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and G.GAME.selected_back.effect.config.extra_hand_level_upgrades or 0
-        amount = amount or 0
-        local finalAmount = amount
+        amount = amount or 1
         if amount >= 0 and extraLevels > 0 then
             local totalLevels = amount + extraLevels
             if totalLevels > 5 then
-                local iterations = math.min(5, totalLevels)
+                local iterations = math.min(3, totalLevels)
                 local baseLevelsPerIteration = math.floor(totalLevels / iterations)
                 local extraLevelsToDistribute = totalLevels % iterations
                 for i = 1, iterations do
@@ -40,7 +525,7 @@ function DeckCreator.Enable()
                     LevelUpHand(card, hand, instant, currentIterationLevels)
                 end
             else
-                for i = 1, finalAmount do
+                for i = 1, totalLevels do
                     LevelUpHand(card, hand, instant, 1)
                 end
             end
@@ -68,8 +553,8 @@ function DeckCreator.Enable()
     local RerollShop = G.FUNCS.reroll_shop
     G.FUNCS.reroll_shop = function(e)
 
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.reroll_boosters) or false
-        if isSkipBlindOptionsEnabled == false then
+        local isRerollOverrideNeeded = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.reroll_boosters or G.GAME.shop.joker_max > 4) or false
+        if isRerollOverrideNeeded == false then
             return RerollShop(e)
         end
 
@@ -89,11 +574,15 @@ function DeckCreator.Enable()
                 G.GAME.round_scores.times_rerolled.amt = G.GAME.round_scores.times_rerolled.amt + 1
 
                 calculate_reroll_cost(final_free)
-                for i = #G.shop_jokers.cards,1, -1 do
-                    local c = G.shop_jokers:remove_card(G.shop_jokers.cards[i])
-                    c:remove()
-                    c = nil
-                end
+                CardUtils.removeAllJokersFromShop()
+
+                --[[if Utils.shopJokers ~= nil and Utils.shopJokers[Utils.currentShopJokerPage] ~= nil then
+                    for i = #Utils.shopJokers[Utils.currentShopJokerPage], 1, -1 do
+                        local c = Utils.shopJokers[Utils.currentShopJokerPage][i]
+                        c:remove()
+                        c = nil
+                    end
+                end]]
 
                 if G.GAME.selected_back.effect.config.reroll_boosters then
                     for i = #G.shop_booster.cards,1,-1 do
@@ -109,11 +598,16 @@ function DeckCreator.Enable()
                 play_sound('coin2')
                 play_sound('other1')
 
+                --[[if G.GAME.shop.joker_max > 4 then
+                    Utils.resetShopJokerPages()
+                    CardUtils.setupBigJokerShop(true)]]
+                --else
                 for i = 1, G.GAME.shop.joker_max - #G.shop_jokers.cards do
                     local new_shop_card = create_card_for_shop(G.shop_jokers)
                     G.shop_jokers:emplace(new_shop_card)
                     new_shop_card:juice_up()
                 end
+                --end
 
                 if G.GAME.selected_back.effect.config.reroll_boosters then
                     for i = 1, 2 do
@@ -187,8 +681,9 @@ function DeckCreator.Enable()
 
     local GetChipMult = Card.get_chip_mult
     function Card:get_chip_mult()
-        local getChipMultOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.make_sevens_lucky > 0 or G.GAME.selected_back.effect.config.triple_mult_cards_chance > 0 or G.GAME.selected_back.effect.config.disable_mult_cards_chance > 0) or false
+        local getChipMultOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.make_stones_lucky > 0 or G.GAME.selected_back.effect.config.make_sevens_lucky > 0 or G.GAME.selected_back.effect.config.triple_mult_cards_chance > 0 or G.GAME.selected_back.effect.config.disable_mult_cards_chance > 0) or false
         local sevenCheck = getChipMultOptionsEnabled and G.GAME.selected_back.effect.config.make_sevens_lucky > 0 and self:get_id() == 7
+        local stoneCheck = getChipMultOptionsEnabled and G.GAME.selected_back.effect.config.make_stones_lucky > 0 and CardUtils.isStone(self)
         if getChipMultOptionsEnabled == false then
             return GetChipMult(self)
         end
@@ -197,6 +692,13 @@ function DeckCreator.Enable()
         if isLucky == false and sevenCheck then
             local luckyRoll = math.random(1, 100)
             if G.GAME.selected_back.effect.config.make_sevens_lucky >= luckyRoll then
+                isLucky = true
+                self.ability.mult = 20
+            end
+        end
+        if isLucky == false and stoneCheck then
+            local luckyRoll = math.random(1, 100)
+            if G.GAME.selected_back.effect.config.make_stones_lucky >= luckyRoll then
                 isLucky = true
                 self.ability.mult = 20
             end
@@ -231,7 +733,7 @@ function DeckCreator.Enable()
 
     local GPDollars = Card.get_p_dollars
     function Card:get_p_dollars()
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.chance_to_double_gold_seal > 0 or G.GAME.selected_back.effect.config.make_sevens_lucky > 0) or false
+        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.chance_to_double_gold_seal > 0 or G.GAME.selected_back.effect.config.make_sevens_lucky > 0 or G.GAME.selected_back.effect.config.make_stones_lucky > 0 or G.GAME.selected_back.effect.config.chance_to_triple_gold_money > 0 or G.GAME.selected_back.effect.config.chance_to_disable_gold_money > 0) or false
         if isSkipBlindOptionsEnabled == false then
             return GPDollars(self)
         end
@@ -250,11 +752,18 @@ function DeckCreator.Enable()
             end
         end
 
-        if self.ability.p_dollars > 0 or (G.GAME.selected_back.effect.config.make_sevens_lucky and self:get_id() == 7) then
+        if self.ability.p_dollars > 0 or (G.GAME.selected_back.effect.config.make_sevens_lucky and self:get_id() == 7) or (G.GAME.selected_back.effect.config.make_stones_lucky and CardUtils.isStone(self)) then
             local isLucky = self.ability.effect == "Lucky Card"
             if isLucky == false and G.GAME.selected_back.effect.config.make_sevens_lucky and self:get_id() == 7 then
                 local luckyRoll = math.random(1, 100)
                 if G.GAME.selected_back.effect.config.make_sevens_lucky >= luckyRoll then
+                    isLucky = true
+                    self.ability.p_dollars = 20
+                end
+            end
+            if isLucky == false and G.GAME.selected_back.effect.config.make_stones_lucky and CardUtils.isStone(self) then
+                local luckyRoll = math.random(1, 100)
+                if G.GAME.selected_back.effect.config.make_stones_lucky >= luckyRoll then
                     isLucky = true
                     self.ability.p_dollars = 20
                 end
@@ -269,6 +778,17 @@ function DeckCreator.Enable()
             end
         end
 
+        local tripledGold = false
+        if self.ability.name == 'Gold Card' and G.GAME.selected_back.effect.config.chance_to_triple_gold_money > 0 and G.GAME.selected_back.effect.config.chance_to_triple_gold_money >= math.random(1, 100) then
+            ret = ret + 6
+            tripledGold = true
+        end
+
+        if self.ability.name == 'Gold Card' and G.GAME.selected_back.effect.config.chance_to_disable_gold_money > 0 and G.GAME.selected_back.effect.config.chance_to_disable_gold_money >= math.random(1, 100) then
+            local minus = tripledGold and 9 or 3
+            ret = ret - minus
+        end
+
         if ret > 0 then
             G.GAME.dollar_buffer = (G.GAME.dollar_buffer or 0) + ret
             G.E_MANAGER:add_event(Event({func = (function() G.GAME.dollar_buffer = 0; return true end)}))
@@ -279,7 +799,7 @@ function DeckCreator.Enable()
     local CalculateSeal = Card.calculate_seal
     function Card:calculate_seal(context)
 
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.red_seal_silly_messages or G.GAME.selected_back.effect.config.extra_red_seal_repetitions > 0) or false
+        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.red_seal_silly_messages or G.GAME.selected_back.effect.config.extra_red_seal_repetitions > 0 or G.GAME.selected_back.effect.config.chance_for_two_purple_tarots > 0 or G.GAME.selected_back.effect.config.chance_to_disable_red_seal_retriggers > 0  or G.GAME.selected_back.effect.config.chance_purple_seal_rolls_spectral > 0 or G.GAME.selected_back.effect.config.purple_seal_switch_trigger) or false
         if isSkipBlindOptionsEnabled == false then
             return CalculateSeal(self, context)
         end
@@ -290,6 +810,9 @@ function DeckCreator.Enable()
         end
 
         local extraRepetitions = G.GAME.selected_back.effect.config.extra_red_seal_repetitions or 0
+        if G.GAME.selected_back.effect.config.chance_to_disable_red_seal_retriggers > 0 and G.GAME.selected_back.effect.config.chance_to_disable_red_seal_retriggers >= math.random(1, 100) then
+            extraRepetitions = -1
+        end
 
         if self.debuff then return nil end
         if context.repetition then
@@ -302,26 +825,52 @@ function DeckCreator.Enable()
             end
         end
         if context.discard then
-            if self.seal == 'Purple' and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
-                G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1
-                G.E_MANAGER:add_event(Event({
-                    trigger = 'before',
-                    delay = 0.0,
-                    func = (function()
-                        local card = create_card('Tarot',G.consumeables, nil, nil, nil, nil, nil, '8ba')
-                        card:add_to_deck()
-                        G.consumeables:emplace(card)
-                        G.GAME.consumeable_buffer = 0
-                        return true
-                    end)}))
-                card_eval_status_text(self, 'extra', nil, nil, nil, {message = localize('k_plus_tarot'), colour = G.C.PURPLE})
+            if self.seal == 'Purple' then
+                local amount = 1
+                local bufferAmount = 0
+                if G.GAME.selected_back.effect.config.chance_for_two_purple_tarots > 0 and G.GAME.selected_back.effect.config.chance_for_two_purple_tarots >= math.random(1, 100) then
+                    amount = 2
+                    bufferAmount = 1
+                end
+
+                if #G.consumeables.cards + G.GAME.consumeable_buffer + bufferAmount < G.consumeables.config.card_limit then
+                    G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + amount
+                    G.E_MANAGER:add_event(Event({
+                        trigger = 'before',
+                        delay = 0.0,
+                        func = (function()
+                            for i = 1, amount do
+                                local _card
+                                if G.GAME.selected_back.effect.config.chance_purple_seal_rolls_spectral > 0 and G.GAME.selected_back.effect.config.chance_purple_seal_rolls_spectral > math.random(1, 100) then
+                                    _card = create_card("Spectral", G.consumeables, nil, nil, true, true, nil, 'ar2')
+                                else
+                                    _card = create_card('Tarot',G.consumeables, nil, nil, nil, nil, nil, '8ba')
+                                end
+                                _card:add_to_deck()
+                                G.consumeables:emplace(_card)
+                            end
+                            G.GAME.consumeable_buffer = 0
+                            return true
+                        end)}))
+                    card_eval_status_text(self, 'extra', nil, nil, nil, {message = localize('k_plus_tarot'), colour = G.C.PURPLE})
+                    if G.GAME.selected_back.effect.config.purple_seal_switch_trigger then
+                        local seal_type = pseudorandom(pseudoseed('stdsealtype'..G.GAME.round_resets.ante))
+                        if seal_type > 0.66 then
+                            self:set_seal("Red")
+                        elseif seal_type > 0.33 then
+                            self:set_seal("Gold")
+                        else
+                            self:set_seal("Blue")
+                        end
+                    end
+                end
             end
         end
     end
 
     local GetEndOfRoundEffect = Card.get_end_of_round_effect
     function Card:get_end_of_round_effect(context)
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.blue_seal_switch_trigger or G.GAME.selected_back.effect.config.blue_seal_always_most_played) or false
+        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.blue_seal_switch_trigger or G.GAME.selected_back.effect.config.blue_seal_always_most_played or G.GAME.selected_back.effect.config.chance_for_negative_joker_on_blue_seal_trigger > 0) or false
         if isSkipBlindOptionsEnabled == false then
             return GetEndOfRoundEffect(self, context)
         end
@@ -359,10 +908,24 @@ function DeckCreator.Enable()
                 trigger = 'before',
                 delay = 0.0,
                 func = (function()
-                    local card = create_card(card_type,G.consumeables, nil, nil, nil, nil, forced_key, 'blusl')
-                    card:add_to_deck()
-                    G.consumeables:emplace(card)
-                    G.GAME.consumeable_buffer = 0
+                    local _card
+                    if forced_key == nil and G.GAME.last_hand_played then
+                        local _planet = 0
+                        for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                            if v.config.hand_type == G.GAME.last_hand_played then
+                                _planet = v.key
+                            end
+                        end
+                        _card = create_card(card_type,G.consumeables, nil, nil, nil, nil, _planet, 'blusl')
+                    elseif forced_key ~= nil then
+                        _card = create_card(card_type,G.consumeables, nil, nil, nil, nil, forced_key, 'blusl')
+                    end
+
+                    if _card ~= nil then
+                        _card:add_to_deck()
+                        G.consumeables:emplace(_card)
+                        G.GAME.consumeable_buffer = 0
+                    end
                     return true
                 end)}))
             card_eval_status_text(self, 'extra', nil, nil, nil, {message = localize('k_plus_planet'), colour = G.C.SECONDARY_SET.Planet})
@@ -378,10 +941,12 @@ function DeckCreator.Enable()
                     self:set_seal("Purple")
                 end
             end
+            if G.GAME.selected_back.effect.config.chance_for_negative_joker_on_blue_seal_trigger > 0 and G.GAME.selected_back.effect.config.chance_for_negative_joker_on_blue_seal_trigger >= math.random(1, 100) then
+                CardUtils.receiveRandomNegativeJoker()
+            end
         end
         return ret
     end
-
 
     local function find_most_played_hands()
         local hand_play_counts = {}
@@ -409,7 +974,9 @@ function DeckCreator.Enable()
     local OpenCard = Card.open
     function Card:open()
 
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.spectral_cards_in_arcana or G.GAME.selected_back.effect.config.always_telescoping or G.GAME.selected_back.effect.config.never_telescoping or G.GAME.selected_back.effect.config.tarot_cards_in_spectral or G.GAME.selected_back.effect.config.tarot_cards_in_celestial or G.GAME.selected_back.effect.config.planet_cards_in_arcana or G.GAME.selected_back.effect.config.planet_cards_in_spectral or G.GAME.selected_back.effect.config.spectral_cards_in_celestial or (G.GAME.selected_back.effect.config.standard_pack_edition_rate and G.GAME.selected_back.effect.config.standard_pack_edition_rate ~= 2) or (G.GAME.selected_back.effect.config.standard_pack_enhancement_rate and G.GAME.selected_back.effect.config.standard_pack_enhancement_rate ~= 40) or (G.GAME.selected_back.effect.config.standard_pack_seal_rate and G.GAME.selected_back.effect.config.standard_pack_seal_rate ~= 20)) or false
+        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.spectral_cards_in_arcana or G.GAME.selected_back.effect.config.always_telescoping or G.GAME.selected_back.effect.config.never_telescoping or G.GAME.selected_back.effect.config.tarot_cards_in_spectral or G.GAME.selected_back.effect.config.tarot_cards_in_celestial or G.GAME.selected_back.effect.config.planet_cards_in_arcana or G.GAME.selected_back.effect.config.planet_cards_in_spectral or G.GAME.selected_back.effect.config.spectral_cards_in_celestial
+                or G.GAME.selected_back.effect.config.chance_for_free_booster > 0 or G.GAME.selected_back.effect.config.extra_arcana_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_spectral_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_celestial_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_standard_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_buffoon_pack_cards > 0
+                or G.GAME.selected_back.effect.config.extra_booster_pack_choices > 0 or (G.GAME.selected_back.effect.config.standard_pack_edition_rate and G.GAME.selected_back.effect.config.standard_pack_edition_rate ~= 2) or (G.GAME.selected_back.effect.config.standard_pack_enhancement_rate and G.GAME.selected_back.effect.config.standard_pack_enhancement_rate ~= 40) or (G.GAME.selected_back.effect.config.standard_pack_seal_rate and G.GAME.selected_back.effect.config.standard_pack_seal_rate ~= 20)) or false
         if isSkipBlindOptionsEnabled == false then
             return OpenCard(self)
         end
@@ -427,28 +994,60 @@ function DeckCreator.Enable()
             if self.ability.name:find('Arcana') then
                 G.STATE = G.STATES.TAROT_PACK
                 G.GAME.pack_size = self.ability.extra
+                if G.GAME.selected_back.effect.config.extra_arcana_pack_cards > 0 then
+                    G.GAME.pack_size = G.GAME.pack_size + G.GAME.selected_back.effect.config.extra_arcana_pack_cards
+                end
             elseif self.ability.name:find('Celestial') then
                 G.STATE = G.STATES.PLANET_PACK
                 G.GAME.pack_size = self.ability.extra
+                if G.GAME.selected_back.effect.config.extra_celestial_pack_cards > 0 then
+                    G.GAME.pack_size = G.GAME.pack_size + G.GAME.selected_back.effect.config.extra_celestial_pack_cards
+                end
             elseif self.ability.name:find('Spectral') then
                 G.STATE = G.STATES.SPECTRAL_PACK
                 G.GAME.pack_size = self.ability.extra
+                if G.GAME.selected_back.effect.config.extra_spectral_pack_cards > 0 then
+                    G.GAME.pack_size = G.GAME.pack_size + G.GAME.selected_back.effect.config.extra_spectral_pack_cards
+                end
             elseif self.ability.name:find('Standard') then
                 G.STATE = G.STATES.STANDARD_PACK
                 G.GAME.pack_size = self.ability.extra
+                if G.GAME.selected_back.effect.config.extra_standard_pack_cards > 0 then
+                    G.GAME.pack_size = G.GAME.pack_size + G.GAME.selected_back.effect.config.extra_standard_pack_cards
+                end
             elseif self.ability.name:find('Buffoon') then
                 G.STATE = G.STATES.BUFFOON_PACK
                 G.GAME.pack_size = self.ability.extra
+                if G.GAME.selected_back.effect.config.extra_buffoon_pack_cards > 0 then
+                    G.GAME.pack_size = G.GAME.pack_size + G.GAME.selected_back.effect.config.extra_buffoon_pack_cards
+                end
             end
 
+            local packSize = G.GAME.pack_size
+
             G.GAME.pack_choices = self.config.center.config.choose or 1
+            if G.GAME.selected_back.effect.config.extra_booster_pack_choices > 0 then
+                G.GAME.pack_choices = G.GAME.pack_choices + G.GAME.selected_back.effect.config.extra_booster_pack_choices
+            end
+
+            if G.GAME.pack_choices > packSize then G.GAME.pack_choices = packSize end
 
             if self.cost > 0 then
+                local skip = false
+                if G.GAME.selected_back.effect.config.chance_for_free_booster > 0 then
+                    skip = G.GAME.selected_back.effect.config.chance_for_free_booster >= math.random(1, 100)
+                end
+
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2, func = function()
-                    inc_career_stat('c_shop_dollars_spent', self.cost)
+                    if skip == false then
+                        inc_career_stat('c_shop_dollars_spent', self.cost)
+                    end
                     self:juice_up()
-                    return true end }))
-                ease_dollars(-self.cost)
+                    return true end
+                }))
+                if skip == false then
+                    ease_dollars(-self.cost)
+                end
             else
                 delay(0.2)
             end
@@ -458,10 +1057,9 @@ function DeckCreator.Enable()
                 local pack_cards = {}
 
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 1.3*math.sqrt(G.SETTINGS.GAMESPEED), blockable = false, blocking = false, func = function()
-                    local _size = self.ability.extra
 
-                    for i = 1, _size do
-                        local card = nil
+                    for i = 1, packSize do
+                        local card
                         if self.ability.name:find('Arcana') then
                             if (G.GAME.used_vouchers.v_omen_globe or G.GAME.selected_back.effect.config.spectral_cards_in_arcana) and pseudorandom('omen_globe') > 0.8 then
                                 card = create_card("Spectral", G.pack_cards, nil, nil, true, true, nil, 'ar2')
@@ -536,12 +1134,14 @@ function DeckCreator.Enable()
                             end
                         elseif self.ability.name:find('Buffoon') then
                             card = create_card("Joker", G.pack_cards, nil, nil, true, true, nil, 'buf')
-
                         end
-                        card.T.x = self.T.x
-                        card.T.y = self.T.y
-                        card:start_materialize({G.C.WHITE, G.C.WHITE}, nil, 1.5*G.SETTINGS.GAMESPEED)
-                        pack_cards[i] = card
+
+                        if card ~= nil then
+                            card.T.x = self.T.x
+                            card.T.y = self.T.y
+                            card:start_materialize({G.C.WHITE, G.C.WHITE}, nil, 1.5*G.SETTINGS.GAMESPEED)
+                            pack_cards[i] = card
+                        end
                     end
                     return true
                 end}))
@@ -647,15 +1247,13 @@ function DeckCreator.Enable()
     local CreateCard = create_card
     function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
 
-
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.allow_duplicate_jokers) or false
-        if isSkipBlindOptionsEnabled == false then
+        local isCreateCardOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.allow_duplicate_jokers or G.GAME.selected_back.effect.config.eternal_rate ~= 30 or G.GAME.selected_back.effect.config.rental_rate ~= 30 or G.GAME.selected_back.effect.config.perishable_rate ~= 30) or false
+        if isCreateCardOptionsEnabled == false then
             return CreateCard(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
         end
 
-        local area = area or G.jokers
+        area = area or G.jokers
         local center = G.P_CENTERS.b_red
-
 
         --should pool be skipped with a forced key
         if not forced_key and soulable and (not G.GAME.banned_keys['c_soul']) then
@@ -674,8 +1272,6 @@ function DeckCreator.Enable()
         if _type == 'Base' then
             forced_key = 'c_base'
         end
-
-
 
         if forced_key and not G.GAME.banned_keys[forced_key] then
             center = G.P_CENTERS[forced_key]
@@ -705,9 +1301,20 @@ function DeckCreator.Enable()
             if G.GAME.modifiers.all_eternal then
                 card:set_eternal(true)
             end
-            if area == G.shop_jokers then
-                if G.GAME.modifiers.enable_eternals_in_shop and pseudorandom('stake_shop_joker_eternal'..G.GAME.round_resets.ante) > 0.7 then
+            if (area == G.shop_jokers) or (area == G.pack_cards) then
+                local eternalRate = G.GAME.selected_back.effect.config.eternal_rate or 30
+                local perishRate = G.GAME.selected_back.effect.config.perishable_rate or 30
+                local rentalRate = G.GAME.selected_back.effect.config.rental_rate or 30
+                local isEternal = false
+                if G.GAME.modifiers.enable_eternals_in_shop and (100 * pseudorandom('stake_shop_joker_eternal'..G.GAME.round_resets.ante)) <= eternalRate then
                     card:set_eternal(true)
+                    isEternal = true
+                end
+                if isEternal == false and G.GAME.modifiers.enable_perishables_in_shop and (100 * pseudorandom('ssjp'..G.GAME.round_resets.ante)) <= perishRate then
+                    card:set_perishable(true)
+                end
+                if G.GAME.modifiers.enable_rentals_in_shop and (100 * pseudorandom('ssjr'..G.GAME.round_resets.ante)) <= rentalRate then
+                    card:set_rental(true)
                 end
             end
 
@@ -736,7 +1343,7 @@ function DeckCreator.Enable()
             else
                 rarity = (_legendary and 4) or (rarity > 0.95 and 3) or (rarity > 0.7 and 2) or 1
             end
-            _starting_pool, _pool_key = G.P_JOKER_RARITY_POOLS[rarity], 'Joker'..rarity..(_append or '')
+            _starting_pool, _pool_key = G.P_JOKER_RARITY_POOLS[rarity], 'Joker'..rarity..((not _legendary and _append) or '')
         else _starting_pool, _pool_key = G.P_CENTER_POOLS[_type], _type..(_append or '')
         end
 
@@ -814,7 +1421,7 @@ function DeckCreator.Enable()
         --if pool is empty
         if _pool_size == 0 then
             _pool = EMPTY(G.ARGS.TEMP_POOL)
-            if _type == 'Tarot' or _type == 'Tarot_Planet' then _pool[#_pool + 1] = "c_fool"
+            if _type == 'Tarot' or _type == 'Tarot_Planet' then _pool[#_pool + 1] = "c_strength"
             elseif _type == 'Planet' then _pool[#_pool + 1] = "c_pluto"
             elseif _type == 'Spectral' then _pool[#_pool + 1] = "c_incantation"
             elseif _type == 'Joker' then _pool[#_pool + 1] = "j_joker"
@@ -825,7 +1432,7 @@ function DeckCreator.Enable()
             end
         end
 
-        return _pool, _pool_key..G.GAME.round_resets.ante
+        return _pool, _pool_key..(not _legendary and G.GAME.round_resets.ante or '')
     end
 
     local createUiBoxBlindTag = create_UIBox_blind_tag
@@ -864,6 +1471,24 @@ function DeckCreator.Enable()
             return createUiBoxBlindTag(blind_choice, run_info)
         end
 
+        if G.GAME.selected_back.effect.config.chance_for_five_dollars_on_skip_disable > 0 then
+            if G.GAME.selected_back.effect.config.chance_for_five_dollars_on_skip_disable >= math.random(1, 100) then
+                ease_dollars(5)
+            end
+        end
+
+        if G.GAME.selected_back.effect.config.chance_for_fifteen_dollars_on_skip_disable > 0 then
+            if G.GAME.selected_back.effect.config.chance_for_fifteen_dollars_on_skip_disable >= math.random(1, 100) then
+                ease_dollars(15)
+            end
+        end
+
+        if G.GAME.selected_back.effect.config.chance_for_negative_joker_on_skip_disable > 0 then
+            if G.GAME.selected_back.effect.config.chance_for_negative_joker_on_skip_disable >= math.random(1, 100) then
+                CardUtils.receiveRandomNegativeJoker()
+            end
+        end
+
         return nil
     end
 
@@ -875,6 +1500,8 @@ function DeckCreator.Enable()
             local bigDefeated = G.GAME.round_resets.blind_states.Big == 'Defeated' and G.GAME.selected_back.effect.config.skip_shop_chance_big_blind and G.GAME.selected_back.effect.config.skip_shop_chance_big_blind > 0
             local bossDefeated = G.GAME.round_resets.blind_states.Boss == 'Defeated' and G.GAME.selected_back.effect.config.skip_shop_chance_boss and G.GAME.selected_back.effect.config.skip_shop_chance_boss > 0
             local anyDefeated = G.GAME.selected_back.effect.config.skip_shop_chance_any and G.GAME.selected_back.effect.config.skip_shop_chance_any > 0
+            local canWinNegativeJoker = G.GAME.selected_back.effect.config.chance_for_random_negative_joker_on_shop_skip and G.GAME.selected_back.effect.config.chance_for_random_negative_joker_on_shop_skip > 0
+            local canWinTwentyDollars = G.GAME.selected_back.effect.config.chance_for_twenty_dollars_on_shop_skip and G.GAME.selected_back.effect.config.chance_for_twenty_dollars_on_shop_skip > 0
             local skipShop = false
             if bossDefeated then
                 local roll = math.random(1, 100)
@@ -906,6 +1533,18 @@ function DeckCreator.Enable()
             if skipShop == false then
                 CashOut(e)
                 return
+            end
+
+            if canWinNegativeJoker then
+                if G.GAME.selected_back.effect.config.chance_for_random_negative_joker_on_shop_skip >= math.random(1, 100) then
+                    CardUtils.receiveRandomNegativeJoker()
+                end
+            end
+
+            if canWinTwentyDollars then
+                if G.GAME.selected_back.effect.config.chance_for_twenty_dollars_on_shop_skip >= math.random(1, 100) then
+                    ease_dollars(20)
+                end
             end
 
             stop_use()
@@ -944,6 +1583,11 @@ function DeckCreator.Enable()
                 G.VIBRATION = G.VIBRATION + 1
             end
             ease_chips(0)
+            if G.GAME.round_resets.blind_states.Boss == 'Defeated' then
+                G.GAME.round_resets.blind_ante = G.GAME.round_resets.ante
+                G.GAME.round_resets.blind_tags.Small = get_next_tag_key()
+                G.GAME.round_resets.blind_tags.Big = get_next_tag_key()
+            end
             delay(0.6)
         else
             CashOut(e)
@@ -968,40 +1612,87 @@ function DeckCreator.Enable()
 
     local getBlindAmount = get_blind_amount
     function get_blind_amount(ante)
-        local isModifyingBlindScaling = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and G.GAME.selected_back.effect.config.blind_scaling and G.GAME.selected_back.effect.config.blind_scaling ~= 1 and (G.GAME.selected_back.effect.config.blind_scaling < 1 or G.GAME.selected_back.effect.config.blind_scaling > 3)  or false
+        local isModifyingBlindScaling = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and G.GAME.selected_back.effect.config.blind_scaling and G.GAME.selected_back.effect.config.blind_scaling ~= 1 or false
+        local mod = 1
         if isModifyingBlindScaling then
-            local base_amount = 300
-            local scaling_factor = G.GAME.selected_back.effect.config.blind_scaling - 3
-            local amounts = {}
-            for i = 1, 8 do
-                amounts[i] = base_amount * (1.2 ^ (i-1)) * (1 + scaling_factor * 0.5)
-                amounts[i] = math.floor(amounts[i] / 100) * 100
-            end
-
-            if ante < 1 then return 100 end
-            if ante <= 8 then return amounts[ante] end
-            local a, b, c, d = amounts[8],1.6,ante-8, 1 + 0.2*(ante-8)
-            local amount = math.floor(a*(b+(k*c)^d)^c)
-            amount = amount - amount % (10^math.floor(math.log10(amount)-1))
-            return amount
-        else
-            return getBlindAmount(ante)
+            mod = G.GAME.selected_back.effect.config.blind_scaling
         end
+        return math.floor(getBlindAmount(ante) * mod)
     end
 
     local EndRound = end_round
     function end_round()
+        -- Utils.resetShopJokerPages()
         EndRound()
 
         local deck = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config or nil
         if deck.customDeck then
-            if G.jokers and G.jokers.cards and #G.jokers.cards > 0 and deck.random_sell_value_increase and deck.random_sell_value_increase > 0 then
-                local list = G.jokers.cards
-                local rand = list[math.random(1, #list)]
-                if rand.set_cost then
-                    rand.ability.extra_value = (rand.ability.extra_value or 0) + deck.random_sell_value_increase
-                    rand:set_cost()
+            if G.jokers and G.jokers.cards and #G.jokers.cards >0 then
+
+                if G.GAME.blind and G.GAME.blind:get_type() == 'Boss' and G.GAME.round_resets.ante == 4 and deck.destroy_random_joker_after_ante_four > 0  then
+                    G.E_MANAGER:add_event(Event({
+                        trigger = 'after',
+                        delay = 0.2,
+                        func = function()
+                            local roll = math.random(1, 100)
+                            if deck.destroy_random_joker_after_ante_four >= roll then
+                                CardUtils.destroyRandomJoker()
+                            end
+                            return true
+                        end
+                    }))
                 end
+
+                if deck.random_sell_value_increase then
+                    G.E_MANAGER:add_event(Event({
+                        trigger = 'after',
+                        delay = 0.2,
+                        func = function()
+                            local list = G.jokers.cards
+                            local rand = list[math.random(1, #list)]
+                            if rand.set_cost then
+                                rand.ability.extra_value = (rand.ability.extra_value or 0) + deck.random_sell_value_increase
+                                rand:juice_up()
+                                rand:set_cost()
+                            end
+                            return true
+                        end
+                    }))
+                end
+
+                if deck.random_sell_value_decrease then
+                    G.E_MANAGER:add_event(Event({
+                        trigger = 'after',
+                        delay = 0.2,
+                        func = function()
+                            local list = G.jokers.cards
+                            local secondList = {}
+                            for k,v in pairs(list) do
+                                if v.ability.extra_value > 0 then
+                                    table.insert(secondList, v)
+                                end
+                            end
+
+                            local rand
+                            if #secondList > 0 then
+                                rand = secondList[math.random(1, #secondList)]
+                            else
+                                rand = list[math.random(1, #list)]
+                            end
+
+                            if rand and rand.set_cost then
+                                rand.ability.extra_value = (rand.ability.extra_value or 0) - deck.random_sell_value_decrease
+                                if rand.ability.extra_value < 0 then
+                                    rand.ability.extra_value = 0
+                                end
+                                rand:juice_up()
+                                rand:set_cost()
+                            end
+                            return true
+                        end
+                    }))
+                end
+
             end
         end
     end
@@ -1137,6 +1828,7 @@ function DeckCreator.Enable()
             self.cost = self.cost + 3
         end
         if (self.ability.set == 'Planet' or (self.ability.set == 'Booster' and self.ability.name:find('Celestial'))) and #find_joker('Astronomer') > 0 then self.cost = 0 end
+        if self.ability.rental then self.cost = 1 end
         if fullPriced then
             self.sell_cost = math.max(1, math.floor(self.cost)) + (self.ability.extra_value or 0)
         else self.sell_cost = math.max(1, math.floor(self.cost/2)) + (self.ability.extra_value or 0)
@@ -1166,19 +1858,12 @@ function DeckCreator.Enable()
                 ease_dollars(totalDollars, true)
             end
 
-            if deck.effect.config.negative_joker_for_broken_glass then
-                G.GAME.joker_buffer = G.GAME.joker_buffer + 1
-                G.E_MANAGER:add_event(Event({
-                    func = function()
-                        local card = create_card('Joker', G.jokers, nil, nil, nil, nil, nil, 'rif')
-                        card:set_edition({ negative = true }, true, true)
-                        card:add_to_deck()
-                        G.jokers:emplace(card)
-                        card:start_materialize()
-                        G.GAME.joker_buffer = 0
-                        return true
-                    end
-                }))
+            if deck.effect.config.destroy_joker_on_broken_glass > 0 and deck.effect.config.destroy_joker_on_broken_glass >= math.random(1, 100) then
+                CardUtils.destroyRandomJoker()
+            end
+
+            if deck.effect.config.negative_joker_for_broken_glass > 0 and deck.effect.config.negative_joker_for_broken_glass >= math.random(1, 100) then
+                CardUtils.receiveRandomNegativeJoker()
             end
 
             if deck.effect.config.replace_broken_glass_with_random_cards_chance and deck.effect.config.replace_broken_glass_with_random_cards_chance > 0 then
@@ -1281,7 +1966,7 @@ function DeckCreator.Enable()
                 if GUI.OpenStartingItemConfig.openItemType == 'voucher' then
                     added = CardUtils.addItemToDeck({ voucher = true, ref = 'customVoucherList', addCard = self.config.center.key })
                 elseif GUI.OpenStartingItemConfig.openItemType == 'joker' then
-                    added = CardUtils.addItemToDeck({ joker = true, ref = 'customJokerList', addCard = { id = self.config.center.key, key = self.config.center.key, copies = GUI.OpenStartingItemConfig.copies, eternal = GUI.OpenStartingItemConfig.eternal, pinned = GUI.OpenStartingItemConfig.pinned, edition = GUI.OpenStartingItemConfig.edition } })
+                    added = CardUtils.addItemToDeck({ joker = true, ref = 'customJokerList', addCard = { id = self.config.center.key, key = self.config.center.key, copies = GUI.OpenStartingItemConfig.copies, eternal = GUI.OpenStartingItemConfig.eternal, pinned = GUI.OpenStartingItemConfig.pinned, edition = GUI.OpenStartingItemConfig.edition, perishable = GUI.OpenStartingItemConfig.perishable, rental = GUI.OpenStartingItemConfig.rental } })
                 elseif GUI.OpenStartingItemConfig.openItemType == 'tarot' then
                     added = CardUtils.addItemToDeck({ tarot = true, ref = 'customTarotList', addCard = { key = self.config.center.key, copies = GUI.OpenStartingItemConfig.copies, edition = GUI.OpenStartingItemConfig.edition }})
                 elseif GUI.OpenStartingItemConfig.openItemType == 'planet' then
@@ -1719,6 +2404,18 @@ function DeckCreator.Enable()
                 G.GAME.modifiers.enable_eternals_in_shop = false
             end
 
+            if G.GAME.stake >= 7 or (G.GAME.stake < 7 and config.enable_perishables_in_shop) then
+                G.GAME.modifiers.enable_perishables_in_shop = true
+            else
+                G.GAME.modifiers.enable_perishables_in_shop = false
+            end
+
+            if G.GAME.stake >= 8 or (G.GAME.stake < 8 and config.enable_rentals_in_shop) then
+                G.GAME.modifiers.enable_rentals_in_shop = true
+            else
+                G.GAME.modifiers.enable_rentals_in_shop = false
+            end
+
             if config.booster_ante_scaling and type(config.booster_ante_scaling == 'boolean') then
                 if G.GAME.stake >= 7 or (G.GAME.stake < 7 and config.booster_ante_scaling) then
                     G.GAME.modifiers.booster_ante_scaling = true
@@ -1738,6 +2435,10 @@ function DeckCreator.Enable()
 
             if config.extra_hand_bonus == 0 then
                 G.GAME.modifiers.no_extra_hand_money = true
+            end
+
+            if config.negative_fifty_dollars_allowed then
+                G.GAME.bankrupt_at = -50
             end
 
             if hadRerollSurplus then
@@ -2115,12 +2816,17 @@ function DeckCreator.Enable()
             end
         end
 
+        local blinds_per_row = math.ceil(#blind_tab/6)
         table.sort(blind_tab, function (a, b) return a.order < b.order end)
 
         local blinds_to_be_alerted = {}
         for k, v in ipairs(blind_tab) do
             local discovered = v.discovered
-            local temp_blind = AnimatedSprite(0,0,1.3,1.3, G.ANIMATION_ATLAS['blind_chips'], discovered and v.pos or G.b_undiscovered.pos)
+            local atlas = 'blind_chips'
+            if v.atlas then
+                atlas = v.atlas
+            end
+            local temp_blind = AnimatedSprite(0,0,1.3,1.3, G.ANIMATION_ATLAS[atlas], discovered and v.pos or G.b_undiscovered.pos)
             temp_blind:define_draw_steps({
                 {shader = 'dissolve', shadow_height = 0.05},
                 {shader = 'dissolve'}
@@ -2162,11 +2868,19 @@ function DeckCreator.Enable()
                 end
                 temp_blind.stop_hover = function() temp_blind.hovering = false; Node.stop_hover(temp_blind); temp_blind.hover_tilt = 0 end
             end
-            blind_matrix[math.ceil((k-1)/5+0.001)][1+((k-1)%5)] = {n=G.UIT.C, config={align = "cm", padding = 0.1}, nodes={
-                (k==6 or k ==16 or k == 26) and {n=G.UIT.B, config={h=0.2,w=0.5}} or nil,
-                {n=G.UIT.O, config={object = temp_blind, focus_with_object = true}},
-                (k==5 or k ==15 or k == 25) and {n=G.UIT.B, config={h=0.2,w=0.5}} or nil,
-            }}
+
+            local row = math.ceil((k - 1) / blinds_per_row + 0.001)
+            table.insert(blind_matrix[row], {
+                n = G.UIT.C,
+                config = { align = "cm", padding = 0.1 },
+                nodes = {
+                    ((k - blinds_per_row) % (2 * blinds_per_row) == 1) and { n = G.UIT.B, config = { h = 0.2, w = 0.5 } } or
+                            nil,
+                    { n = G.UIT.O, config = { object = temp_blind, focus_with_object = true } },
+                    ((k - blinds_per_row) % (2 * blinds_per_row) == 0) and { n = G.UIT.B, config = { h = 0.2, w = 0.5 } } or
+                            nil,
+                }
+            })
         end
 
         G.E_MANAGER:add_event(Event({

@@ -265,16 +265,21 @@ function CardUtils.generateCardProto(args)
         seal = args.seal,
         copies = args.copies
     }
-    Utils.log("Original generated card suit: " .. tostring(generatedCard.suit))
 
     if args.suit == "Random" then
-        local list = Utils.suits()
+        local list = Utils.suits(false, true)
         local randomSuit = list[math.random(1, #list)]
-        generatedCard.suit = randomSuit
-        generatedCard.suitKey = string.sub(randomSuit, 1, 1)
-    end
 
-    Utils.log("Generated card suit after random roll: " .. tostring(generatedCard.suit))
+        if randomSuit.name ~= nil then
+            generatedCard.suit = randomSuit.name
+            generatedCard.suitKey = randomSuit.prefix
+        else
+            generatedCard.suit = randomSuit
+            generatedCard.suitKey = string.sub(randomSuit, 1, 1)
+        end
+
+
+    end
 
     if args.rank == "Random" then
         local list = Utils.ranks()
@@ -316,7 +321,7 @@ function CardUtils.generateCardProto(args)
         end
 
     end
-    Utils.log("Final generated card suit: " .. tostring(generatedCard.suit))
+
     local newCardName = generatedCard.rank .. " of " .. generatedCard.suit
     local rank = generatedCard.rank
     if rank == 10 then rank = "T" end
@@ -368,6 +373,8 @@ function CardUtils.getJokersFromCustomJokerList(deck)
         local index
         local eternal = false
         local pinned = false
+        local perishable = false
+        local rental = false
         local edition
         local uuid
         for k,v in pairs(G.P_CENTER_POOLS["Joker"]) do
@@ -378,6 +385,8 @@ function CardUtils.getJokersFromCustomJokerList(deck)
                 pinned = deck[j].pinned
                 edition = deck[j].edition
                 uuid = deck[j].uuid
+                perishable = deck[j].perishable
+                rental = deck[j].rental
                 break
             end
         end
@@ -388,6 +397,8 @@ function CardUtils.getJokersFromCustomJokerList(deck)
             card.ability.order = (j-1)*4
             if edition then card:set_edition{[edition] = true} end
             if eternal then card:set_eternal(true) end
+            if perishable then card:set_perishable() end
+            if rental then card:set_rental(true) end
             if pinned then card.pinned = true end
             table.insert(CardUtils.startingItems.jokers, card)
             table.insert(CardUtils.allCardsEverMade, card)
@@ -684,6 +695,8 @@ function CardUtils.addItemToDeck(args)
                     pinned = args.addCard.pinned,
                     eternal = args.addCard.eternal,
                     edition = args.addCard.edition,
+                    perishable = args.addCard.perishable,
+                    rental = args.addCard.rental,
                     uuid = Utils.uuid()
                 }
             end
@@ -984,7 +997,11 @@ function CardUtils.getBannedBlindsFromBannedBlindList(deck)
         if blind then
             local v = blind
             local discovered = v.discovered
-            local temp_blind = AnimatedSprite(0,0,0.8,0.8, G.ANIMATION_ATLAS['blind_chips'], v.pos)
+            local atlas = 'blind_chips'
+            if v.atlas then
+                atlas = v.atlas
+            end
+            local temp_blind = AnimatedSprite(0,0,0.8,0.8, G.ANIMATION_ATLAS[atlas], v.pos)
             temp_blind:define_draw_steps({
                 {shader = 'dissolve', shadow_height = 0.05},
                 {shader = 'dissolve'}
@@ -1244,17 +1261,13 @@ function CardUtils.banItem(args)
 
     if newCard then
         local skip = false
-        if args.booster and #Utils.getCurrentEditingDeck().config[args.ref] >= Utils.runtimeConstants.boosterPacks - 1 then
-            skip = true
-        else
-            for k,v in pairs(Utils.getCurrentEditingDeck().config[args.ref]) do
-                if args.voucher and v == newCard then
-                    skip = true
-                    break
-                elseif not args.voucher and v.key == newCard.key then
-                    skip = true
-                    break
-                end
+        for k,v in pairs(Utils.getCurrentEditingDeck().config[args.ref]) do
+            if args.voucher and v == newCard then
+                skip = true
+                break
+            elseif not args.voucher and v.key == newCard.key then
+                skip = true
+                break
             end
         end
 
@@ -1269,7 +1282,8 @@ end
 
 -- General purpose utilities
 function CardUtils.standardCardSet()
-    return {
+    return G.P_CARDS
+    --[[return {
         H_2={name = "2 of Hearts",value = '2', suit = 'Hearts', pos = {x=0,y=0}},
         H_3={name = "3 of Hearts",value = '3', suit = 'Hearts', pos = {x=1,y=0}},
         H_4={name = "4 of Hearts",value = '4', suit = 'Hearts', pos = {x=2,y=0}},
@@ -1322,11 +1336,100 @@ function CardUtils.standardCardSet()
         S_Q={name = "Queen of Spades",value = 'Queen', suit = 'Spades', pos = {x=10,y=3}},
         S_K={name = "King of Spades",value = 'King', suit = 'Spades', pos = {x=11,y=3}},
         S_A={name = "Ace of Spades",value = 'Ace', suit = 'Spades', pos = {x=12,y=3}},
-    }
+    }]]
 end
 
 function CardUtils.isStone(card)
     return card.ability.effect == 'Stone Card' and not card.vampired
+end
+
+function CardUtils.receiveRandomNegativeJoker()
+    G.GAME.joker_buffer = G.GAME.joker_buffer + 1
+    G.E_MANAGER:add_event(Event({
+        func = function()
+            local card = create_card('Joker', G.jokers, nil, nil, nil, nil, nil, 'rif')
+            card:set_edition({ negative = true }, true, true)
+            card:add_to_deck()
+            G.jokers:emplace(card)
+            card:start_materialize()
+            G.GAME.joker_buffer = 0
+            return true
+        end
+    }))
+end
+
+function CardUtils.destroyRandomJoker()
+    local deletable_jokers = {}
+    for k, v in pairs(G.jokers.cards) do
+        if not v.ability.eternal then deletable_jokers[#deletable_jokers + 1] = v end
+    end
+    local chosen_joker = pseudorandom_element(deletable_jokers, pseudoseed('ankh_choice'))
+    G.E_MANAGER:add_event(Event({trigger = 'before', delay = 0.75, func = function()
+        for k, v in pairs(G.jokers.cards) do
+            if v == chosen_joker then
+                v:start_dissolve()
+            end
+        end
+        return true end })
+    )
+end
+
+function CardUtils.removeAllJokersFromShop()
+    for i = #G.shop_jokers.cards,1, -1 do
+        local c = G.shop_jokers:remove_card(G.shop_jokers.cards[i])
+        c:remove()
+        c = nil
+    end
+end
+
+function CardUtils.addFourJokersToShop()
+    for i = 1, 4 do
+        local joker = Utils.shopJokers[Utils.currentShopJokerPage][i]
+        if joker ~= nil then
+            G.shop_jokers:emplace(joker)
+        end
+    end
+
+
+end
+
+function CardUtils.setupBigJokerShop(juice)
+    juice = juice or false
+    local page = 0
+    local currentPage = 1
+    local maxPage = 1
+    for i = 1, G.GAME.shop.joker_max - #G.shop_jokers.cards do
+        local joker = create_card_for_shop(G.shop_jokers)
+        Utils.shopJokers[currentPage] = Utils.shopJokers[currentPage] or {}
+        table.insert(Utils.shopJokers[currentPage], joker)
+        G.DeckCreatorModuleAllShopJokersArea:emplace(joker)
+        page = page + 1
+        if page == 4 then
+            page = 0
+            currentPage = currentPage + 1
+            maxPage = currentPage
+        end
+    end
+
+    Utils.maxShopJokerPages = maxPage
+    local jokersInShop = G.GAME.shop.joker_max - #G.shop_jokers.cards
+    if jokersInShop > 4 then jokersInShop = 4 end
+
+    for i = 1, jokersInShop do
+        local joker = Utils.shopJokers[Utils.currentShopJokerPage][i]
+        if joker ~= nil then
+            G.shop_jokers:emplace(joker)
+            if juice then
+                joker:juice_up()
+            end
+        end
+    end
+end
+
+function CardUtils.savedJokerAreaToPages()
+    if G.DeckCreatorModuleAllShopJokersArea then
+
+    end
 end
 
 return CardUtils

@@ -1,6 +1,8 @@
+local ModloaderHelper = require "ModloaderHelper"
+
 local Utils = {}
 
-Utils.mode = "dev"
+Utils.mode = "PROD"
 Utils.customDeckList = {}
 Utils.runMemoryChecks = false
 Utils.EditDeckConfig = {
@@ -34,6 +36,10 @@ Utils.bannedBlindsPerPage = nil
 Utils.runtimeConstants = {
     boosterPacks = 0
 }
+Utils.currentShopJokerPage = 1
+Utils.maxShopJokerPages = 1
+Utils.shopJokers = {}
+-- G.DeckCreatorModuleAllShopJokersArea = nil
 
 function Utils.resetTagsPerPage()
     Utils.startingTagsPerPage = 8
@@ -41,6 +47,19 @@ function Utils.resetTagsPerPage()
 end
 function Utils.resetBlindsPerPage()
     Utils.bannedBlindsPerPage = 8
+end
+function Utils.resetShopJokerPages()
+    for k,v in pairs(Utils.shopJokers) do
+        for x,y in pairs(v) do
+            y:remove()
+            y = nil
+        end
+        v = nil
+    end
+    Utils.shopJokers = {}
+    Utils.currentShopJokerPage = 1
+    Utils.maxShopJokerPages = 1
+    G.DeckCreatorModuleAllShopJokersArea = nil
 end
 Utils.resetTagsPerPage()
 Utils.resetBlindsPerPage()
@@ -157,6 +176,17 @@ function Utils.generateBoundedIntegerList(min, max)
     return list
 end
 
+function Utils.generateBoundedFloatList(min, max, step)
+    local list = {}
+    local value = min
+    while value <= max do
+        local roundedValue = math.floor(value * 100 + 0.5) / 100
+        table.insert(list, roundedValue)
+        value = value + step
+    end
+    return list
+end
+
 function Utils.generateBoundedIntegerListWithNoneOption(min, max, noneString)
     noneString = noneString or '--'
     local list = {
@@ -188,14 +218,25 @@ function Utils.allDeckNames()
     return output
 end
 
-function Utils.suits(includeRandom)
+function Utils.suits(includeRandom, fullObject)
+    local output = {}
     includeRandom = includeRandom or false
-    local output = {
-        "Clubs",
-        "Diamonds",
-        "Hearts",
-        "Spades"
-    }
+    if ModloaderHelper.SteamoddedLoaded then
+        for k,v in pairs(SMODS.Card.SUITS) do
+            if fullObject ~= nil then
+                table.insert(output, v)
+            else
+                table.insert(output, v.name)
+            end
+        end
+    else
+        output = {
+            "Clubs",
+            "Diamonds",
+            "Hearts",
+            "Spades"
+        }
+    end
     if includeRandom then
         table.insert(output, "Random")
     end
@@ -203,9 +244,17 @@ function Utils.suits(includeRandom)
 end
 
 function Utils.protoSuits()
-    return {
-        "H", "C", "D", "S"
-    }
+    local output = {}
+    if ModloaderHelper.SteamoddedLoaded then
+        for k,v in pairs(SMODS.Card.SUITS) do
+            table.insert(output, v.prefix)
+        end
+    else
+        output = {
+            "H", "C", "D", "S"
+        }
+    end
+    return output
 end
 
 function Utils.ranks(includeRandom)
