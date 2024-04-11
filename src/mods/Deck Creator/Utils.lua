@@ -1,6 +1,8 @@
+local ModloaderHelper = require "ModloaderHelper"
+
 local Utils = {}
 
-Utils.mode = "dev"
+Utils.mode = "PROD"
 Utils.customDeckList = {}
 Utils.runMemoryChecks = false
 Utils.EditDeckConfig = {
@@ -11,10 +13,60 @@ Utils.EditDeckConfig = {
 }
 Utils.deletedSlugs = {}
 Utils.disabledSlugs = {}
+Utils.redSealMessages = {}
+
+Utils.hoveredTagStartingItemsAddToItemsKey = nil
+Utils.hoveredTagStartingItemsAddToItemsSprite = nil
+Utils.hoveredTagStartingItemsRemoveKey = nil
+Utils.hoveredTagStartingItemsRemoveUUID = nil
+Utils.hoveredTagStartingItemsRemoveSprite = nil
+Utils.startingTagsPerPage = nil
+
+Utils.hoveredTagBanItemsAddToBanKey = nil
+Utils.hoveredTagBanItemsAddToBanSprite = nil
+Utils.hoveredTagBanItemsRemoveKey = nil
+Utils.hoveredTagBanItemsRemoveSprite = nil
+Utils.bannedTagsPerPage = nil
+Utils.hoveredBlindBanItemsAddToBanKey = nil
+Utils.hoveredBlindBanItemsAddToBanSprite = nil
+Utils.hoveredBlindBanItemsRemoveKey = nil
+Utils.hoveredBlindBanItemsRemoveSprite = nil
+Utils.bannedBlindsPerPage = nil
+
+Utils.runtimeConstants = {
+    boosterPacks = 0
+}
+Utils.currentShopJokerPage = 1
+Utils.maxShopJokerPages = 1
+Utils.shopJokers = {}
+-- G.DeckCreatorModuleAllShopJokersArea = nil
+
+function Utils.resetTagsPerPage()
+    Utils.startingTagsPerPage = 8
+    Utils.bannedTagsPerPage = 8
+end
+function Utils.resetBlindsPerPage()
+    Utils.bannedBlindsPerPage = 8
+end
+function Utils.resetShopJokerPages()
+    for k,v in pairs(Utils.shopJokers) do
+        for x,y in pairs(v) do
+            y:remove()
+            y = nil
+        end
+        v = nil
+    end
+    Utils.shopJokers = {}
+    Utils.currentShopJokerPage = 1
+    Utils.maxShopJokerPages = 1
+    G.DeckCreatorModuleAllShopJokersArea = nil
+end
+Utils.resetTagsPerPage()
+Utils.resetBlindsPerPage()
 
 function Utils.log(message)
     if Utils.mode ~= "PROD" and sendDebugMessage ~= nil then
-        sendDebugMessage("DeckCreatorMod: " .. message)
+        sendDebugMessage(message, "DeckCreatorModule")
     end
 end
 
@@ -124,6 +176,17 @@ function Utils.generateBoundedIntegerList(min, max)
     return list
 end
 
+function Utils.generateBoundedFloatList(min, max, step)
+    local list = {}
+    local value = min
+    while value <= max do
+        local roundedValue = math.floor(value * 100 + 0.5) / 100
+        table.insert(list, roundedValue)
+        value = value + step
+    end
+    return list
+end
+
 function Utils.generateBoundedIntegerListWithNoneOption(min, max, noneString)
     noneString = noneString or '--'
     local list = {
@@ -155,14 +218,25 @@ function Utils.allDeckNames()
     return output
 end
 
-function Utils.suits(includeRandom)
+function Utils.suits(includeRandom, fullObject)
+    local output = {}
     includeRandom = includeRandom or false
-    local output = {
-        "Clubs",
-        "Diamonds",
-        "Hearts",
-        "Spades"
-    }
+    if ModloaderHelper.SteamoddedLoaded then
+        for k,v in pairs(SMODS.Card.SUITS) do
+            if fullObject ~= nil then
+                table.insert(output, v)
+            else
+                table.insert(output, v.name)
+            end
+        end
+    else
+        output = {
+            "Clubs",
+            "Diamonds",
+            "Hearts",
+            "Spades"
+        }
+    end
     if includeRandom then
         table.insert(output, "Random")
     end
@@ -170,9 +244,17 @@ function Utils.suits(includeRandom)
 end
 
 function Utils.protoSuits()
-    return {
-        "H", "C", "D", "S"
-    }
+    local output = {}
+    if ModloaderHelper.SteamoddedLoaded then
+        for k,v in pairs(SMODS.Card.SUITS) do
+            table.insert(output, v.prefix)
+        end
+    else
+        output = {
+            "H", "C", "D", "S"
+        }
+    end
+    return output
 end
 
 function Utils.ranks(includeRandom)
@@ -278,6 +360,36 @@ function Utils.spectralKeys()
     local output = {}
     for k,v in pairs(G.P_CENTERS) do
         if v.set == 'Spectral' then
+            table.insert(output, k)
+        end
+    end
+    return output
+end
+
+function Utils.tagKeys()
+    local output = {}
+    for k,v in pairs(G.P_TAGS) do
+        table.insert(output, k)
+    end
+    return output
+end
+
+function Utils.blindKeys()
+    local output = {}
+    for k,v in pairs(G.P_BLINDS) do
+        if v.name ~= 'Big Blind' and v.name ~= 'Small Blind' and v.name ~= 'The Empty' then
+            table.insert(output, v.name)
+        end
+    end
+    return output
+end
+
+function Utils.boosterKeys()
+    Utils.runtimeConstants.boosterPacks = 0
+    local output = {}
+    for k,v in pairs(G.P_CENTERS) do
+        if v.set == 'Booster' then
+            Utils.runtimeConstants.boosterPacks = Utils.runtimeConstants.boosterPacks + 1
             table.insert(output, k)
         end
     end
@@ -530,6 +642,47 @@ function Utils.fullDeckConversionFunctions(arg)
             end
         }))
     end
+end
+
+function Utils.configureEmptyBlind()
+    local newLocalizationEntry = { name = "The Empty", text = { "No boss effects" }}
+    local newEntry = {
+        key = 'bl_empty',
+        name = 'The Empty',
+        defeated = false,
+        order = 99,
+        dollars = 5,
+        mult = 2,
+        vars = {},
+        debuff = {},
+        pos = {x=0, y=1},
+        boss = {min = 1, max = 99},
+        boss_colour = HEX('c6e0eb')
+    }
+
+    newLocalizationEntry.text_parsed = {}
+    for _, line in ipairs(newLocalizationEntry.text) do
+        newLocalizationEntry.text_parsed[#newLocalizationEntry.text_parsed+1] = loc_parse_string(line)
+    end
+    newLocalizationEntry.name_parsed = {}
+    for _, line in ipairs(type(newLocalizationEntry.name) == 'table' and newLocalizationEntry.name or {newLocalizationEntry.name}) do
+        newLocalizationEntry.name_parsed[#newLocalizationEntry.name_parsed+1] = loc_parse_string(line)
+    end
+
+    G.localization.descriptions.Blind['bl_empty'] = newLocalizationEntry
+    G.P_BLINDS['bl_empty'] = newEntry
+end
+
+function Utils.addTag(tagKey)
+    if tagKey == 'tag_orbital' and G.orbital_hand == nil then
+        local _poker_hands = {}
+        for x, y in pairs(G.GAME.hands) do
+            if y.visible then _poker_hands[#_poker_hands+1] = x end
+        end
+        G.orbital_hand = pseudorandom_element(_poker_hands, pseudoseed('orbital'))
+    end
+    add_tag(Tag(tagKey))
+    G.orbital_hand = nil
 end
 
 return Utils

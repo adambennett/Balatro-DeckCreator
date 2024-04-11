@@ -4,6 +4,7 @@ local ModloaderHelper = require "ModloaderHelper"
 
 local Persistence = {}
 local filename = "CustomDecks.txt"
+local RedSealFilename = "Red_Seal_Messages.txt"
 
 local function serializeDeck(val, depth)
     local temp = string.rep(" ", depth)
@@ -62,17 +63,27 @@ function Persistence.loadAllDeckLists()
                         local count = deckNames[baseName] or 0
                         deckNames[baseName] = count + 1
                         if count > 0 then
-                            deckConfig.name = baseName .. " (" .. count .. ")"
+                            deckConfig.name = baseName .. " "
                             deckConfig.loc_txt.name = deckConfig.name
                             deckConfig.slug = deckConfig.name
                         end
-
-                        if file ~= "CustomDecks.txt" then
-                            deckConfig.loc_txt = deckConfig.loc_txt or {}
-                            deckConfig.loc_txt.text = deckConfig.loc_txt.text or { "Custom Deck", "imported via", file, "" }
+                        local loadedDeck = CustomDeck.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.config, deckConfig.spritePos, deckConfig.loc_txt)
+                        local blankCheck = CustomDeck:blankDeck()
+                        for k,v in pairs(blankCheck.config) do
+                            if loadedDeck.config[k] == nil then
+                                loadedDeck.config[k] = v
+                            end
                         end
 
-                        local loadedDeck = CustomDeck.createCustomDeck(deckConfig.name, deckConfig.slug, deckConfig.config, deckConfig.spritePos, deckConfig.loc_txt)
+                        if loadedDeck.config.extra_discard_bonus == 0 then
+                            loadedDeck.config.extra_discard_bonus = nil
+                        end
+                        if loadedDeck.config.rawDescription ~= nil then
+                            local descTable = CustomDeck.parseRawDescription(loadedDeck.config.rawDescription)
+                            local descDeck = CustomDeck.fullNewFromExisting(loadedDeck, descTable, false)
+                            G.localization.descriptions["Back"][deckConfig.slug] = descDeck.loc_txt
+                            loadedDeck.loc_txt = descDeck.loc_txt
+                        end
                         Utils.addDeckToList(loadedDeck)
                         loadedUUIDs[loadedDeck.config.uuid] = true
                     end
@@ -172,6 +183,24 @@ function Persistence.refreshDeckList()
         end
         Utils.log("The Deck named " .. deck.name .. " with the slug " .. deck.slug .. " has been registered at the id " .. id .. ".")
     end
+end
+
+function Persistence.loadRedSealMessages()
+    local directory = "Mods/Deck Creator/assets"
+    local filePath = directory .. "/" .. RedSealFilename
+    local messages = { "Mama Liz's Chili Oil" }
+    local fileContent = love.filesystem.read(filePath)
+
+    if fileContent then
+        messages = {}
+        for line in fileContent:gmatch("[^\r\n]+") do
+            table.insert(messages, line)
+        end
+    else
+        Utils.log("Could not open file " .. filePath .. " or file is empty")
+    end
+
+    return messages
 end
 
 return Persistence

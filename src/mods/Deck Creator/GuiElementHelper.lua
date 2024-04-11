@@ -1,5 +1,5 @@
-local CardUtils = require "CardUtils"
 local ModloaderHelper = require "ModloaderHelper"
+local Utils = require "Utils"
 
 local Helper = {}
 
@@ -12,6 +12,7 @@ function Helper.registerGlobals()
         local from_key = e.config.ref_table.current_option
         local old_pip = e.UIBox:get_UIE_by_ID('pip_'..e.config.ref_table.current_option, e.parent.parent)
         local cycle_main = e.UIBox:get_UIE_by_ID('cycle_main', e.parent.parent)
+        e.config.increments = e.config.increments or {}
 
         if cycle_main and cycle_main.config.h_popup then
             cycle_main:stop_hover()
@@ -25,13 +26,20 @@ function Helper.registerGlobals()
 
         if e.config.ref_value == 'l' then
             --cycle left
-            e.config.ref_table.current_option = e.config.ref_table.current_option - 1
+            local inc = 1
+            if e.config.increments.l ~= nil then
+                inc = e.config.increments.l
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
         elseif e.config.ref_value == 'll' then
             --cycle left x10
             local inc = 10
             if e.config.minorArrows then
                 inc = 5
+            end
+            if e.config.increments.ll ~= nil then
+                inc = e.config.increments.ll
             end
             e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
@@ -41,17 +49,27 @@ function Helper.registerGlobals()
             if e.config.minorArrows then
                 inc = 10
             end
+            if e.config.increments.lll ~= nil then
+                inc = e.config.increments.lll
+            end
             e.config.ref_table.current_option = e.config.ref_table.current_option - inc
             if e.config.ref_table.current_option <= 0 then e.config.ref_table.current_option = #e.config.ref_table.options end
         elseif e.config.ref_value == 'r' then
             --cycle right
-            e.config.ref_table.current_option = e.config.ref_table.current_option + 1
+            local inc = 1
+            if e.config.increments.r ~= nil then
+                inc = e.config.increments.r
+            end
+            e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
         elseif e.config.ref_value == 'rr' then
             --cycle right x10
             local inc = 10
             if e.config.minorArrows then
                 inc = 5
+            end
+            if e.config.increments.rr ~= nil then
+                inc = e.config.increments.rr
             end
             e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
@@ -60,6 +78,9 @@ function Helper.registerGlobals()
             local inc = 100
             if e.config.minorArrows then
                 inc = 10
+            end
+            if e.config.increments.rrr ~= nil then
+                inc = e.config.increments.rrr
             end
             e.config.ref_table.current_option = e.config.ref_table.current_option + inc
             if e.config.ref_table.current_option > #e.config.ref_table.options then e.config.ref_table.current_option = 1 end
@@ -431,7 +452,7 @@ end
 function Helper.tally_item_sprite(pos, value, tooltip, atlas)
     local text_colour = G.C.BLACK
     atlas = atlas or "itemIcons"
-    if ModloaderHelper.SteamoddedLoaded then
+    if not ModloaderHelper.SteamoddedLoaded then
         atlas = "ui_"..(G.SETTINGS.colourblind_option and 2 or 1)
     end
     if type(value) == "table" and value[1].string==value[2].string then
@@ -454,15 +475,73 @@ function Helper.tally_item_sprite(pos, value, tooltip, atlas)
     }}
 end
 
+function Helper.generateTagUI(tag, _size, context)
+    _size = _size or 0.8
+
+    local tag_sprite = Sprite(0,0,_size*1,_size*1,G.ASSET_ATLAS["tags"], tag.pos)
+    tag_sprite.T.scale = 1
+
+    local tag_sprite_tab = {n= G.UIT.C, config={align = "cm", ref_table = tag, group = tag.tally }, nodes={
+        {n=G.UIT.O, config={w=_size*1,h=_size*1, colour = G.C.BLUE, object = tag_sprite, focus_with_object = true}},
+    }}
+    tag_sprite:define_draw_steps({
+        {shader = 'dissolve', shadow_height = 0.05},
+        {shader = 'dissolve'},
+    })
+    tag_sprite.float = true
+    tag_sprite.states.hover.can = true
+    tag_sprite.states.drag.can = false
+    tag_sprite.states.collide.can = true
+    tag_sprite.config = {tag = tag, force_focus = true, pos = tag.pos}
+
+    tag_sprite.hover = function(_self)
+        if not G.CONTROLLER.dragging.target or G.CONTROLLER.using_touch then
+            if not _self.hovering and _self.states.visible then
+                _self.hovering = true
+                Utils[context.key] = tag.key
+                Utils[context.sprite] = tag_sprite
+                if context.key == 'hoveredTagStartingItemsRemoveKey' then
+                    Utils.hoveredTagStartingItemsRemoveUUID = tag.config.uuid
+                end
+                if _self == tag_sprite then
+                    _self.hover_tilt = 3
+                    _self:juice_up(0.05, 0.02)
+                    play_sound('paper1', math.random()*0.1 + 0.55, 0.42)
+                    play_sound('tarot2', math.random()*0.1 + 0.55, 0.09)
+                end
+
+                tag:get_uibox_table(tag_sprite)
+                _self.config.h_popup =  G.UIDEF.card_h_popup(_self)
+                _self.config.h_popup_config ={align = 'cl', offset = {x=-0.1,y=0},parent = _self}
+                Node.hover(_self)
+                if _self.children.alert then
+                    _self.children.alert:remove()
+                    _self.children.alert = nil
+                    if tag.key and G.P_TAGS[tag.key] then G.P_TAGS[tag.key].alerted = true end
+                    G:save_progress()
+                end
+            end
+        end
+    end
+    tag_sprite.stop_hover = function(_self)
+        _self.hovering = false
+        Utils[context.key] = nil
+        Utils[context.sprite] = nil
+        Utils.hoveredTagStartingItemsRemoveUUID = nil
+        Node.stop_hover(_self)
+        _self.hover_tilt = 0
+    end
+
+    -- tag_sprite:juice_up()
+    tag.tag_sprite = tag_sprite
+
+    return tag_sprite_tab, tag_sprite
+end
+
 function Helper.calculateDeckEditorSums()
     local unplayed_only = false
     local flip_col = G.C.WHITE
-    Helper.sums.total_cards = 0
-    Helper.sums.suit_tallies = {['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0}
-    Helper.sums.mod_suit_tallies = {['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0}
-    Helper.sums.rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-    Helper.sums.mod_rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-    Helper.sums.rank_name_mapping = {2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K', 'A'}
+
     Helper.sums.face_tally = 0
     Helper.sums.mod_face_tally = 0
     Helper.sums.num_tally = 0
@@ -470,51 +549,126 @@ function Helper.calculateDeckEditorSums()
     Helper.sums.ace_tally = 0
     Helper.sums.mod_ace_tally = 0
     Helper.sums.wheel_flipped = 0
+    Helper.sums.total_cards = 0
 
-    for k, v in ipairs(G.playing_cards) do
-        Helper.sums.total_cards = Helper.sums.total_cards + 1
-        if v.ability.name ~= 'Stone Card' and (not unplayed_only or ((v.area and v.area == G.deck) or v.ability.wheel_flipped)) then
-            if v.ability.wheel_flipped and unplayed_only then Helper.wheel_flipped = Helper.wheel_flipped + 1 end
-            --For the suits
-            Helper.sums.suit_tallies[v.base.suit] = (Helper.sums.suit_tallies[v.base.suit] or 0) + 1
-            Helper.sums.mod_suit_tallies['Spades'] = (Helper.sums.mod_suit_tallies['Spades'] or 0) + (v:is_suit('Spades') and 1 or 0)
-            Helper.sums.mod_suit_tallies['Hearts'] = (Helper.sums.mod_suit_tallies['Hearts'] or 0) + (v:is_suit('Hearts') and 1 or 0)
-            Helper.sums.mod_suit_tallies['Clubs'] = (Helper.sums.mod_suit_tallies['Clubs'] or 0) + (v:is_suit('Clubs') and 1 or 0)
-            Helper.sums.mod_suit_tallies['Diamonds'] = (Helper.sums.mod_suit_tallies['Diamonds'] or 0) + (v:is_suit('Diamonds') and 1 or 0)
-
-            --for face cards/numbered cards/aces
-            local card_id = v:get_id()
-            Helper.sums.face_tally = Helper.sums.face_tally + ((card_id ==11 or card_id ==12 or card_id ==13) and 1 or 0)
-            Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
-            if card_id > 1 and card_id < 11 then
-                Helper.sums.num_tally = Helper.sums.num_tally + 1
-                if not v.debuff then Helper.sums.mod_num_tally = Helper.sums.mod_num_tally + 1 end
-            end
-            if card_id == 14 then
-                Helper.sums.ace_tally = Helper.sums.ace_tally + 1
-                if not v.debuff then Helper.sums.mod_ace_tally = Helper.sums.mod_ace_tally + 1 end
-            end
-
-            --ranks
-            Helper.sums.rank_tallies[card_id - 1] = Helper.sums.rank_tallies[card_id - 1] + 1
-            if not v.debuff then Helper.sums.mod_rank_tallies[card_id - 1] = Helper.sums.mod_rank_tallies[card_id - 1] + 1 end
+    if ModloaderHelper.SteamoddedLoaded then
+        local suit_list = SMODS.Card.SUIT_LIST
+        Helper.sums.suit_tallies = {}
+        Helper.sums.mod_suit_tallies = {}
+        for _, v in ipairs(suit_list) do
+            Helper.sums.suit_tallies[v] = 0
+            Helper.sums.mod_suit_tallies[v] = 0
         end
+        Helper.sums.rank_tallies = {}
+        Helper.sums.mod_rank_tallies = {}
+        Helper.sums.rank_name_mapping = SMODS.Card.RANK_LIST
+        Helper.sums.id_index_mapping = {}
+        for i, v in ipairs(SMODS.Card.RANK_LIST) do
+            local rank_data = SMODS.Card.RANKS[SMODS.Card.RANK_SHORTHAND_LOOKUP[v] or v]
+            Helper.sums.id_index_mapping[rank_data.id] = i
+            Helper.sums.rank_tallies[i] = 0
+            Helper.sums.mod_rank_tallies[i] = 0
+        end
+
+        for _, v in ipairs(G.playing_cards) do
+            Helper.sums.total_cards = Helper.sums.total_cards + 1
+            if v.ability.name ~= 'Stone Card' and (not unplayed_only or ((v.area and v.area == G.deck) or v.ability.wheel_flipped)) then
+                if v.ability.wheel_flipped and unplayed_only then Helper.sums.wheel_flipped = Helper.sums.wheel_flipped + 1 end
+                --For the suits
+                if v.base.suit ~= nil then
+                    Helper.sums.suit_tallies[v.base.suit] = (Helper.sums.suit_tallies[v.base.suit] or 0) + 1
+                    for kk, vv in pairs(Helper.sums.mod_suit_tallies) do
+                        Helper.sums.mod_suit_tallies[kk] = (vv or 0) + (v:is_suit(kk) and 1 or 0)
+                    end
+
+                    --for face cards/numbered cards/aces
+                    local card_id = v:get_id()
+                    Helper.sums.face_tally = Helper.sums.face_tally + ((SMODS.Card.RANKS[v.base.value].face) and 1 or 0)
+                    Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
+                    if not SMODS.Card.RANKS[v.base.value].face and card_id ~= 14 then
+                        Helper.sums.num_tally = Helper.sums.num_tally + 1
+                        if not v.debuff then Helper.sums.mod_num_tally = Helper.sums.mod_num_tally + 1 end
+                    end
+                    if card_id == 14 then
+                        Helper.sums.ace_tally = Helper.sums.ace_tally + 1
+                        if not v.debuff then Helper.sums.mod_ace_tally = Helper.sums.mod_ace_tally + 1 end
+                    end
+
+                    --ranks
+                    Helper.sums.rank_tallies[Helper.sums.id_index_mapping[card_id]] = Helper.sums.rank_tallies[Helper.sums.id_index_mapping[card_id]] + 1
+                    if not v.debuff then Helper.sums.mod_rank_tallies[Helper.sums.id_index_mapping[card_id]] = Helper.sums.mod_rank_tallies[Helper.sums.id_index_mapping[card_id]] + 1 end
+                else
+                    Helper.sums.total_cards = Helper.sums.total_cards - 1
+                end
+            end
+        end
+
+        local modded = (Helper.sums.face_tally ~= Helper.sums.mod_face_tally)
+        for kk, vv in pairs(Helper.sums.mod_suit_tallies) do
+            if vv ~= Helper.sums.suit_tallies[kk] then modded = true end
+        end
+
+        if Helper.sums.wheel_flipped > 0 then flip_col = mix_colours(G.C.FILTER, G.C.WHITE, 0.7) end
+    else
+        Helper.sums.suit_tallies = {
+            ['Spades']  = 0,
+            ['Hearts'] = 0,
+            ['Clubs'] = 0,
+            ['Diamonds'] = 0
+        }
+        Helper.sums.mod_suit_tallies = {
+            ['Spades']  = 0, ['Hearts'] = 0, ['Clubs'] = 0, ['Diamonds'] = 0
+        }
+
+        Helper.sums.rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        Helper.sums.mod_rank_tallies = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        Helper.sums.rank_name_mapping = {2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K', 'A'}
+
+        for k, v in ipairs(G.playing_cards) do
+            Helper.sums.total_cards = Helper.sums.total_cards + 1
+            if v.ability.name ~= 'Stone Card' and (not unplayed_only or ((v.area and v.area == G.deck) or v.ability.wheel_flipped)) then
+                if v.ability.wheel_flipped and unplayed_only then Helper.wheel_flipped = Helper.wheel_flipped + 1 end
+                --For the suits
+                Helper.sums.suit_tallies[v.base.suit] = (Helper.sums.suit_tallies[v.base.suit] or 0) + 1
+                Helper.sums.mod_suit_tallies['Spades'] = (Helper.sums.mod_suit_tallies['Spades'] or 0) + (v:is_suit('Spades') and 1 or 0)
+                Helper.sums.mod_suit_tallies['Hearts'] = (Helper.sums.mod_suit_tallies['Hearts'] or 0) + (v:is_suit('Hearts') and 1 or 0)
+                Helper.sums.mod_suit_tallies['Clubs'] = (Helper.sums.mod_suit_tallies['Clubs'] or 0) + (v:is_suit('Clubs') and 1 or 0)
+                Helper.sums.mod_suit_tallies['Diamonds'] = (Helper.sums.mod_suit_tallies['Diamonds'] or 0) + (v:is_suit('Diamonds') and 1 or 0)
+
+                --for face cards/numbered cards/aces
+                local card_id = v:get_id()
+                Helper.sums.face_tally = Helper.sums.face_tally + ((card_id ==11 or card_id ==12 or card_id ==13) and 1 or 0)
+                Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
+                if card_id > 1 and card_id < 11 then
+                    Helper.sums.num_tally = Helper.sums.num_tally + 1
+                    if not v.debuff then Helper.sums.mod_num_tally = Helper.sums.mod_num_tally + 1 end
+                end
+                if card_id == 14 then
+                    Helper.sums.ace_tally = Helper.sums.ace_tally + 1
+                    if not v.debuff then Helper.sums.mod_ace_tally = Helper.sums.mod_ace_tally + 1 end
+                end
+
+                --ranks
+                Helper.sums.rank_tallies[card_id - 1] = Helper.sums.rank_tallies[card_id - 1] + 1
+                if not v.debuff then Helper.sums.mod_rank_tallies[card_id - 1] = Helper.sums.mod_rank_tallies[card_id - 1] + 1 end
+            end
+        end
+
+        Helper.sums.modded = (Helper.sums.face_tally ~= Helper.sums.mod_face_tally) or
+                (Helper.sums.mod_suit_tallies['Spades'] ~= Helper.sums.suit_tallies['Spades']) or
+                (Helper.sums.mod_suit_tallies['Hearts'] ~= Helper.sums.suit_tallies['Hearts']) or
+                (Helper.sums.mod_suit_tallies['Clubs'] ~= Helper.sums.suit_tallies['Clubs']) or
+                (Helper.sums.mod_suit_tallies['Diamonds'] ~= Helper.sums.suit_tallies['Diamonds'])
+
+        if Helper.sums.wheel_flipped > 0 then flip_col = mix_colours(G.C.FILTER, G.C.WHITE,0.7) end
     end
-
-    Helper.sums.modded = (Helper.sums.face_tally ~= Helper.sums.mod_face_tally) or
-            (Helper.sums.mod_suit_tallies['Spades'] ~= Helper.sums.suit_tallies['Spades']) or
-            (Helper.sums.mod_suit_tallies['Hearts'] ~= Helper.sums.suit_tallies['Hearts']) or
-            (Helper.sums.mod_suit_tallies['Clubs'] ~= Helper.sums.suit_tallies['Clubs']) or
-            (Helper.sums.mod_suit_tallies['Diamonds'] ~= Helper.sums.suit_tallies['Diamonds'])
-
-    if Helper.sums.wheel_flipped > 0 then flip_col = mix_colours(G.C.FILTER, G.C.WHITE,0.7) end
 
     Helper.sums.rank_cols = {}
     Helper.sums.rank_tallies_strings = {}
     for i = #Helper.sums.rank_tallies, 1, -1 do
         Helper.sums.rank_tallies_strings[i] = tostring(Helper.sums.rank_tallies[i])
     end
-    for i = 13, 1, -1 do
+    for i = #Helper.sums.rank_name_mapping, 1, -1 do
         local mod_delta = Helper.sums.mod_rank_tallies[i] ~= Helper.sums.rank_tallies[i]
         Helper.sums.rank_cols[#Helper.sums.rank_cols+1] = {
             n=G.UIT.R,
@@ -540,43 +694,46 @@ function Helper.calculateDeckEditorSums()
     end
 end
 
-function Helper.calculateStartingItemsSums()
+function Helper.calculateStartingItemsSums(list)
 
     Helper.sums.item_tallies = {
         ['Joker']  = 0,
         ['Consumable'] = 0,
-        -- ['Tag'] = 0,
+        ['Tag'] = 0,
         ['Voucher'] = 0,
         ['Tarot'] = 0,
         ['Planet'] = 0,
-        ['Spectral'] = 0
+        ['Spectral'] = 0,
+        ['Other'] = 0
     }
 
-    for k,v in pairs(CardUtils.startingItems.jokers) do
+    for k,v in pairs(list.jokers) do
         Helper.sums.item_tallies["Joker"] = (Helper.sums.item_tallies["Joker"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.tarots) do
+    for k,v in pairs(list.tarots) do
         Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
         Helper.sums.item_tallies["Tarot"] = (Helper.sums.item_tallies["Tarot"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.planets) do
+    for k,v in pairs(list.planets) do
         Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
         Helper.sums.item_tallies["Planet"] = (Helper.sums.item_tallies["Planet"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.spectrals) do
+    for k,v in pairs(list.spectrals) do
         Helper.sums.item_tallies["Consumable"] = (Helper.sums.item_tallies["Consumable"] or 0) + 1
         Helper.sums.item_tallies["Spectral"] = (Helper.sums.item_tallies["Spectral"] or 0) + 1
     end
-    for k,v in pairs(CardUtils.startingItems.vouchers) do
+    for k,v in pairs(list.vouchers) do
         Helper.sums.item_tallies["Voucher"] = (Helper.sums.item_tallies["Voucher"] or 0) + 1
+        Helper.sums.item_tallies["Other"] = (Helper.sums.item_tallies["Other"] or 0) + 1
     end
-    --[[for k,v in pairs(CardUtils.startingItems.tags) do
+    for k,v in pairs(list.tags) do
         Helper.sums.item_tallies["Tag"] = (Helper.sums.item_tallies["Tag"] or 0) + 1
-    end]]
+        Helper.sums.item_tallies["Other"] = (Helper.sums.item_tallies["Other"] or 0) + 1
+    end
 
     Helper.sums.start_item_cols = {}
     for k,v in pairs(Helper.sums.item_tallies) do
-        if k ~= 'Consumable' then
+        if k ~= 'Consumable' and k ~= 'Other' then
             Helper.sums.start_item_cols[#Helper.sums.start_item_cols+1] = {
                 n=G.UIT.R,
                 config={align = "cm", padding = 0.07},
@@ -585,8 +742,83 @@ function Helper.calculateStartingItemsSums()
                         n=G.UIT.C,
                         config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
                         nodes={
-                            --{n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
-                            {n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            {n=G.UIT.T, config={text = k == 'Tarot' and 'R' or string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                            --{n=G.UIT.T, config={text = string.sub(k, 1, 1), colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
+                        }
+                    },
+                    {
+                        n=G.UIT.C,
+                        config={align = "cr", minw = 0.4},
+                        nodes={
+                            {n=G.UIT.T, config={text = tostring(v) or 'NIL',colour = G.C.WHITE, scale = 0.45, shadow = true}},
+                        }
+                    }
+                }
+            }
+        end
+    end
+end
+
+function Helper.calculateBannedItemsSums(list)
+
+    Helper.sums.banned_item_tallies = {
+        ['Joker']  = 0,
+        ['Consumable'] = 0,
+        ['Tag'] = 0,
+        ['Blind'] = 0,
+        ['Voucher'] = 0,
+        ['Tarot'] = 0,
+        ['Planet'] = 0,
+        ['Spectral'] = 0,
+        ['Other'] = 0,
+        ['Booster'] = 0
+    }
+
+    for k,v in pairs(list.jokers) do
+        Helper.sums.banned_item_tallies["Joker"] = (Helper.sums.banned_item_tallies["Joker"] or 0) + 1
+    end
+    for k,v in pairs(list.tarots) do
+        Helper.sums.banned_item_tallies["Consumable"] = (Helper.sums.banned_item_tallies["Consumable"] or 0) + 1
+        Helper.sums.banned_item_tallies["Tarot"] = (Helper.sums.banned_item_tallies["Tarot"] or 0) + 1
+    end
+    for k,v in pairs(list.planets) do
+        Helper.sums.banned_item_tallies["Consumable"] = (Helper.sums.banned_item_tallies["Consumable"] or 0) + 1
+        Helper.sums.banned_item_tallies["Planet"] = (Helper.sums.banned_item_tallies["Planet"] or 0) + 1
+    end
+    for k,v in pairs(list.spectrals) do
+        Helper.sums.banned_item_tallies["Consumable"] = (Helper.sums.banned_item_tallies["Consumable"] or 0) + 1
+        Helper.sums.banned_item_tallies["Spectral"] = (Helper.sums.banned_item_tallies["Spectral"] or 0) + 1
+    end
+    for k,v in pairs(list.vouchers) do
+        Helper.sums.banned_item_tallies["Voucher"] = (Helper.sums.banned_item_tallies["Voucher"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
+    for k,v in pairs(list.tags) do
+        Helper.sums.banned_item_tallies["Tag"] = (Helper.sums.banned_item_tallies["Tag"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
+    for k,v in pairs(list.blinds) do
+        Helper.sums.banned_item_tallies["Blind"] = (Helper.sums.banned_item_tallies["Blind"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
+    for k,v in pairs(list.boosters) do
+        Helper.sums.banned_item_tallies["Booster"] = (Helper.sums.banned_item_tallies["Booster"] or 0) + 1
+        Helper.sums.banned_item_tallies["Other"] = (Helper.sums.banned_item_tallies["Other"] or 0) + 1
+    end
+
+    Helper.sums.ban_item_cols = {}
+    for k,v in pairs(Helper.sums.banned_item_tallies) do
+        if k ~= 'Consumable' and k ~= 'Other' then
+            local letterText = (k == 'Tarot' and 'R') or (k == 'Booster' and 'O') or string.sub(k, 1, 1)
+            Helper.sums.ban_item_cols[#Helper.sums.ban_item_cols+1] = {
+                n=G.UIT.R,
+                config={align = "cm", padding = 0.07},
+                nodes={
+                    {
+                        n=G.UIT.C,
+                        config={align = "cm", r = 0.1, padding = 0.04, emboss = 0.04, minw = 0.5, colour = G.C.L_BLACK},
+                        nodes={
+                            {n=G.UIT.T, config={text = letterText, colour = G.C.JOKER_GREY, scale = 0.35, shadow = true}},
                         }
                     },
                     {

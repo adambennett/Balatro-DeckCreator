@@ -1,4 +1,5 @@
 local Utils = require "Utils"
+local Helper = require "GuiElementHelper"
 
 local CardUtils = {}
 CardUtils.allCardsEverMade = {}
@@ -9,6 +10,16 @@ CardUtils.startingItems = {
     spectrals = {},
     vouchers = {},
     tags = {}
+}
+CardUtils.bannedItems = {
+    jokers = {},
+    tarots = {},
+    planets = {},
+    spectrals = {},
+    vouchers = {},
+    tags = {},
+    blinds = {},
+    boosters = {}
 }
 
 local function shuffleDeck(deck)
@@ -111,6 +122,7 @@ function CardUtils.initializeCustomCardList(deckObj)
     local randomizeRankAndSuits = config.randomize_rank_suit
     local noFaces = config.remove_faces
     local noNumbered = config.no_numbered_cards
+    local noAces = config.no_aces
     G.playing_cards = {}
     G.deck.cards = {}
     local card_protos = {}
@@ -130,6 +142,7 @@ function CardUtils.initializeCustomCardList(deckObj)
         end
 
         if noFaces and (rank == 'K' or rank == 'Q' or rank == 'J') then keep = false end
+        if noAces and (rank == 'A') then keep = false end
         if noNumbered and (rank == '2' or rank == '3' or rank == '4' or rank == '5' or rank == '6' or rank == '7' or rank == '8' or rank == '9' or rank == 'T') then keep = false end
 
         if keep then
@@ -187,33 +200,32 @@ function CardUtils.flushStartingItems(specific)
     end
 end
 
+function CardUtils.flushBannedItems(specific)
+    if CardUtils.bannedItems and #CardUtils.bannedItems > 0 then
+        for k,v in pairs(CardUtils.bannedItems) do
+            if v and (specific == nil or specific == k) then
+                for i = 1, #v do
+                    local c = v[i]
+                    if c then
+                        c:remove()
+                        c = nil
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Base Deck
 function CardUtils.getCardsFromCustomCardList(deck)
 
     CardUtils.flushGPlayingCards()
     G.playing_cards = {}
-    local card_protos = {}
-
-    for k, v in pairs(deck) do
-        local rank = string.sub(k, 3, 3)
-        local suit = string.sub(k, 1, 1)
-        card_protos[#card_protos+1] = {
-            suit = suit,
-            rank = rank,
-            enhancement = v.enhancement ~= "None" and v.enhancementKey or nil,
-            edition = v.edition ~= "None" and v.editionKey or nil,
-            seal = v.seal ~= "None" and v.seal or nil,
-            key = k
-        }
-    end
-
     local memoryBefore = Utils.checkMemory()
-    for k, v in ipairs(card_protos) do
-        local _card = Card(999, 999, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'])
-        _card.uuid = v.key
-        if v.edition then _card:set_edition({[v.edition] = true}, true, true) end
-        if v.seal then _card:set_seal(v.seal, true, true) end
-        table.insert(G.playing_cards, _card)
-        table.insert(CardUtils.allCardsEverMade, _card)
+    for k, v in pairs(deck) do
+        local card = CardUtils.cardProtoToCardObject(v, k, 999, 999)
+        table.insert(G.playing_cards, card)
+        table.insert(CardUtils.allCardsEverMade, card)
     end
 
     if Utils.runMemoryChecks then
@@ -223,6 +235,133 @@ function CardUtils.getCardsFromCustomCardList(deck)
     end
 end
 
+function CardUtils.cardProtoToCardObject(proto, key, x, y)
+    local rank = string.sub(key, 3, 3)
+    local suit = string.sub(key, 1, 1)
+    local cardProto = {
+        suit = suit,
+        rank = rank,
+        enhancement = proto.enhancement ~= "None" and proto.enhancementKey or nil,
+        edition = proto.edition ~= "None" and proto.editionKey or nil,
+        seal = proto.seal ~= "None" and proto.seal or nil,
+        key = key
+    }
+    local _card = Card(x, y, G.CARD_W, G.CARD_H, G.P_CARDS[cardProto.suit ..'_'.. cardProto.rank], G.P_CENTERS[cardProto.enhancement or 'c_base'])
+    _card.uuid = cardProto.key
+    if cardProto.edition then _card:set_edition({[cardProto.edition] = true}, true, true) end
+    if cardProto.seal then _card:set_seal(cardProto.seal, true, true) end
+    return _card
+end
+
+function CardUtils.generateCardProto(args)
+    local generatedCard = {
+        rank = args.rank,
+        suit = args.suit,
+        suitKey = args.suitKey,
+        edition = args.edition,
+        enhancement = args.enhancement,
+        editionKey = args.editionKey,
+        enhancementKey = args.enhancementKey,
+        seal = args.seal,
+        copies = args.copies
+    }
+
+    if args.suit == "Random" then
+        local list = Utils.suits(false, true)
+        local randomSuit = list[math.random(1, #list)]
+
+        if randomSuit.name ~= nil then
+            generatedCard.suit = randomSuit.name
+            generatedCard.suitKey = randomSuit.prefix
+        else
+            generatedCard.suit = randomSuit
+            generatedCard.suitKey = string.sub(randomSuit, 1, 1)
+        end
+
+
+    end
+
+    if args.rank == "Random" then
+        local list = Utils.ranks()
+        generatedCard.rank = list[math.random(1, #list)]
+    end
+
+    if args.enhancement == "Random" then
+        if math.random(1, 100) > 80 then
+            local list = Utils.enhancements()
+            local randomEnhance = list[math.random(1, #list)]
+            generatedCard.enhancement = randomEnhance
+            generatedCard.enhancementKey = randomEnhance ~= "None" and "m_" .. string.lower(randomEnhance) or nil
+        else
+            generatedCard.enhancement = "None"
+        end
+
+    end
+
+    if args.edition == "Random" then
+        if math.random(1, 100) > 90 then
+            local list = Utils.editions(false)
+            local randomEdition = list[math.random(1, #list)]
+            generatedCard.edition = randomEdition
+            generatedCard.editionKey = randomEdition ~= "None" and string.lower(randomEdition) or nil
+            if generatedCard.editionKey and generatedCard.editionKey == 'holographic' then
+                generatedCard.editionKey = 'holo'
+            end
+        else
+            generatedCard.edition = "None"
+        end
+    end
+
+    if args.seal == "Random" then
+        if math.random(1, 100) > 70 then
+            local list = Utils.seals()
+            generatedCard.seal = list[math.random(1, #list)]
+        else
+            generatedCard.seal = "None"
+        end
+
+    end
+
+    local newCardName = generatedCard.rank .. " of " .. generatedCard.suit
+    local rank = generatedCard.rank
+    if rank == 10 then rank = "T" end
+    local key = generatedCard.suitKey .. "_" .. rank
+    local newCard = {
+        name = newCardName ,
+        value = generatedCard.rank,
+        suit = generatedCard.suit,
+        pos = {x=0,y=1},
+        edition = generatedCard.edition,
+        editionKey = generatedCard.editionKey,
+        enhancement = generatedCard.enhancement,
+        enhancementKey = generatedCard.enhancementKey,
+        seal = generatedCard.seal,
+        uuid = Utils.uuid()
+    }
+    return newCard, key
+end
+
+function CardUtils.addCardToDeck(args)
+    local counter = 1
+    for i = 1, args.copies do
+
+        local newCard, key = CardUtils.generateCardProto(args)
+
+        if Utils.getCurrentEditingDeck().config.customCardList[key] == nil then
+            newCard.key = key
+            Utils.getCurrentEditingDeck().config.customCardList[key] = newCard
+        else
+            while Utils.getCurrentEditingDeck().config.customCardList[key .. "_" .. counter] ~= nil do
+                counter = counter + 1
+            end
+            local extraKey = key .. "_" .. counter
+            newCard.key = extraKey
+            Utils.getCurrentEditingDeck().config.customCardList[extraKey] = newCard
+        end
+    end
+end
+
+-- Starting Items
 function CardUtils.getJokersFromCustomJokerList(deck)
     CardUtils.flushStartingItems('jokers')
     CardUtils.startingItems.jokers = {}
@@ -234,6 +373,8 @@ function CardUtils.getJokersFromCustomJokerList(deck)
         local index
         local eternal = false
         local pinned = false
+        local perishable = false
+        local rental = false
         local edition
         local uuid
         for k,v in pairs(G.P_CENTER_POOLS["Joker"]) do
@@ -244,6 +385,8 @@ function CardUtils.getJokersFromCustomJokerList(deck)
                 pinned = deck[j].pinned
                 edition = deck[j].edition
                 uuid = deck[j].uuid
+                perishable = deck[j].perishable
+                rental = deck[j].rental
                 break
             end
         end
@@ -254,6 +397,8 @@ function CardUtils.getJokersFromCustomJokerList(deck)
             card.ability.order = (j-1)*4
             if edition then card:set_edition{[edition] = true} end
             if eternal then card:set_eternal(true) end
+            if perishable then card:set_perishable() end
+            if rental then card:set_rental(true) end
             if pinned then card.pinned = true end
             table.insert(CardUtils.startingItems.jokers, card)
             table.insert(CardUtils.allCardsEverMade, card)
@@ -417,105 +562,41 @@ function CardUtils.getVouchersFromCustomVoucherList(deck)
     end
 end
 
-function CardUtils.addCardToDeck(args)
-    local deckList = args.deck_list or {}
+function CardUtils.getTagsFromCustomTagList(deck)
 
-    local counter = 1
-    for i = 1, args.addCard.copies do
+    CardUtils.flushStartingItems('tags')
+    CardUtils.startingItems.tags = {}
 
-        local generatedCard = {
-            rank = args.addCard.rank,
-            suit = args.addCard.suit,
-            suitKey = args.addCard.suitKey,
-            edition = args.addCard.edition,
-            enhancement = args.addCard.enhancement,
-            editionKey = args.addCard.editionKey,
-            enhancementKey = args.addCard.enhancementKey,
-            seal = args.addCard.seal,
-            copies = args.addCard.copies
-        }
+    local memoryBefore = Utils.checkMemory()
 
-        if args.addCard.suit == "Random" then
-            local list = Utils.suits()
-            local randomSuit = list[math.random(1, #list)]
-            generatedCard.suit = randomSuit
-            generatedCard.suitKey = string.sub(randomSuit, 1, 1)
-        end
-
-        if args.addCard.rank == "Random" then
-            local list = Utils.ranks()
-            generatedCard.rank = list[math.random(1, #list)]
-        end
-
-        if args.addCard.enhancement == "Random" then
-            if math.random(1, 100) > 80 then
-                local list = Utils.enhancements()
-                local randomEnhance = list[math.random(1, #list)]
-                generatedCard.enhancement = randomEnhance
-                generatedCard.enhancementKey = randomEnhance ~= "None" and "m_" .. string.lower(randomEnhance) or nil
-            else
-                generatedCard.enhancement = "None"
-            end
-
-        end
-
-        if args.addCard.edition == "Random" then
-            if math.random(1, 100) > 90 then
-                local list = Utils.editions(false)
-                local randomEdition = list[math.random(1, #list)]
-                generatedCard.edition = randomEdition
-                generatedCard.editionKey = randomEdition ~= "None" and string.lower(randomEdition) or nil
-                if generatedCard.editionKey and generatedCard.editionKey == 'holographic' then
-                    generatedCard.editionKey = 'holo'
-                end
-            else
-                generatedCard.edition = "None"
+    for j = 1, #deck do
+        local tag
+        local uuid
+        for k,v in pairs(G.P_TAGS) do
+            if deck[j] ~= nil and deck[j].key ~= nil and k == deck[j].key then
+                tag = v
+                uuid = deck[j].uuid
+                break
             end
         end
-
-        if args.addCard.seal == "Random" then
-            if math.random(1, 100) > 70 then
-                local list = Utils.seals()
-                generatedCard.seal = list[math.random(1, #list)]
-            else
-                generatedCard.seal = "None"
-            end
-
+        if tag then
+            local v = tag
+            local temp_tag = Tag(v.key, true)
+            temp_tag.config.uuid = uuid
+            local _, sprite = Helper.generateTagUI(temp_tag, 0.8, { key = 'hoveredTagStartingItemsRemoveKey', sprite = 'hoveredTagStartingItemsRemoveSprite' })
+            table.insert(CardUtils.startingItems.tags, sprite)
+            table.insert(CardUtils.allCardsEverMade, sprite)
         end
+    end
 
-        local newCardName = generatedCard.rank .. " of " .. generatedCard.suit
-        local rank = generatedCard.rank
-        if rank == 10 then rank = "T" end
-        local key = generatedCard.suitKey .. "_" .. rank
-        local newCard = {
-            name = newCardName ,
-            value = generatedCard.rank,
-            suit = generatedCard.suit,
-            pos = {x=0,y=1},
-            edition = generatedCard.edition,
-            editionKey = generatedCard.editionKey,
-            enhancement = generatedCard.enhancement,
-            enhancementKey = generatedCard.enhancementKey,
-            seal = generatedCard.seal,
-            uuid = Utils.uuid()
-        }
-
-        if Utils.getCurrentEditingDeck().config.customCardList[key] == nil then
-            newCard.key = key
-            Utils.getCurrentEditingDeck().config.customCardList[key] = newCard
-        else
-            while Utils.getCurrentEditingDeck().config.customCardList[key .. "_" .. counter] ~= nil do
-                counter = counter + 1
-            end
-            local extraKey = key .. "_" .. counter
-            newCard.key = extraKey
-            Utils.getCurrentEditingDeck().config.customCardList[extraKey] = newCard
-        end
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (StartingTagCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
     end
 end
 
 function CardUtils.addItemToDeck(args)
-    local deckList = args.deck_list or {}
     args.addCard = args.addCard or {}
     local copies = args.addCard and type(args.addCard) ~= 'string' and args.addCard.copies or 1
 
@@ -541,10 +622,6 @@ function CardUtils.addItemToDeck(args)
 
             local typeRollMax = #unObtainedVouchers > 0 and 7 or 6
             local typeRoll = math.random(1, typeRollMax)
-
-            -- temporary line to prevent random tag
-            if typeRoll == 6 then typeRoll = 2 end
-
             if typeRollMax < typeRoll then typeRoll = 1 end
 
             if typeRoll <= 2 then
@@ -591,6 +668,8 @@ function CardUtils.addItemToDeck(args)
                 args.ref = 'customSpectralList'
             end
             if typeRoll == 6 then
+                local list = Utils.tagKeys()
+                args.addCard = { key = list[math.random(1, #list)] }
                 args.tag = true
                 args.ref = 'customTagList'
             end
@@ -605,6 +684,8 @@ function CardUtils.addItemToDeck(args)
         local newCard
         if args.addCard ~= nil then
             if args.voucher then newCard = tostring(args.addCard)
+            elseif args.tag then
+                newCard = { key = tostring(args.addCard.key), uuid = Utils.uuid() }
             else
                 newCard = {
                     id = args.addCard.id,
@@ -614,6 +695,8 @@ function CardUtils.addItemToDeck(args)
                     pinned = args.addCard.pinned,
                     eternal = args.addCard.eternal,
                     edition = args.addCard.edition,
+                    perishable = args.addCard.perishable,
+                    rental = args.addCard.rental,
                     uuid = Utils.uuid()
                 }
             end
@@ -671,8 +754,536 @@ function CardUtils.addItemToDeck(args)
     return true
 end
 
+-- Banned Items
+function CardUtils.getBannedJokersFromBannedJokerList(deck)
+    CardUtils.flushBannedItems('jokers')
+    CardUtils.bannedItems.jokers = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local center
+        local index
+        local eternal = false
+        local pinned = false
+        local edition
+        local uuid
+        for k,v in pairs(G.P_CENTER_POOLS["Joker"]) do
+            if deck[j] ~= nil and v.key == deck[j].key then
+                center = v
+                index = k
+                eternal = deck[j].eternal
+                pinned = deck[j].pinned
+                edition = deck[j].edition
+                uuid = deck[j].uuid
+                break
+            end
+        end
+
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = 'joker', uuid = uuid }
+            card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            if eternal then card:set_eternal(true) end
+            if pinned then card.pinned = true end
+            table.insert(CardUtils.bannedItems.jokers, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedJokerCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getBannedTarotsFromBannedTarotList(deck)
+    CardUtils.flushBannedItems('tarots')
+    CardUtils.bannedItems.tarots = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local center
+        local index
+        local edition
+        local uuid
+        for k,v in pairs(G.P_CENTER_POOLS['Tarot']) do
+            if deck[j] ~= nil and v.key == deck[j].key then
+                center = v
+                index = k
+                edition = deck[j].edition
+                uuid = deck[j].uuid
+                break
+            end
+        end
+
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = 'tarot', uuid = uuid }
+            card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            table.insert(CardUtils.bannedItems.tarots, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedTarotCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getBannedPlanetsFromBannedPlanetList(deck)
+    CardUtils.flushBannedItems('planets')
+    CardUtils.bannedItems.planets = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local center
+        local index
+        local edition
+        local uuid
+        for k,v in pairs(G.P_CENTER_POOLS['Planet']) do
+            if deck[j] ~= nil and v.key == deck[j].key then
+                center = v
+                index = k
+                edition = deck[j].edition
+                uuid = deck[j].uuid
+                break
+            end
+        end
+
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = 'planet', uuid = uuid }
+            card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            table.insert(CardUtils.bannedItems.planets, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedPlanetCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getBannedSpectralsFromBannedSpectralList(deck)
+    CardUtils.flushBannedItems('spectrals')
+    CardUtils.bannedItems.spectrals = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local center
+        local index
+        local edition
+        local uuid
+        for k,v in pairs(G.P_CENTER_POOLS['Spectral']) do
+            if deck[j] ~= nil and v.key == deck[j].key then
+                center = v
+                index = k
+                edition = deck[j].edition
+                uuid = deck[j].uuid
+                break
+            end
+        end
+
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = 'spectral', uuid = uuid }
+            card.ability.order = (j-1)*4
+            if edition then card:set_edition{[edition] = true} end
+            table.insert(CardUtils.bannedItems.spectrals, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedSpectralCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getBannedVouchersFromBannedVoucherList(deck)
+    CardUtils.flushBannedItems('vouchers')
+    CardUtils.bannedItems.vouchers = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local center
+        local index
+        for k,v in pairs(G.P_CENTER_POOLS["Voucher"]) do
+            if deck[j] ~= nil and v.key == deck[j] then
+                center = v
+                index = k
+                break
+            end
+        end
+        if center then
+            local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
+            card.uuid = { key = center.key, type = 'voucher'}
+            card.ability.order = (j-1)*4
+            if center.key == 'v_reroll_surplus' or center.key == 'v_reroll_glut' then
+                card.ability.extra = G.P_CENTERS[center.key].config.extra
+            end
+            table.insert(CardUtils.bannedItems.vouchers, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedVoucherCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getBannedTagsFromBannedTagList(deck)
+    CardUtils.flushBannedItems('tags')
+    CardUtils.bannedItems.tags = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local tag
+        for k,v in pairs(G.P_TAGS) do
+            if deck[j] ~= nil and deck[j].key and k == deck[j].key then
+                tag = v
+                break
+            end
+        end
+        if tag then
+            local v = tag
+            local temp_tag = Tag(v.key, true)
+            local _, sprite = Helper.generateTagUI(temp_tag, 0.8, { key = 'hoveredTagBanItemsRemoveKey', sprite = 'hoveredTagBanItemsRemoveSprite' })
+            table.insert(CardUtils.bannedItems.tags, sprite)
+            table.insert(CardUtils.allCardsEverMade, sprite)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedTagCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getBannedBlindsFromBannedBlindList(deck)
+    CardUtils.flushBannedItems('blinds')
+    CardUtils.bannedItems.blinds = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local blind
+        local index
+        for k,v in pairs(G.P_BLINDS) do
+            if deck[j] ~= nil and deck[j].key and v.name == deck[j].key then
+                blind = v
+                index = k
+                break
+            end
+        end
+        if blind then
+            local v = blind
+            local discovered = v.discovered
+            local atlas = 'blind_chips'
+            if v.atlas then
+                atlas = v.atlas
+            end
+            local temp_blind = AnimatedSprite(0,0,0.8,0.8, G.ANIMATION_ATLAS[atlas], v.pos)
+            temp_blind:define_draw_steps({
+                {shader = 'dissolve', shadow_height = 0.05},
+                {shader = 'dissolve'}
+            })
+            temp_blind.float = true
+            temp_blind.states.hover.can = true
+            temp_blind.states.drag.can = false
+            temp_blind.states.collide.can = true
+            temp_blind.config = {blind = v, force_focus = true}
+            temp_blind.hover = function()
+                if not G.CONTROLLER.dragging.target or G.CONTROLLER.using_touch then
+                    if not temp_blind.hovering and temp_blind.states.visible then
+                        temp_blind.hovering = true
+                        temp_blind.hover_tilt = 3
+                        temp_blind:juice_up(0.05, 0.02)
+                        Utils.hoveredBlindBanItemsRemoveKey = v.name
+                        Utils.hoveredBlindBanItemsRemoveSprite = temp_blind
+                        play_sound('chips1', math.random()*0.1 + 0.55, 0.12)
+                        temp_blind.config.h_popup = create_UIBox_blind_popup(v, discovered)
+                        temp_blind.config.h_popup_config ={align = 'cl', offset = {x=-0.1,y=0},parent = temp_blind}
+                        Node.hover(temp_blind)
+                        if temp_blind.children.alert then
+                            temp_blind.children.alert:remove()
+                            temp_blind.children.alert = nil
+                            temp_blind.config.blind.alerted = true
+                            G:save_progress()
+                        end
+                    end
+                end
+                temp_blind.stop_hover = function()
+                    temp_blind.hovering = false
+                    Utils.hoveredBlindBanItemsRemoveKey = nil
+                    Utils.hoveredBlindBanItemsRemoveSprite = nil
+                    Node.stop_hover(temp_blind)
+                    temp_blind.hover_tilt = 0
+                end
+            end
+
+            table.insert(CardUtils.bannedItems.blinds, temp_blind)
+            table.insert(CardUtils.allCardsEverMade, temp_blind)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedBlindCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.getBannedBoostersFromBannedBoosterList(deck)
+    CardUtils.flushBannedItems('boosters')
+    CardUtils.bannedItems.boosters = {}
+
+    local memoryBefore = Utils.checkMemory()
+
+    for j = 1, #deck do
+        local booster
+        local index
+        local uuid
+        for k,v in pairs(G.P_CENTER_POOLS.Booster) do
+            if deck[j] ~= nil and deck[j].key and v.key == deck[j].key then
+                booster = v
+                index = k
+                uuid = deck[j].uuid
+                break
+            end
+        end
+        if booster then
+
+            local center = booster
+            local card = Card(9999, 9999, G.CARD_W*1.27, G.CARD_H*1.27, nil, center)
+            card.uuid = { key = center.key, type = 'booster', uuid = uuid }
+            table.insert(CardUtils.bannedItems.boosters, card)
+            table.insert(CardUtils.allCardsEverMade, card)
+        end
+    end
+
+    if Utils.runMemoryChecks then
+        local memoryAfter = collectgarbage("count")
+        local diff = memoryAfter - memoryBefore
+        Utils.log("MEMORY CHECK (BannedBoosterCreation): " .. memoryBefore .. " -> " .. memoryAfter .. " (" .. diff .. ")")
+    end
+end
+
+function CardUtils.banItem(args)
+    args.addCard = args.addCard or {}
+    local newCard
+
+    if Utils.runtimeConstants.boosterPacks == 0 then
+        Utils.boosterKeys()
+    end
+
+    if args.isRandomType then
+
+        local allJokers = Utils.jokerKeys()
+        local allTarots = Utils.tarotKeys()
+        local allPlanets = Utils.planetKeys()
+        local allSpectral = Utils.spectralKeys()
+        local allTags = Utils.tagKeys()
+        local allBlinds = Utils.blindKeys()
+        local allBoosters = Utils.boosterKeys()
+        local allVouchers = Utils.vouchers(true)
+        local unObtainedJokers = {}
+        local unObtainedTarots = {}
+        local unObtainedPlanets = {}
+        local unObtainedSpectrals = {}
+        local unObtainedTags = {}
+        local unObtainedBlinds = {}
+        local unObtainedVouchers = {}
+        local unObtainedBoosters = {}
+        for x, y in pairs(allJokers) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedJokerList) do
+                if v.key == y then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedJokers, y)
+            end
+        end
+        for x, y in pairs(allTarots) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedTarotList) do
+                if v.key == y then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedTarots, y)
+            end
+        end
+        for x, y in pairs(allPlanets) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedPlanetList) do
+                if v.key == y then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedPlanets, y)
+            end
+        end
+        for x, y in pairs(allSpectral) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedSpectralList) do
+                if v.key == y then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedSpectrals, y)
+            end
+        end
+        for x, y in pairs(allTags) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedTagList) do
+                if v.key == y then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedTags, y)
+            end
+        end
+        for x, y in pairs(allBlinds) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedBlindList) do
+                if v.key == y then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedBlinds, y)
+            end
+        end
+        for x, y in pairs(allVouchers) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedVoucherList) do
+                if v == y.id then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedVouchers, y)
+            end
+        end
+        for x, y in pairs(allBoosters) do
+            local foundMatch = false
+            for k,v in pairs(Utils.getCurrentEditingDeck().config.bannedBoosterList) do
+                if v.key == y then
+                    foundMatch = true
+                    break
+                end
+            end
+            if foundMatch == false then
+                table.insert(unObtainedBoosters, y)
+            end
+        end
+
+        local typeRoll = math.random(1, 8)
+
+        if typeRoll == 1 and #unObtainedJokers > 0 then
+            newCard = { key = unObtainedJokers[math.random(1, #unObtainedJokers)], uuid = Utils.uuid() }
+            args.joker = true
+            args.ref = 'bannedJokerList'
+        elseif typeRoll <= 2 and #unObtainedTarots > 0 then
+            newCard = { key = unObtainedTarots[math.random(1, #unObtainedTarots)], uuid = Utils.uuid() }
+            args.tarot = true
+            args.ref = 'bannedTarotList'
+        elseif typeRoll <= 3 and #unObtainedPlanets > 0 then
+            newCard = { key = unObtainedPlanets[math.random(1, #unObtainedPlanets)], uuid = Utils.uuid() }
+            args.planet = true
+            args.ref = 'bannedPlanetList'
+        elseif typeRoll <= 4 and #unObtainedSpectrals > 0 then
+            newCard = { key = unObtainedSpectrals[math.random(1, #unObtainedSpectrals)], uuid = Utils.uuid() }
+            args.spectral = true
+            args.ref = 'bannedSpectralList'
+        elseif typeRoll <= 5 and #unObtainedTags > 0 then
+            newCard = { key = unObtainedTags[math.random(1, #unObtainedTags)], uuid = Utils.uuid() }
+            args.tag = true
+            args.ref = 'bannedTagList'
+        elseif typeRoll <= 6 and #unObtainedVouchers > 0 then
+            newCard = unObtainedVouchers[math.random(1, #unObtainedVouchers)].id
+            args.voucher = true
+            args.ref = 'bannedVoucherList'
+        elseif typeRoll <= 7 and #unObtainedBlinds > 0 then
+            newCard = { key = unObtainedBlinds[math.random(1, #unObtainedBlinds)], uuid = Utils.uuid() }
+            args.blind = true
+            args.ref = 'bannedBlindList'
+        elseif typeRoll <= 8 and #unObtainedBoosters > 0 then
+            newCard = { key = unObtainedBoosters[math.random(1, #unObtainedBoosters)], uuid = Utils.uuid() }
+            args.booster = true
+            args.ref = 'bannedBoosterList'
+        elseif #unObtainedJokers > 0 then
+            newCard = { key = unObtainedJokers[math.random(1, #unObtainedJokers)], uuid = Utils.uuid() }
+            args.joker = true
+            args.ref = 'bannedJokerList'
+        end
+    elseif args.addCard ~= nil then
+        if args.voucher then newCard = tostring(args.addCard)
+        else
+            newCard = {
+                key = args.addCard,
+                uuid = Utils.uuid()
+            }
+        end
+    end
+
+    if newCard then
+        local skip = false
+        for k,v in pairs(Utils.getCurrentEditingDeck().config[args.ref]) do
+            if args.voucher and v == newCard then
+                skip = true
+                break
+            elseif not args.voucher and v.key == newCard.key then
+                skip = true
+                break
+            end
+        end
+
+        if skip == false then
+            table.insert(Utils.getCurrentEditingDeck().config[args.ref], newCard)
+            return true
+        end
+    end
+
+    return false
+end
+
+-- General purpose utilities
 function CardUtils.standardCardSet()
-    return {
+    return G.P_CARDS
+    --[[return {
         H_2={name = "2 of Hearts",value = '2', suit = 'Hearts', pos = {x=0,y=0}},
         H_3={name = "3 of Hearts",value = '3', suit = 'Hearts', pos = {x=1,y=0}},
         H_4={name = "4 of Hearts",value = '4', suit = 'Hearts', pos = {x=2,y=0}},
@@ -725,7 +1336,100 @@ function CardUtils.standardCardSet()
         S_Q={name = "Queen of Spades",value = 'Queen', suit = 'Spades', pos = {x=10,y=3}},
         S_K={name = "King of Spades",value = 'King', suit = 'Spades', pos = {x=11,y=3}},
         S_A={name = "Ace of Spades",value = 'Ace', suit = 'Spades', pos = {x=12,y=3}},
-    }
+    }]]
+end
+
+function CardUtils.isStone(card)
+    return card.ability.effect == 'Stone Card' and not card.vampired
+end
+
+function CardUtils.receiveRandomNegativeJoker()
+    G.GAME.joker_buffer = G.GAME.joker_buffer + 1
+    G.E_MANAGER:add_event(Event({
+        func = function()
+            local card = create_card('Joker', G.jokers, nil, nil, nil, nil, nil, 'rif')
+            card:set_edition({ negative = true }, true, true)
+            card:add_to_deck()
+            G.jokers:emplace(card)
+            card:start_materialize()
+            G.GAME.joker_buffer = 0
+            return true
+        end
+    }))
+end
+
+function CardUtils.destroyRandomJoker()
+    local deletable_jokers = {}
+    for k, v in pairs(G.jokers.cards) do
+        if not v.ability.eternal then deletable_jokers[#deletable_jokers + 1] = v end
+    end
+    local chosen_joker = pseudorandom_element(deletable_jokers, pseudoseed('ankh_choice'))
+    G.E_MANAGER:add_event(Event({trigger = 'before', delay = 0.75, func = function()
+        for k, v in pairs(G.jokers.cards) do
+            if v == chosen_joker then
+                v:start_dissolve()
+            end
+        end
+        return true end })
+    )
+end
+
+function CardUtils.removeAllJokersFromShop()
+    for i = #G.shop_jokers.cards,1, -1 do
+        local c = G.shop_jokers:remove_card(G.shop_jokers.cards[i])
+        c:remove()
+        c = nil
+    end
+end
+
+function CardUtils.addFourJokersToShop()
+    for i = 1, 4 do
+        local joker = Utils.shopJokers[Utils.currentShopJokerPage][i]
+        if joker ~= nil then
+            G.shop_jokers:emplace(joker)
+        end
+    end
+
+
+end
+
+function CardUtils.setupBigJokerShop(juice)
+    juice = juice or false
+    local page = 0
+    local currentPage = 1
+    local maxPage = 1
+    for i = 1, G.GAME.shop.joker_max - #G.shop_jokers.cards do
+        local joker = create_card_for_shop(G.shop_jokers)
+        Utils.shopJokers[currentPage] = Utils.shopJokers[currentPage] or {}
+        table.insert(Utils.shopJokers[currentPage], joker)
+        G.DeckCreatorModuleAllShopJokersArea:emplace(joker)
+        page = page + 1
+        if page == 4 then
+            page = 0
+            currentPage = currentPage + 1
+            maxPage = currentPage
+        end
+    end
+
+    Utils.maxShopJokerPages = maxPage
+    local jokersInShop = G.GAME.shop.joker_max - #G.shop_jokers.cards
+    if jokersInShop > 4 then jokersInShop = 4 end
+
+    for i = 1, jokersInShop do
+        local joker = Utils.shopJokers[Utils.currentShopJokerPage][i]
+        if joker ~= nil then
+            G.shop_jokers:emplace(joker)
+            if juice then
+                joker:juice_up()
+            end
+        end
+    end
+end
+
+function CardUtils.savedJokerAreaToPages()
+    if G.DeckCreatorModuleAllShopJokersArea then
+
+    end
 end
 
 return CardUtils
