@@ -2,11 +2,21 @@
 
 ## Introduction
 
-Deck Creator is a small tool for the game Balatro that allows users to create, save, load, and even share custom decks. I'm open to suggestions and contributions!
+Deck Creator is a small tool for the game Balatro that allows users to create, save, load, and even share custom decks.
+
+I'm open to suggestions and contributions! Please feel free to create a PR or message me on Discord.
 
 ## Requirements
 
-Requires Steamodded v0.6.2+
+- Balatro 1.0.0c (or newer)
+- Steamodded v0.9.8 (or newer)
+
+## How to Install
+- Head over to the releases page: [releases](https://github.com/adambennett/Balatro-DeckCreator/releases/latest)
+- Download the .zip archive provided
+- Extract the contents of the downloaded zip directly into your mods folder
+- The result should be a directory at the path: ../Mods/Deck Creator/
+- Under this 'Deck Creator' folder you should see a handful of Lua files, an 'assets' directory, and a 'Custom Decks' directory
 
 ## How to Use
 
