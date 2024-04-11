@@ -515,7 +515,7 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         flipped_cards = flippedCards,
         deck_back_index = deckBackIndex,
         broken_glass_money = broken_glass_money,
-        enahnced_dollars_per_round = enhanced_dollars_per_round,
+        enhanced_dollars_per_round = enhanced_dollars_per_round,
         negative_joker_money = negative_joker_money,
         negative_joker_for_broken_glass = negative,
         balance_percent = balanceChips and 100 or balance_percent,

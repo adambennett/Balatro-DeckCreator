@@ -653,12 +653,12 @@ function DeckCreator.Enable()
     local SkipBooster = G.FUNCS.skip_booster
     G.FUNCS.skip_booster = function(e)
         SkipBooster(e)
-        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.gain_dollars_when_skip_booster > 0) or false
+        local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.gain_dollars_when_skip_booster ~= 0) or false
         if isSkipBlindOptionsEnabled == false then
             return
         end
 
-        if G.GAME.selected_back.effect.config.gain_dollars_when_skip_booster > 0 then
+        if G.GAME.selected_back.effect.config.gain_dollars_when_skip_booster ~= 0 then
             ease_dollars(G.GAME.selected_back.effect.config.gain_dollars_when_skip_booster)
         end
     end
@@ -1779,7 +1779,8 @@ function DeckCreator.Enable()
         -- add_round_eval_row({bonus = true, name='Deck Creator Module', pitch = 0.95, dollars = 10 })
         local deck = G.GAME.selected_back
         if deck and deck.effect.config.customDeck then
-            if deck.effect.config.enhanced_dollars_per_round and deck.effect.config.enhanced_dollars_per_round > 0 then
+            local dollarsToModify = 0
+            if deck.effect.config.enhanced_dollars_per_round and deck.effect.config.enhanced_dollars_per_round ~= 0 then
                 local enhancedCards = 0
                 for k,v in pairs(G.playing_cards) do
                     if v.config.center ~= G.P_CENTERS.c_base then
@@ -1787,11 +1788,17 @@ function DeckCreator.Enable()
                     end
                 end
                 if enhancedCards > 0 then
-                    Utils.addDollarAmountAtEndOfRound(enhancedCards * deck.effect.config.enhanced_dollars_per_round, "Enhanced Cards ($1 each)")
+                    dollarsToModify = dollarsToModify + (enhancedCards * deck.effect.config.enhanced_dollars_per_round)
+                    --[[if deck.effect.config.enhanced_dollars_per_round > 0 then
+                        Utils.addDollarAmountAtEndOfRound(enhancedCards * deck.effect.config.enhanced_dollars_per_round, "Enhanced Cards ($1 each)")
+                        G.GAME.current_round.dollars = G.GAME.current_round.dollars + (enhancedCards * deck.effect.config.enhanced_dollars_per_round)
+                    else]]
+                        -- ease_dollars(enhancedCards * deck.effect.config.enhanced_dollars_per_round, true)
+                    -- end
                 end
             end
 
-            if deck.effect.config.negative_joker_money and deck.effect.config.negative_joker_money > 0 then
+            if deck.effect.config.negative_joker_money and deck.effect.config.negative_joker_money ~= 0 then
                 local negativeJokers = 0
                 for k,v in pairs(G.jokers.cards) do
                     if v.edition and v.edition.negative then
@@ -1800,8 +1807,18 @@ function DeckCreator.Enable()
                 end
 
                 if negativeJokers > 0 then
-                    ease_dollars(-1 * negativeJokers * deck.effect.config.negative_joker_money, true)
+                    dollarsToModify = dollarsToModify + (negativeJokers * deck.effect.config.negative_joker_money)
+                    --[[if deck.effect.config.negative_joker_money > 0 then
+                        Utils.addDollarAmountAtEndOfRound(negativeJokers * deck.effect.config.negative_joker_money, "Negative Jokers ($1 each)")
+                        G.GAME.current_round.dollars = G.GAME.current_round.dollars + (negativeJokers * deck.effect.config.negative_joker_money)
+                    else]]
+                        -- ease_dollars(negativeJokers * deck.effect.config.negative_joker_money, true)
+                    -- end
                 end
+            end
+
+            if dollarsToModify ~= 0 then
+                ease_dollars(dollarsToModify, true)
             end
         end
 
@@ -1843,7 +1860,7 @@ function DeckCreator.Enable()
         local deck = G.GAME.selected_back
         if deck and deck.effect.config.customDeck then
             local totalDollars = 0
-            if deck.effect.config.broken_glass_money and deck.effect.config.broken_glass_money > 0 then
+            if deck.effect.config.broken_glass_money and deck.effect.config.broken_glass_money ~= 0 then
                 totalDollars = totalDollars + deck.effect.config.broken_glass_money
             end
             if deck.effect.config.gain_ten_dollars_glass_break_chance and deck.effect.config.gain_ten_dollars_glass_break_chance > 0 then
@@ -1854,7 +1871,7 @@ function DeckCreator.Enable()
                 end
             end
 
-            if totalDollars > 0 then
+            if totalDollars ~= 0 then
                 ease_dollars(totalDollars, true)
             end
 
@@ -2498,6 +2515,26 @@ function DeckCreator.Enable()
         end
 
         if args.context == 'final_scoring_step' then
+            --[[if self.effect.config.chip_reduction_percent and self.effect.config.chip_reduction_percent > 0 and self.effect.config.chip_reduction_percent < 100 then
+                Utils.log("Reducing chips by percentage: " .. tostring(self.effect.config.chip_reduction_percent) .. ', chips=' .. tostring(chips) .. ', args.chips=' .. tostring(args.chips))
+                local mod = self.effect.config.chip_reduction_percent / 100
+                local reduce = 1 - mod
+                local chip = chips or args.chips
+                chips = chip * reduce
+                args.chips = chips
+                Utils.log("Reduced chips by percentage: " .. Utils.tableToString({ mod = mod, reduce = reduce, chip = chip, chips = chips, argChips = args.chips }))
+            end
+
+            if self.effect.config.mult_reduction_percent and self.effect.config.mult_reduction_percent > 0 and self.effect.config.mult_reduction_percent < 100 then
+                Utils.log("Reducing Mult by percentage: " .. tostring(self.effect.config.mult_reduction_percent))
+                local mod = self.effect.config.mult_reduction_percent / 100
+                local reduce = 1 - mod
+                local mul = mult or args.mult
+                mult = mul * reduce
+                args.mult = mult
+                Utils.log("Reduced Mult by percentage: " .. Utils.tableToString({ mod = mod, reduce = reduce, mul = mul, mult = mult, argMult = args.mult }))
+            end]]
+
             if self.effect.config.balance_percent and self.effect.config.balance_percent > 0 then
                 local balanceRoll = self.effect.config.balance_percent == 100 and 0 or math.random(1, 100)
                 if balanceRoll <= self.effect.config.balance_percent then
@@ -2545,22 +2582,6 @@ function DeckCreator.Enable()
                     delay(0.6)
                     chips, mult = args.chips, args.mult
                 end
-            end
-
-            if self.effect.config.chip_reduction_percent and self.effect.config.chip_reduction_percent > 0 and self.effect.config.chip_reduction_percent < 100 then
-                local mod = self.effect.config.chip_reduction_percent / 100
-                local reduce = 1 - mod
-                local chip = chips or args.chips
-                chips = chip * reduce
-                args.chips = chips
-            end
-
-            if self.effect.config.mult_reduction_percent and self.effect.config.mult_reduction_percent > 0 and self.effect.config.mult_reduction_percent < 100 then
-                local mod = self.effect.config.mult_reduction_percent / 100
-                local reduce = 1 - mod
-                local mul = mult or args.mult
-                mult = mul * reduce
-                args.mult = mult
             end
         end
         return chips, mult

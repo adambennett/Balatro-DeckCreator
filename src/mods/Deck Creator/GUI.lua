@@ -2145,7 +2145,7 @@ function GUI.createDecksMenu(chosen)
                                                                         n = G.UIT.R,
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
-                                                                            Helper.createOptionSelector({label = "Joker Slots", scale = 0.7, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeJokerSlots', current_option = (
+                                                                            Helper.createOptionSelector({label = "Joker Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeJokerSlots', current_option = (
                                                                                     Utils.getCurrentEditingDeck().config.joker_slot
                                                                             ), multiArrows = true }),
                                                                         }
@@ -2154,7 +2154,7 @@ function GUI.createDecksMenu(chosen)
                                                                         n = G.UIT.R,
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
-                                                                            Helper.createOptionSelector({label = "Ante Scaling", scale = 0.7, options = Utils.generateBoundedIntegerList(0, 9999), opt_callback = 'DeckCreatorModuleChangeAnteScaling', current_option = (
+                                                                            Helper.createOptionSelector({label = "Ante Scaling", scale = 0.8, options = Utils.generateBoundedIntegerList(0, 3), opt_callback = 'DeckCreatorModuleChangeAnteScaling', current_option = (
                                                                                     Utils.getCurrentEditingDeck().config.ante_scaling
                                                                             ), multiArrows = true}),
                                                                         }
@@ -2169,7 +2169,7 @@ function GUI.createDecksMenu(chosen)
                                                                         n = G.UIT.R,
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
-                                                                            Helper.createOptionSelector({label = "Consumable Slots", scale = 0.7, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeConsumableSlots', current_option = (
+                                                                            Helper.createOptionSelector({label = "Consumable Slots", scale = 0.8, options = Utils.generateBigIntegerList(), opt_callback = 'DeckCreatorModuleChangeConsumableSlots', current_option = (
                                                                                     Utils.getCurrentEditingDeck().config.consumable_slot
                                                                             ), multiArrows = true }),
                                                                         }
@@ -2178,7 +2178,7 @@ function GUI.createDecksMenu(chosen)
                                                                         n = G.UIT.R,
                                                                         config = { align = "cm", padding = 0.1 },
                                                                         nodes = {
-                                                                            Helper.createOptionSelector({label = "Blind Score Multiplier", scale = 0.7, options = Utils.generateBoundedFloatList(0, 100, 0.01), opt_callback = 'DeckCreatorModuleChangeBlindScaling', current_option = (
+                                                                            Helper.createOptionSelector({label = "Blind Score Multiplier", scale = 0.8, options = Utils.generateBoundedFloatList(0, 100, 0.01), opt_callback = 'DeckCreatorModuleChangeBlindScaling', current_option = (
                                                                                     Utils.getCurrentEditingDeck().config.blind_scaling
                                                                             ), multiArrows = true }),
                                                                         }
@@ -5227,7 +5227,7 @@ function GUI.initializeStaticMods()
             minorArrows = true,
             isToggle = false
         },
-        {
+        --[[{
             group = "Gameplay",
             label = "Mult Reduced by X Percent",
             property = "mult_reduction_percent",
@@ -5244,7 +5244,7 @@ function GUI.initializeStaticMods()
             multiArrows = true,
             minorArrows = true,
             isToggle = false
-        },
+        },]]
         {
             group = "Gameplay",
             label = "Multiply all probabilities by X",
@@ -5310,18 +5310,17 @@ function GUI.initializeStaticMods()
         },
         {
             group = "Money",
-            label = "Lose $X per round for each Negative Joker",
+            label = "Gain $X per round for each Negative Joker",
             property = "negative_joker_money",
-            options = Utils.generateBigIntegerList(),
+            options = Utils.generateBoundedIntegerList(-300, 300),
             multiArrows = true,
-            minorArrows = true,
             isToggle = false
         },
         {
             group = "Money",
             label = "Gain $X per round for each Enhanced card",
             property = "enhanced_dollars_per_round",
-            options = Utils.generateBigIntegerList(),
+            options = Utils.generateBoundedIntegerList(-300, 300),
             multiArrows = true,
             isToggle = false
         },
@@ -5329,7 +5328,7 @@ function GUI.initializeStaticMods()
             group = "Money",
             label = "Gain $X when any Booster Pack is skipped",
             property = "gain_dollars_when_skip_booster",
-            options = Utils.generateBigIntegerList(),
+            options = Utils.generateBoundedIntegerList(-300, 300),
             multiArrows = true,
             isToggle = false
         },
@@ -5842,7 +5841,7 @@ function GUI.initializeStaticMods()
             group = "Glass Break",
             label = "Gain $X on Glass Break",
             property = "broken_glass_money",
-            options = Utils.generateBigIntegerList(),
+            options = Utils.generateBoundedIntegerList(-300, 300),
             multiArrows = true,
             isToggle = false
         },

@@ -80,12 +80,11 @@ function Persistence.loadAllDeckLists()
                         end
                         if loadedDeck.config.rawDescription ~= nil then
                             local descTable = CustomDeck.parseRawDescription(loadedDeck.config.rawDescription)
-                            Utils.log("Parsed rawDescription from imported deck\n" .. Utils.tableToString(descTable))
-                            loadedDeck = CustomDeck.fullNewFromExisting(loadedDeck, descTable, false)
-                            G.localization.descriptions["Back"][deckConfig.slug] = loadedDeck.loc_txt
+                            local descDeck = CustomDeck.fullNewFromExisting(loadedDeck, descTable, false)
+                            G.localization.descriptions["Back"][deckConfig.slug] = descDeck.loc_txt
+                            loadedDeck.loc_txt = descDeck.loc_txt
                         end
                         Utils.addDeckToList(loadedDeck)
-                        Utils.log("Loaded deck loc_txt\n" .. Utils.tableToString(G.localization.descriptions["Back"][deckConfig.slug]))
                         loadedUUIDs[loadedDeck.config.uuid] = true
                     end
                 end
@@ -158,9 +157,6 @@ function Persistence.refreshDeckList()
 
         -- Setup Localize text
         G.localization.descriptions["Back"][deck.slug] = deck.loc_txt
-        if deck.config.customDeck then
-            Utils.log("loc_txt:\n" .. Utils.tableToString(deck.loc_txt))
-        end
 
         -- Load it
         for g_k, group in pairs(G.localization) do
