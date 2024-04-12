@@ -1,3 +1,6 @@
+### v1.2.1
+- Fix 'Boosters cost $X more per Ante" option always increasing booster prices even when set to $0
+
 ### v1.2.0
 - Implemented 'Banned Items' menu
 - Fixed a crash that occurred sometimes when using the Deck Creator without first unlocking all items in the game
