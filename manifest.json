@@ -1,0 +1,9 @@
+{
+  "name": "Deck_Creator",
+  "description": "GUI mod for creating, saving, loading, and sharing your own customizable decks!",
+  "version_number": "1.2.0",
+  "dependencies": [
+    "Steamopollys-Steamodded-0.9.8"
+  ],
+  "website_url": "https://github.com/adambennett/Balatro-DeckCreator"
+}
