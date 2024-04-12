@@ -2433,13 +2433,13 @@ function DeckCreator.Enable()
                 G.GAME.modifiers.enable_rentals_in_shop = false
             end
 
-            if config.booster_ante_scaling and type(config.booster_ante_scaling == 'boolean') then
+            --[[if config.booster_ante_scaling and type(config.booster_ante_scaling == 'boolean') then
                 if G.GAME.stake >= 7 or (G.GAME.stake < 7 and config.booster_ante_scaling) then
                     G.GAME.modifiers.booster_ante_scaling = true
                 else
                     G.GAME.modifiers.booster_ante_scaling = false
                 end
-            end
+            end]]
 
             if config.reroll_cost then
                 G.GAME.starting_params.reroll_cost = config.reroll_cost
