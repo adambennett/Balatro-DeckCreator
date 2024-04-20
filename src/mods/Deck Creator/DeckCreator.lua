@@ -297,8 +297,7 @@ function DeckCreator.Enable()
                 }))
             end
         else
-            UseConsumeable(self, area, copier)
-            return
+            return UseConsumeable(self, area, copier)
         end
     end
 
@@ -610,7 +609,8 @@ function DeckCreator.Enable()
                 --end
 
                 if G.GAME.selected_back.effect.config.reroll_boosters then
-                    for i = 1, 2 do
+                    local packs = G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.booster_pack_slots or 2
+                    for i = 1, packs do
                         G.GAME.current_round.used_packs = {}
                         if not G.GAME.current_round.used_packs[i] then
                             G.GAME.current_round.used_packs[i] = getRerollPack('shop_pack').key
@@ -977,7 +977,8 @@ function DeckCreator.Enable()
         local isSkipBlindOptionsEnabled = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.spectral_cards_in_arcana or G.GAME.selected_back.effect.config.always_telescoping or G.GAME.selected_back.effect.config.never_telescoping or G.GAME.selected_back.effect.config.tarot_cards_in_spectral or G.GAME.selected_back.effect.config.tarot_cards_in_celestial or G.GAME.selected_back.effect.config.planet_cards_in_arcana or G.GAME.selected_back.effect.config.planet_cards_in_spectral or G.GAME.selected_back.effect.config.spectral_cards_in_celestial
                 or G.GAME.selected_back.effect.config.chance_for_free_booster > 0 or G.GAME.selected_back.effect.config.extra_arcana_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_spectral_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_celestial_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_standard_pack_cards > 0 or G.GAME.selected_back.effect.config.extra_buffoon_pack_cards > 0
                 or G.GAME.selected_back.effect.config.extra_booster_pack_choices > 0 or (G.GAME.selected_back.effect.config.standard_pack_edition_rate and G.GAME.selected_back.effect.config.standard_pack_edition_rate ~= 2) or (G.GAME.selected_back.effect.config.standard_pack_enhancement_rate and G.GAME.selected_back.effect.config.standard_pack_enhancement_rate ~= 40) or (G.GAME.selected_back.effect.config.standard_pack_seal_rate and G.GAME.selected_back.effect.config.standard_pack_seal_rate ~= 20)) or false
-        if isSkipBlindOptionsEnabled == false then
+        local baseGamePack = self.ability ~= nil and self.ability.set == "Booster" and (self.ability.name:find('Arcana') or self.ability.name:find('Celestial') or self.ability.name:find('Spectral') or self.ability.name:find('Standard') or self.ability.name:find('Buffoon'))
+        if isSkipBlindOptionsEnabled == false or baseGamePack == nil or baseGamePack == false then
             return OpenCard(self)
         end
 
