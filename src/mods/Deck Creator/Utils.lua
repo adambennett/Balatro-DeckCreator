@@ -2,7 +2,7 @@ local ModloaderHelper = require "ModloaderHelper"
 
 local Utils = {}
 
-Utils.mode = "PROD"
+Utils.mode = "PROD" -- "dev"
 Utils.customDeckList = {}
 Utils.runMemoryChecks = false
 Utils.EditDeckConfig = {
@@ -66,7 +66,7 @@ Utils.resetBlindsPerPage()
 
 function Utils.log(message)
     if Utils.mode ~= "PROD" and sendDebugMessage ~= nil then
-        sendDebugMessage(message, "DeckCreatorModule")
+        sendInfoMessage(message, "DeckCreatorModule")
     end
 end
 

@@ -564,7 +564,7 @@ function Helper.calculateDeckEditorSums()
         Helper.sums.rank_name_mapping = SMODS.Card.RANK_LIST
         Helper.sums.id_index_mapping = {}
         for i, v in ipairs(SMODS.Card.RANK_LIST) do
-            local rank_data = SMODS.Card.RANKS[SMODS.Card.RANK_SHORTHAND_LOOKUP[v] or v]
+            local rank_data = SMODS.Card.RANKS[v] -- SMODS.Card.RANKS[SMODS.Card.RANK_SHORTHAND_LOOKUP[v] or v]
             Helper.sums.id_index_mapping[rank_data.id] = i
             Helper.sums.rank_tallies[i] = 0
             Helper.sums.mod_rank_tallies[i] = 0
@@ -583,9 +583,13 @@ function Helper.calculateDeckEditorSums()
 
                     --for face cards/numbered cards/aces
                     local card_id = v:get_id()
-                    Helper.sums.face_tally = Helper.sums.face_tally + ((SMODS.Card.RANKS[v.base.value].face) and 1 or 0)
+                    local faceCheck = ((card_id ==11 or card_id ==12 or card_id ==13) and 1 or 0)
+                    if SMODS.Card ~= nil and v ~= nil and v.base ~= nil and v.base.value ~= nil and SMODS.Card.RANKS[v.base.value] ~= nil then
+                        faceCheck = ((SMODS.Card.RANKS[v.base.value].face) and 1 or 0)
+                    end
+                    Helper.sums.face_tally = Helper.sums.face_tally + faceCheck
                     Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
-                    if not SMODS.Card.RANKS[v.base.value].face and card_id ~= 14 then
+                    if faceCheck == 0 and card_id ~= 14 then
                         Helper.sums.num_tally = Helper.sums.num_tally + 1
                         if not v.debuff then Helper.sums.mod_num_tally = Helper.sums.mod_num_tally + 1 end
                     end

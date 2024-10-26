@@ -8,9 +8,11 @@ local ModloaderHelper = require "ModloaderHelper"
 local DeckCreator = {}
 DeckCreator.hadPaintbrush = false
 DeckCreator.hadPalette = false
+DeckCreator.DKC = nil
 
-function DeckCreator.Enable()
+function DeckCreator.Enable(dkc)
 
+    DeckCreator.DKC = dkc
     ModloaderHelper.DeckCreatorLoader = true
     Utils.disabledSlugs = {}
     Utils.registerGlobals()
@@ -18,9 +20,10 @@ function DeckCreator.Enable()
     GUI.registerGlobals()
     Helper.registerGlobals()
     Persistence.loadAllDeckLists()
-    GUI.registerModMenuUI()
+    GUI.setupCustomModMenuUI(DeckCreator.DKC)
     GUI.initializeStaticMods()
     Utils.boosterKeys()
+
 
     --[[local Shop = G.UIDEF.shop
     function G.UIDEF.shop()
@@ -199,8 +202,8 @@ function DeckCreator.Enable()
         end
 
         local deathChanges = (self.ability.consumeable.mod_conv or self.ability.consumeable.suit_conv) and self.ability.name == 'Death' and G.GAME.selected_back.effect.config.death_targets_random_card
-        local spectralChanges = G.GAME.selected_back.effect.config.spectral_cards_cannot_destroy_jokers and (self.ability.name == 'Ankh' or self.ability.name == 'Hex')
-        local anyOverrides = deathChanges or spectralChanges
+        local noSpectralJokerKill = G.GAME.selected_back.effect.config.spectral_cards_cannot_destroy_jokers and (self.ability.name == 'Ankh' or self.ability.name == 'Hex')
+        local anyOverrides = deathChanges or noSpectralJokerKill
         local used_tarot
         if anyOverrides then
             stop_use()
@@ -271,8 +274,24 @@ function DeckCreator.Enable()
 
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
             delay(0.5)
-        elseif spectralChanges then
+        elseif noSpectralJokerKill then
             if self.ability.name == 'Ankh' then
+                if noSpectralJokerKill == false then
+                    local deletable_jokers = {}
+                    for k, v in pairs(G.jokers.cards) do
+                        if not v.ability.eternal then deletable_jokers[#deletable_jokers + 1] = v end
+                    end
+                    local _first_dissolve
+                    G.E_MANAGER:add_event(Event({trigger = 'before', delay = 0.75, func = function()
+                        for k, v in pairs(deletable_jokers) do
+                            if v ~= chosen_joker then
+                                v:start_dissolve(nil, _first_dissolve)
+                                _first_dissolve = true
+                            end
+                        end
+                        return true end }))
+                end
+
                 local chosen_joker = pseudorandom_element(G.jokers.cards, pseudoseed('ankh_choice'))
                 G.E_MANAGER:add_event(Event({trigger = 'before', delay = 0.4, func = function()
                     local card = copy_card(chosen_joker, nil, nil, nil, chosen_joker.edition and chosen_joker.edition.negative)
@@ -1307,7 +1326,7 @@ function DeckCreator.Enable()
                 local perishRate = G.GAME.selected_back.effect.config.perishable_rate or 30
                 local rentalRate = G.GAME.selected_back.effect.config.rental_rate or 30
                 local isEternal = false
-                if G.GAME.modifiers.enable_eternals_in_shop and (100 * pseudorandom('stake_shop_joker_eternal'..G.GAME.round_resets.ante)) <= eternalRate then
+                if G.GAME.modifiers.enable_eternals_in_shop and (100 * pseudorandom('etperpoll'..G.GAME.round_resets.ante)) <= eternalRate then
                     card:set_eternal(true)
                     isEternal = true
                 end

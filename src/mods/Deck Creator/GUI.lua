@@ -55,10 +55,10 @@ function GUI.CloseAllOpenFlags()
     GUI.closeAllHoveredObjects()
     GUI.resetOpenStartingItemConfig()
     GUI.resetOpenBannedItemConfig()
-    if G.GAME and G.GAME.viewed_back then
+    --[[if G.GAME and G.GAME.viewed_back then
         G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[1])
         G.PROFILES[G.SETTINGS.profile].MEMORY.deck = "Red Deck"
-    end
+    end]]
 end
 
 function GUI.setOpenTab(tab)
@@ -424,15 +424,15 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         if #Utils.customDeckList < 1 then
-            GUI.redrawMainMenu()
+            -- GUI.redrawMainMenu()
             G.FUNCS.DeckCreatorModuleBackToMainMenu()
         else
-            for k,v in pairs(Utils.customDeckList) do
+            --[[ for k,v in pairs(Utils.customDeckList) do
                 if v.config and v.config.centerPosition then
                     G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[v.config.centerPosition])
                     break
                 end
-            end
+            end ]]
             G.FUNCS.overlay_menu({
                 definition = GUI.createManageDecksMenu()
             })
@@ -1084,14 +1084,14 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleAddCardChangeSuit = function(args)
         GUI.addCard.suit = args.to_val
         GUI.addCard.suitKey = string.sub(args.to_val, 1, 1)
-        if ModloaderHelper.SteamoddedLoaded then
+        --[[ if ModloaderHelper.SteamoddedLoaded then
             for _, v in pairs(SMODS.Card.SUITS) do
                 if v.name == args.to_val then
                     GUI.addCard.suitKey = v.prefix
                     break
                 end
             end
-        end
+        end ]]
     end
     G.FUNCS.DeckCreatorModuleAddCardChangeEdition = function(args)
         GUI.addCard.edition = args.to_val
@@ -1448,20 +1448,19 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleBackToMainMenu = function()
-        G.SETTINGS.paused = true
+        -- G.SETTINGS.paused = true
         GUI.CloseAllOpenFlags()
         Utils.currentShopJokerPage = 1
         GUI.ManageDecksConfig.manageDecksOpen = false
         GUI.addCard = GUI.resetAddCard()
-        if ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Balamod' then
+        G.FUNCS:exit_overlay_menu()
+        --[[if ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Balamod' then
             G.FUNCS.overlay_menu({
                 definition = GUI.createBalamodMenu()
             })
         elseif ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Steamodded' then
-            G.FUNCS.overlay_menu({
-                definition = create_UIBox_mods()
-            })
-        end
+            G.FUNCS:exit_overlay_menu()
+        end]]
     end
 
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
@@ -1562,7 +1561,7 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         GUI.CloseAllOpenFlags()
-        GUI.redrawMainMenu()
+        -- GUI.redrawMainMenu()
         GUI.addCard = GUI.resetAddCard()
         G.FUNCS:exit_overlay_menu()
     end
@@ -1610,8 +1609,13 @@ function GUI.runBanAllFlips()
 end
 
 function GUI.redrawMainMenu()
-    if ModloaderHelper.SteamoddedLoaded then
-        SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
+    G.FUNCS:exit_overlay_menu()
+end
+
+function GUI.mainMenuCustomUI(modNodes)
+    local customUI = GUI.mainMenu()
+    for _, uiElement in ipairs(customUI) do
+        table.insert(modNodes, uiElement)
     end
 end
 
@@ -1692,9 +1696,9 @@ function GUI.mainMenu()
     }
 end
 
-function GUI.registerModMenuUI()
-    if ModloaderHelper.SteamoddedLoaded then
-        SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
+function GUI.setupCustomModMenuUI(dkc)
+    if ModloaderHelper.SteamoddedLoaded and dkc ~= nil then
+        dkc.custom_ui = GUI.mainMenuCustomUI
     end
 end
 
@@ -1956,7 +1960,7 @@ end
 function GUI.createDecksMenu(chosen)
     chosen = chosen or "Main Menu"
     return create_UIBox_generic_options({
-        back_func = GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
+        back_func = "DeckCreatorModuleBackToMainMenu", -- GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
         contents = {
             {
                 n = G.UIT.R,
@@ -2650,7 +2654,7 @@ function GUI.createManageDecksMenu()
         }
     }
     return create_UIBox_generic_options({
-        back_func = "DeckCreatorModuleBackToMainMenu",
+        back_func = "exit_overlay_menu", --"DeckCreatorModuleBackToMainMenu",
         contents = {
             {n=G.UIT.R, config={align = "cm", padding = 0, draw_layer = 1 }, nodes={
                 t
@@ -3504,7 +3508,7 @@ function GUI.addVoucherMenu()
     return create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm"}, nodes={
-            create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_voucher_page', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
+            create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeVoucherPage', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
         }}
     }})
 end
@@ -3638,7 +3642,7 @@ function GUI.addTarotMenu()
                 config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
                 nodes = {
                     {n=G.UIT.R, config={align = "cm"}, nodes={
-                        create_option_cycle({options = tarot_options, w = 2.5, cycle_shoulders = true, opt_callback = 'your_collection_tarot_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+                        create_option_cycle({options = tarot_options, w = 2.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeTarotPage', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
                     }}
                 }
             },
@@ -3778,7 +3782,7 @@ function GUI.addSpectralMenu()
                 config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
                 nodes = {
                     {n=G.UIT.R, config={align = "cm"}, nodes={
-                        create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_spectral_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+                        create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeSpectralPage', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
                     }}
                 }
             },
