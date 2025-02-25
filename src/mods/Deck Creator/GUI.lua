@@ -424,7 +424,7 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         if #Utils.customDeckList < 1 then
-            GUI.redrawMainMenu()
+           -- GUI.redrawMainMenu()
             G.FUNCS.DeckCreatorModuleBackToMainMenu()
         else
             for k,v in pairs(Utils.customDeckList) do
@@ -1086,8 +1086,8 @@ function GUI.registerGlobals()
         GUI.addCard.suitKey = string.sub(args.to_val, 1, 1)
         if ModloaderHelper.SteamoddedLoaded then
             for _, v in pairs(SMODS.Card.SUITS) do
-                if v.name == args.to_val then
-                    GUI.addCard.suitKey = v.prefix
+                if v.key == args.to_val then
+                    GUI.addCard.suitKey = v.card_key
                     break
                 end
             end
@@ -1448,6 +1448,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleBackToMainMenu = function()
+        sendTraceMessage("Trying to back out", "DeckCreatorLog")
         G.SETTINGS.paused = true
         GUI.CloseAllOpenFlags()
         Utils.currentShopJokerPage = 1
@@ -1457,11 +1458,13 @@ function GUI.registerGlobals()
             G.FUNCS.overlay_menu({
                 definition = GUI.createBalamodMenu()
             })
-        elseif ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Steamodded' then
+        elseif ModloaderHelper.SteamoddedLoaded then
+            sendTraceMessage("STEAMODDED", "DeckCreatorLog")
             G.FUNCS.overlay_menu({
                 definition = create_UIBox_mods()
             })
         end
+        sendTraceMessage("fucked up", "DeckCreatorLog")
     end
 
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
@@ -1562,9 +1565,12 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         GUI.CloseAllOpenFlags()
-        GUI.redrawMainMenu()
+        --GUI.redrawMainMenu()
         GUI.addCard = GUI.resetAddCard()
-        G.FUNCS:exit_overlay_menu()
+        --G.FUNCS:exit_overlay_menu()
+        G.FUNCS.overlay_menu({
+            definition = create_UIBox_mods()
+        })
     end
 end
 
@@ -1611,82 +1617,93 @@ end
 
 function GUI.redrawMainMenu()
     if ModloaderHelper.SteamoddedLoaded then
-        SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
+        --SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
     end
 end
 
 function GUI.mainMenu()
+    sendTraceMessage("Building menu", "DeckCreatorLogger")
     return {
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.5,
-                align = "cm"
-            },
-            nodes = {
+        n = G.UIT.ROOT,
+		config = {
+			r = 0.1,
+			minh = 6,
+			minw = 6,
+			align = 'cm',
+			colour = G.C.CLEAR
+		},
+        nodes = {
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.5,
+                    align = "cm"
+                },
+                nodes = {
 
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+                }
             },
-            nodes = {
-                UIBox_button({
-                    label = {" Create Deck "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.GREEN,
-                    button = "DeckCreatorModuleOpenCreateDeck",
-                    minh = 0.8,
-                    minw = 8
-                })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Create Deck "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.GREEN,
+                        button = "DeckCreatorModuleOpenCreateDeck",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             },
-            nodes = {
-                #Utils.customDeckList > 0 and UIBox_button({
-                    label = {" Manage Decks "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.BOOSTER,
-                    button = "DeckCreatorModuleOpenManageDecks",
-                    minh = 0.8,
-                    minw = 8
-                }) or UIBox_button({
-                    label = {" No Custom Decks Found "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.RED,
-                    button = "DeckCreatorModuleEmptyFunc",
-                    minh = 0.8,
-                    minw = 8
-                })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    #Utils.customDeckList > 0 and UIBox_button({
+                        label = {" Manage Decks "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.BOOSTER,
+                        button = "DeckCreatorModuleOpenManageDecks",
+                        minh = 0.8,
+                        minw = 8
+                    }) or UIBox_button({
+                        label = {" No Custom Decks Found "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.RED,
+                        button = "DeckCreatorModuleEmptyFunc",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             },
-            nodes = {
-                UIBox_button({
-                    label = {" Source Code "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.GOLD,
-                    button = "DeckCreatorModuleOpenGithub",
-                    minh = 0.8,
-                    minw = 8
-                })
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Source Code "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.GOLD,
+                        button = "DeckCreatorModuleOpenGithub",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             }
         }
     }
@@ -1694,7 +1711,9 @@ end
 
 function GUI.registerModMenuUI()
     if ModloaderHelper.SteamoddedLoaded then
-        SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
+        sendTraceMessage("Registering config menu", "DeckCreatorLogger")
+        SMODS.current_mod.config_tab = GUI.mainMenu
+        ---SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
     end
 end
 

@@ -583,6 +583,9 @@ function Helper.calculateDeckEditorSums()
 
                     --for face cards/numbered cards/aces
                     local card_id = v:get_id()
+                    sendTraceMessage("No crash in calculateEditorSum", "DeckCreatorLog")
+                    sendTraceMessage(card_id, "DeckCreatorLog")
+                    sendTraceMessage(v.base.value, "DeckCreatorLog")
                     Helper.sums.face_tally = Helper.sums.face_tally + ((SMODS.Card.RANKS[v.base.value].face) and 1 or 0)
                     Helper.sums.mod_face_tally = Helper.sums.mod_face_tally + (v:is_face() and 1 or 0)
                     if not SMODS.Card.RANKS[v.base.value].face and card_id ~= 14 then

@@ -271,11 +271,13 @@ function CardUtils.generateCardProto(args)
         local randomSuit = list[math.random(1, #list)]
 
         if randomSuit.name ~= nil then
-            generatedCard.suit = randomSuit.name
-            generatedCard.suitKey = randomSuit.prefix
+            generatedCard.suit = randomSuit.key
+            generatedCard.suitKey = randomSuit.card_key
+            sendTraceMessage("Genned suitkey: " .. generatedCard.suitKey, "DeckCreatorLogger")
         else
             generatedCard.suit = randomSuit
             generatedCard.suitKey = string.sub(randomSuit, 1, 1)
+            sendTraceMessage("Genned suitkey: " .. generatedCard.suitKey, "DeckCreatorLogger")
         end
 
 

@@ -21,6 +21,13 @@ function DeckCreator.Enable()
     GUI.registerModMenuUI()
     GUI.initializeStaticMods()
     Utils.boosterKeys()
+    -- This is missing from the 0.9.8 compatibility layer. Gotta fix it someday
+    SMODS.Card.RANK_SHORTHAND_LOOKUP = {
+        ['J'] = 'Jack',
+        ['Q'] = 'Queen',
+        ['K'] = 'King',
+        ['A'] = 'Ace',
+    }
 
     --[[local Shop = G.UIDEF.shop
     function G.UIDEF.shop()
