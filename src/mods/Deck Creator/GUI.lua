@@ -77,7 +77,7 @@ end
 function GUI.resetOpenStartingItemConfig()
     GUI.OpenStartingItemConfig = {}
     GUI.OpenStartingItemConfig.openItemType = nil
-    GUI.OpenStartingItemConfig.edition = "None"
+    GUI.OpenStartingItemConfig.edition = "base"
     GUI.OpenStartingItemConfig.copies = 1
     GUI.OpenStartingItemConfig.pinned = false
     GUI.OpenStartingItemConfig.eternal = false
@@ -1094,7 +1094,7 @@ function GUI.registerGlobals()
         end
     end
     G.FUNCS.DeckCreatorModuleAddCardChangeEdition = function(args)
-        GUI.addCard.edition = args.to_val
+        GUI.addCard.edition = string.lower(args.to_val)
         GUI.addCard.editionKey = string.lower(args.to_val)
         if GUI.addCard.editionKey == 'holographic' then
             GUI.addCard.editionKey = 'holo'

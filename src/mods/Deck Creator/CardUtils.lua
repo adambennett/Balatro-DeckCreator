@@ -394,10 +394,14 @@ function CardUtils.getJokersFromCustomJokerList(deck)
         end
 
         if center then
+            sendTraceMessage(edition, "DeckCreatorLog")
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'joker', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition then
+                edition = string.lower(edition) -- Lazy fix for Base option
+                card:set_edition{[edition] = true} 
+            end
             if eternal then card:set_eternal(true) end
             if perishable then card:set_perishable() end
             if rental then card:set_rental(true) end

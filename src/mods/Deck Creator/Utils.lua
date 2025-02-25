@@ -279,7 +279,7 @@ function Utils.editions(includeNegative, includeRandom)
     includeRandom = includeRandom or false
     includeNegative = includeNegative or false
     local output = {
-        "None",
+        "base",
         "Foil",
         "Holo",
         "Polychrome",
