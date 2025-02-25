@@ -31,7 +31,7 @@ end
 
 local function applyRandomAbilities(card_protos, config)
     -- Define edition and enhancement abilities
-    local editionAbilities = {'polychrome', 'holographic', 'foil'}
+    local editionAbilities = {'polychrome', 'holo', 'foil'}
     local enhancementAbilities = {'m_bonus', 'm_glass', 'm_lucky', 'm_steel', 'm_stone', 'm_wild', 'm_mult', 'm_gold'}
 
     -- Combine edition and enhancement abilities with their counts
