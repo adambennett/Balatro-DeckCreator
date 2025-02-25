@@ -37,7 +37,7 @@ local function applyRandomAbilities(card_protos, config)
     -- Combine edition and enhancement abilities with their counts
     local abilities = {
         {name = 'polychrome', count = config.random_polychrome_cards, isEdition = true},
-        {name = 'holographic', count = config.random_holographic_cards, isEdition = true},
+        {name = 'holo', count = config.random_holographic_cards, isEdition = true},
         {name = 'foil', count = config.random_foil_cards, isEdition = true},
         {name = 'm_bonus', count = config.random_bonus_cards, isEdition = false},
         {name = 'm_mult', count = config.random_mult_cards, isEdition = false},
