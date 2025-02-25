@@ -1975,7 +1975,7 @@ end
 function GUI.createDecksMenu(chosen)
     chosen = chosen or "Main Menu"
     return create_UIBox_generic_options({
-        back_func = GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
+        back_func = "DeckCreatorModuleBackToMainMenu", --GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
         contents = {
             {
                 n = G.UIT.R,

@@ -2659,6 +2659,7 @@ function DeckCreator.Enable()
         local originalResult = GameStartRun(self, args)
 
         -- re-set deck var after original function modifies
+        -- theres a bug here, somewhere
         deck = self.GAME.selected_back
 
         if deck.effect.config.customDeck then
