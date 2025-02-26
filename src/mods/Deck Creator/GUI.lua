@@ -1563,7 +1563,6 @@ function GUI.registerGlobals()
         GUI.ManageDecksConfig.manageDecksOpen = false
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
-        Persistence.refreshDeckList()
         GUI.CloseAllOpenFlags()
         --GUI.redrawMainMenu()
         GUI.addCard = GUI.resetAddCard()

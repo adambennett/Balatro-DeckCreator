@@ -1972,6 +1972,9 @@ function DeckCreator.Enable()
             end
 
             self:remove()
+            if Utils.getCurrentEditingDeck().config.custom_cards_set == false then
+                Utils.getCurrentEditingDeck().config.custom_cards_set = true
+            end
 
             local memoryBefore = Utils.checkMemory()
             GUI.updateAllDeckEditorAreas()
@@ -2693,8 +2696,10 @@ function DeckCreator.Enable()
             end
 
             if deck.effect.config.custom_cards_set then
+                sendTraceMessage("Playing custom deck", "DeckCreatorLog")
                 CardUtils.initializeCustomCardList(deck)
             else
+                sendTraceMessage("Playing normal deck", "DeckCreatorLog")
                 local config = deck.effect.config
                 local randomizeRanks = config.randomize_ranks
                 local randomizeSuits = config.randomize_suits
