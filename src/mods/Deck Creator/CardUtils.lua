@@ -111,6 +111,7 @@ local function applyRandomAbilities(card_protos, config)
         if not applied then
             break -- If we can't apply the ability, exit the loop
         end
+        shuffleDeck(card_protos) -- Reshuffle after applying to a card
     end
 end
 
