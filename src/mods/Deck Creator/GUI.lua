@@ -1464,7 +1464,6 @@ function GUI.registerGlobals()
                 definition = create_UIBox_mods()
             })
         end
-        sendTraceMessage("fucked up", "DeckCreatorLog")
     end
 
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
@@ -1564,6 +1563,7 @@ function GUI.registerGlobals()
         GUI.ManageDecksConfig.manageDecksOpen = false
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
+        Persistence.refreshDeckList()
         GUI.CloseAllOpenFlags()
         --GUI.redrawMainMenu()
         GUI.addCard = GUI.resetAddCard()

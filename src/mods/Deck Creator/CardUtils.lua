@@ -1288,8 +1288,8 @@ end
 
 -- General purpose utilities
 function CardUtils.standardCardSet()
-    return G.P_CARDS
-    --[[return {
+    --return G.P_CARDS
+    return {
         H_2={name = "2 of Hearts",value = '2', suit = 'Hearts', pos = {x=0,y=0}},
         H_3={name = "3 of Hearts",value = '3', suit = 'Hearts', pos = {x=1,y=0}},
         H_4={name = "4 of Hearts",value = '4', suit = 'Hearts', pos = {x=2,y=0}},
@@ -1342,7 +1342,7 @@ function CardUtils.standardCardSet()
         S_Q={name = "Queen of Spades",value = 'Queen', suit = 'Spades', pos = {x=10,y=3}},
         S_K={name = "King of Spades",value = 'King', suit = 'Spades', pos = {x=11,y=3}},
         S_A={name = "Ace of Spades",value = 'Ace', suit = 'Spades', pos = {x=12,y=3}},
-    }]]
+    }
 end
 
 function CardUtils.isStone(card)
