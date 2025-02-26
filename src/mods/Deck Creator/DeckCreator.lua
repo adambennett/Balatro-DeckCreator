@@ -2695,9 +2695,12 @@ function DeckCreator.Enable()
                 end
             end
 
+
             if deck.effect.config.custom_cards_set then
                 sendTraceMessage("Playing custom deck", "DeckCreatorLog")
-                CardUtils.initializeCustomCardList(deck)
+                if not saveTable then
+                    CardUtils.initializeCustomCardList(deck)
+                end
             else
                 sendTraceMessage("Playing normal deck", "DeckCreatorLog")
                 local config = deck.effect.config
