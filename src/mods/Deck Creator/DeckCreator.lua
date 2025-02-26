@@ -2708,11 +2708,12 @@ function DeckCreator.Enable()
                 local glass = config.random_glass_cards
                 local lucky = config.random_lucky_cards
                 local steel = config.random_steel_cards
+                local gold = config.random_gold_cards
                 local stone = config.random_stone_cards
                 local wild = config.random_wild_cards
                 local mult = config.random_mult_cards
                 local enhance = config.random_enhancement_cards
-                if randomizeRanks or randomizeSuits or noNumbered or noAces or poly > 0 or holo > 0 or foil > 0 or edition > 0 or bonus > 0 or glass > 0 or lucky > 0 or steel > 0 or stone > 0 or wild > 0 or mult > 0 or enhance > 0 then
+                if randomizeRanks or randomizeSuits or noNumbered or noAces or poly > 0 or holo > 0 or foil > 0 or edition > 0 or bonus > 0 or glass > 0 or lucky > 0 or gold > 0 or steel > 0 or stone > 0 or wild > 0 or mult > 0 or enhance > 0 then
                     config.customCardList = CardUtils.standardCardSet()
                     CardUtils.initializeCustomCardList(deck)
                 end
