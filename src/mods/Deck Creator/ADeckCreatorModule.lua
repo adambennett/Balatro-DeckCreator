@@ -34,7 +34,7 @@ if mods ~= nil then
     table.insert(mods, {
         mod_id = "ADeckCreatorModule",
         name = "Deck Creator",
-        version = "1.0.0",
+        version = "1.2.2",
         author = "Nyoxide",
         menu = "DeckCreatorModuleOpenMainMenu",
         description = require "Utils".modDescription(),

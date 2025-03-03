@@ -1,3 +1,7 @@
+### v1.2.2
+- Updated codebase to properly support Steamodded 1.0.0
+- Added 5 additional gameplay modifiers under 'Static Mods' that modify Spectral card behavior
+
 ### v1.2.1
 - Fix 'Boosters cost $X more per Ante" option always increasing booster prices even when set to $0
 

@@ -8,8 +8,8 @@ I'm open to suggestions and contributions! Please feel free to create a PR or me
 
 ## Requirements
 
-- Balatro 1.0.0c (or newer)
-- Steamodded v0.9.8 (or newer)
+- Balatro 1.0.1o (or newer)
+- Steamodded v1.0.0 (or newer)
 
 ## How to Install
 - Head over to the releases page: [releases](https://github.com/adambennett/Balatro-DeckCreator/releases/latest)
@@ -23,6 +23,7 @@ I'm open to suggestions and contributions! Please feel free to create a PR or me
 - Load up modded Balatro (see [Steamodded](https://github.com/Steamopollys/Steamodded))
 - Click on the "Mods" button on the main menu
 - Click on "Deck Creator" by Nyoxide
+- Click on "Config"
 - Click on "Create Deck"
 - Choose all the options you would like. Options that are not changed will be defaulted to the normal default game options.
 - Head back to the "General" tab when you're done, and click "Save Deck"

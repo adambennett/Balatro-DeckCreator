@@ -424,7 +424,7 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         if #Utils.customDeckList < 1 then
-            GUI.redrawMainMenu()
+           -- GUI.redrawMainMenu()
             G.FUNCS.DeckCreatorModuleBackToMainMenu()
         else
             for k,v in pairs(Utils.customDeckList) do
@@ -1086,8 +1086,8 @@ function GUI.registerGlobals()
         GUI.addCard.suitKey = string.sub(args.to_val, 1, 1)
         if ModloaderHelper.SteamoddedLoaded then
             for _, v in pairs(SMODS.Card.SUITS) do
-                if v.name == args.to_val then
-                    GUI.addCard.suitKey = v.prefix
+                if v.key == args.to_val then
+                    GUI.addCard.suitKey = v.card_key
                     break
                 end
             end
@@ -1448,6 +1448,7 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleBackToMainMenu = function()
+        sendTraceMessage("Trying to back out", "DeckCreatorLog")
         G.SETTINGS.paused = true
         GUI.CloseAllOpenFlags()
         Utils.currentShopJokerPage = 1
@@ -1457,7 +1458,8 @@ function GUI.registerGlobals()
             G.FUNCS.overlay_menu({
                 definition = GUI.createBalamodMenu()
             })
-        elseif ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Steamodded' then
+        elseif ModloaderHelper.SteamoddedLoaded then
+            sendTraceMessage("STEAMODDED", "DeckCreatorLog")
             G.FUNCS.overlay_menu({
                 definition = create_UIBox_mods()
             })
@@ -1562,9 +1564,12 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         GUI.CloseAllOpenFlags()
-        GUI.redrawMainMenu()
+        --GUI.redrawMainMenu()
         GUI.addCard = GUI.resetAddCard()
-        G.FUNCS:exit_overlay_menu()
+        --G.FUNCS:exit_overlay_menu()
+        G.FUNCS.overlay_menu({
+            definition = create_UIBox_mods()
+        })
     end
 end
 
@@ -1611,82 +1616,93 @@ end
 
 function GUI.redrawMainMenu()
     if ModloaderHelper.SteamoddedLoaded then
-        SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
+        --SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
     end
 end
 
 function GUI.mainMenu()
+    sendTraceMessage("Building menu", "DeckCreatorLogger")
     return {
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.5,
-                align = "cm"
-            },
-            nodes = {
+        n = G.UIT.ROOT,
+		config = {
+			r = 0.1,
+			minh = 6,
+			minw = 6,
+			align = 'cm',
+			colour = G.C.CLEAR
+		},
+        nodes = {
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.5,
+                    align = "cm"
+                },
+                nodes = {
 
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+                }
             },
-            nodes = {
-                UIBox_button({
-                    label = {" Create Deck "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.GREEN,
-                    button = "DeckCreatorModuleOpenCreateDeck",
-                    minh = 0.8,
-                    minw = 8
-                })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Create Deck "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.GREEN,
+                        button = "DeckCreatorModuleOpenCreateDeck",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             },
-            nodes = {
-                #Utils.customDeckList > 0 and UIBox_button({
-                    label = {" Manage Decks "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.BOOSTER,
-                    button = "DeckCreatorModuleOpenManageDecks",
-                    minh = 0.8,
-                    minw = 8
-                }) or UIBox_button({
-                    label = {" No Custom Decks Found "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.RED,
-                    button = "DeckCreatorModuleEmptyFunc",
-                    minh = 0.8,
-                    minw = 8
-                })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    #Utils.customDeckList > 0 and UIBox_button({
+                        label = {" Manage Decks "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.BOOSTER,
+                        button = "DeckCreatorModuleOpenManageDecks",
+                        minh = 0.8,
+                        minw = 8
+                    }) or UIBox_button({
+                        label = {" No Custom Decks Found "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.RED,
+                        button = "DeckCreatorModuleEmptyFunc",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             },
-            nodes = {
-                UIBox_button({
-                    label = {" Source Code "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.GOLD,
-                    button = "DeckCreatorModuleOpenGithub",
-                    minh = 0.8,
-                    minw = 8
-                })
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Source Code "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.GOLD,
+                        button = "DeckCreatorModuleOpenGithub",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             }
         }
     }
@@ -1694,7 +1710,9 @@ end
 
 function GUI.registerModMenuUI()
     if ModloaderHelper.SteamoddedLoaded then
-        SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
+        sendTraceMessage("Registering config menu", "DeckCreatorLogger")
+        SMODS.current_mod.config_tab = GUI.mainMenu
+        ---SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
     end
 end
 
@@ -1956,7 +1974,7 @@ end
 function GUI.createDecksMenu(chosen)
     chosen = chosen or "Main Menu"
     return create_UIBox_generic_options({
-        back_func = GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
+        back_func = "DeckCreatorModuleBackToMainMenu", --GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
         contents = {
             {
                 n = G.UIT.R,
@@ -3504,7 +3522,7 @@ function GUI.addVoucherMenu()
     return create_UIBox_generic_options({ back_func = 'DeckCreatorModuleOpenAddItemToDeck', contents = {
         {n=G.UIT.R, config={align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.BLACK, emboss = 0.05}, nodes=deck_tables},
         {n=G.UIT.R, config={align = "cm"}, nodes={
-            create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_voucher_page', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
+            create_option_cycle({options = voucher_options, w = 4.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeVoucherPage', focus_args = {snap_to = true, nav = 'wide'}, current_option = 1, colour = G.C.RED, no_pips = true})
         }}
     }})
 end
@@ -3638,7 +3656,7 @@ function GUI.addTarotMenu()
                 config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
                 nodes = {
                     {n=G.UIT.R, config={align = "cm"}, nodes={
-                        create_option_cycle({options = tarot_options, w = 2.5, cycle_shoulders = true, opt_callback = 'your_collection_tarot_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+                        create_option_cycle({options = tarot_options, w = 2.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeTarotPage', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
                     }}
                 }
             },
@@ -3778,7 +3796,7 @@ function GUI.addSpectralMenu()
                 config = { align = "cm", minw = 2.5, padding = 0.1, r = 0.1, colour = G.C.CLEAR },
                 nodes = {
                     {n=G.UIT.R, config={align = "cm"}, nodes={
-                        create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'your_collection_spectral_page', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
+                        create_option_cycle({options = spectral_options, w = 4.5, cycle_shoulders = true, opt_callback = 'DeckCreatorModuleChangeSpectralPage', focus_args = {snap_to = true, nav = 'wide'},current_option = 1, colour = G.C.RED, no_pips = true})
                     }}
                 }
             },
@@ -5173,6 +5191,31 @@ function GUI.initializeStaticMods()
             group = "Gameplay",
             label = "Ankh and Hex cannot destroy Jokers",
             property = 'spectral_cards_cannot_destroy_jokers'
+        },
+        {
+            group = "Gameplay",
+            label = "Ectoplasm cannot reduce your hand size",
+            property = 'ectoplasm_cannot_change_hand_size'
+        },
+        {
+            group = "Gameplay",
+            label = "Ouija cannot reduce your hand size",
+            property = 'ouija_cannot_change_hand_size'
+        },
+        {
+            group = "Gameplay",
+            label = "Wraith cannot modify your money",
+            property = 'wraith_cannot_set_money_to_zero'
+        },
+        {
+            group = "Gameplay",
+            label = "Spectral cards add 1 additional Seal",
+            property = 'spectral_seals_add_additional'
+        },
+        {
+            group = "Gameplay",
+            label = "Spectral cards cannot destroy cards in your hand",
+            property = 'no_spectral_destroy_cards'
         },
         {
             group = "Gameplay",

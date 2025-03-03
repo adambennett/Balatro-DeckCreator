@@ -31,13 +31,13 @@ end
 
 local function applyRandomAbilities(card_protos, config)
     -- Define edition and enhancement abilities
-    local editionAbilities = {'polychrome', 'holographic', 'foil'}
+    local editionAbilities = {'polychrome', 'holo', 'foil'}
     local enhancementAbilities = {'m_bonus', 'm_glass', 'm_lucky', 'm_steel', 'm_stone', 'm_wild', 'm_mult', 'm_gold'}
 
     -- Combine edition and enhancement abilities with their counts
     local abilities = {
         {name = 'polychrome', count = config.random_polychrome_cards, isEdition = true},
-        {name = 'holographic', count = config.random_holographic_cards, isEdition = true},
+        {name = 'holo', count = config.random_holographic_cards, isEdition = true},
         {name = 'foil', count = config.random_foil_cards, isEdition = true},
         {name = 'm_bonus', count = config.random_bonus_cards, isEdition = false},
         {name = 'm_mult', count = config.random_mult_cards, isEdition = false},
@@ -111,6 +111,7 @@ local function applyRandomAbilities(card_protos, config)
         if not applied then
             break -- If we can't apply the ability, exit the loop
         end
+        shuffleDeck(card_protos) -- Reshuffle after applying to a card
     end
 end
 
@@ -162,7 +163,7 @@ function CardUtils.initializeCustomCardList(deckObj)
     for k, v in ipairs(card_protos) do
         G.playing_card = (G.playing_card and G.playing_card + 1) or 1
         local _card = Card(G.deck.T.x, G.deck.T.y, G.CARD_W, G.CARD_H, G.P_CARDS[v.suit ..'_'.. v.rank], G.P_CENTERS[v.enhancement or 'c_base'], {playing_card = G.playing_card})
-        if v.edition then _card:set_edition({[v.edition] = true}, true, true) end
+        if v.edition and v.edition ~= 'None' then _card:set_edition({[v.edition] = true}, true, true) end
         if v.seal then _card:set_seal(v.seal, true, true) end
         G.deck:emplace(_card)
         table.insert(G.playing_cards, _card)
@@ -248,7 +249,7 @@ function CardUtils.cardProtoToCardObject(proto, key, x, y)
     }
     local _card = Card(x, y, G.CARD_W, G.CARD_H, G.P_CARDS[cardProto.suit ..'_'.. cardProto.rank], G.P_CENTERS[cardProto.enhancement or 'c_base'])
     _card.uuid = cardProto.key
-    if cardProto.edition then _card:set_edition({[cardProto.edition] = true}, true, true) end
+    if cardProto.edition and cardProto.edition ~= 'None' then _card:set_edition({[cardProto.edition] = true}, true, true) end
     if cardProto.seal then _card:set_seal(cardProto.seal, true, true) end
     return _card
 end
@@ -271,11 +272,13 @@ function CardUtils.generateCardProto(args)
         local randomSuit = list[math.random(1, #list)]
 
         if randomSuit.name ~= nil then
-            generatedCard.suit = randomSuit.name
-            generatedCard.suitKey = randomSuit.prefix
+            generatedCard.suit = randomSuit.key
+            generatedCard.suitKey = randomSuit.card_key
+            sendTraceMessage("Genned suitkey: " .. generatedCard.suitKey, "DeckCreatorLogger")
         else
             generatedCard.suit = randomSuit
             generatedCard.suitKey = string.sub(randomSuit, 1, 1)
+            sendTraceMessage("Genned suitkey: " .. generatedCard.suitKey, "DeckCreatorLogger")
         end
 
 
@@ -392,10 +395,15 @@ function CardUtils.getJokersFromCustomJokerList(deck)
         end
 
         if center then
+            sendTraceMessage(edition, "DeckCreatorLog")
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'joker', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then
+                -- edition = string.lower(edition) -- Lazy fix for Base option
+                card:set_edition{[edition] = true}
+            end
+            if card.edition == 'None' then card.edition = nil end
             if eternal then card:set_eternal(true) end
             if perishable then card:set_perishable() end
             if rental then card:set_rental(true) end
@@ -437,7 +445,7 @@ function CardUtils.getTarotsFromCustomTarotList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'tarot', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then card:set_edition{[edition] = true} end
             table.insert(CardUtils.startingItems.tarots, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -475,7 +483,7 @@ function CardUtils.getPlanetsFromCustomPlanetList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'planet', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then card:set_edition{[edition] = true} end
             table.insert(CardUtils.startingItems.planets, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -513,7 +521,7 @@ function CardUtils.getSpectralsFromCustomSpectralList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'spectral', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then card:set_edition{[edition] = true} end
             table.insert(CardUtils.startingItems.spectrals, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -746,6 +754,7 @@ function CardUtils.addItemToDeck(args)
         end
 
         if newCard then
+            if newCard.edition == 'None' then newCard.edition = nil end
             table.insert(Utils.getCurrentEditingDeck().config[args.ref], newCard)
             local key = 'custom_' .. type .. '_set'
             Utils.getCurrentEditingDeck().config[key] = true
@@ -784,7 +793,7 @@ function CardUtils.getBannedJokersFromBannedJokerList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'joker', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then card:set_edition{[edition] = true} end
             if eternal then card:set_eternal(true) end
             if pinned then card.pinned = true end
             table.insert(CardUtils.bannedItems.jokers, card)
@@ -824,7 +833,7 @@ function CardUtils.getBannedTarotsFromBannedTarotList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'tarot', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then card:set_edition{[edition] = true} end
             table.insert(CardUtils.bannedItems.tarots, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -862,7 +871,7 @@ function CardUtils.getBannedPlanetsFromBannedPlanetList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'planet', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then card:set_edition{[edition] = true} end
             table.insert(CardUtils.bannedItems.planets, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -900,7 +909,7 @@ function CardUtils.getBannedSpectralsFromBannedSpectralList(deck)
             local card = Card(9999, 9999, G.CARD_W, G.CARD_H, nil, center)
             card.uuid = { key = center.key, type = 'spectral', uuid = uuid }
             card.ability.order = (j-1)*4
-            if edition then card:set_edition{[edition] = true} end
+            if edition and edition ~= 'None' then card:set_edition{[edition] = true} end
             table.insert(CardUtils.bannedItems.spectrals, card)
             table.insert(CardUtils.allCardsEverMade, card)
         end
@@ -1282,7 +1291,19 @@ end
 
 -- General purpose utilities
 function CardUtils.standardCardSet()
-    return G.P_CARDS
+    local function deepCopy(original)
+        local copy = {}
+        for k, v in pairs(original) do
+            if type(v) == "table" then
+                copy[k] = deepCopy(v) -- Recursive copy for nested tables
+            else
+                copy[k] = v -- Directly copy non-table values
+            end
+        end
+        return copy
+    end
+
+    return deepCopy(G.P_CARDS)
     --[[return {
         H_2={name = "2 of Hearts",value = '2', suit = 'Hearts', pos = {x=0,y=0}},
         H_3={name = "3 of Hearts",value = '3', suit = 'Hearts', pos = {x=1,y=0}},
