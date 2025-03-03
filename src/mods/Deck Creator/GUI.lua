@@ -77,7 +77,7 @@ end
 function GUI.resetOpenStartingItemConfig()
     GUI.OpenStartingItemConfig = {}
     GUI.OpenStartingItemConfig.openItemType = nil
-    GUI.OpenStartingItemConfig.edition = "base"
+    GUI.OpenStartingItemConfig.edition = "None"
     GUI.OpenStartingItemConfig.copies = 1
     GUI.OpenStartingItemConfig.pinned = false
     GUI.OpenStartingItemConfig.eternal = false
@@ -1094,7 +1094,7 @@ function GUI.registerGlobals()
         end
     end
     G.FUNCS.DeckCreatorModuleAddCardChangeEdition = function(args)
-        GUI.addCard.edition = string.lower(args.to_val)
+        GUI.addCard.edition = args.to_val
         GUI.addCard.editionKey = string.lower(args.to_val)
         if GUI.addCard.editionKey == 'holographic' then
             GUI.addCard.editionKey = 'holo'
@@ -5191,6 +5191,31 @@ function GUI.initializeStaticMods()
             group = "Gameplay",
             label = "Ankh and Hex cannot destroy Jokers",
             property = 'spectral_cards_cannot_destroy_jokers'
+        },
+        {
+            group = "Gameplay",
+            label = "Ectoplasm cannot reduce your hand size",
+            property = 'ectoplasm_cannot_change_hand_size'
+        },
+        {
+            group = "Gameplay",
+            label = "Ouija cannot reduce your hand size",
+            property = 'ouija_cannot_change_hand_size'
+        },
+        {
+            group = "Gameplay",
+            label = "Wraith cannot modify your money",
+            property = 'wraith_cannot_set_money_to_zero'
+        },
+        {
+            group = "Gameplay",
+            label = "Spectral cards add 1 additional Seal",
+            property = 'spectral_seals_add_additional'
+        },
+        {
+            group = "Gameplay",
+            label = "Spectral cards cannot destroy cards in your hand",
+            property = 'no_spectral_destroy_cards'
         },
         {
             group = "Gameplay",

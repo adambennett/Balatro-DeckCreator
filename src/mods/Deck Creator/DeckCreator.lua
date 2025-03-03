@@ -8,11 +8,9 @@ local ModloaderHelper = require "ModloaderHelper"
 local DeckCreator = {}
 DeckCreator.hadPaintbrush = false
 DeckCreator.hadPalette = false
-DeckCreator.DKC = nil
 
-function DeckCreator.Enable(dkc)
+function DeckCreator.Enable()
 
-    DeckCreator.DKC = dkc
     ModloaderHelper.DeckCreatorLoader = true
     Utils.disabledSlugs = {}
     Utils.registerGlobals()
@@ -20,7 +18,7 @@ function DeckCreator.Enable(dkc)
     GUI.registerGlobals()
     Helper.registerGlobals()
     Persistence.loadAllDeckLists()
-    GUI.setupCustomModMenuUI(DeckCreator.DKC)
+    GUI.registerModMenuUI()
     GUI.initializeStaticMods()
     Utils.boosterKeys()
     -- This is missing from the 0.9.8 compatibility layer. Gotta fix it someday
@@ -201,7 +199,7 @@ function DeckCreator.Enable(dkc)
 
     local UseConsumeable = Card.use_consumeable
     function Card:use_consumeable(area, copier)
-        local consumableChangesNeeded = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.death_targets_random_card or G.GAME.selected_back.effect.config.spectral_cards_cannot_destroy_jokers) or false
+        local consumableChangesNeeded = G.GAME and G.GAME.selected_back and G.GAME.selected_back.effect and G.GAME.selected_back.effect.config and G.GAME.selected_back.effect.config.customDeck and (G.GAME.selected_back.effect.config.death_targets_random_card or G.GAME.selected_back.effect.config.spectral_cards_cannot_destroy_jokers or G.GAME.selected_back.effect.config.ectoplasm_cannot_change_hand_size or G.GAME.selected_back.effect.config.ouija_cannot_change_hand_size or G.GAME.selected_back.effect.config.spectral_seals_add_additional or G.GAME.selected_back.effect.config.no_spectral_destroy_cards or G.GAME.selected_back.effect.config.wraith_cannot_set_money_to_zero) or false
 
         if consumableChangesNeeded == false then
             UseConsumeable(self, area, copier)
@@ -210,7 +208,12 @@ function DeckCreator.Enable(dkc)
 
         local deathChanges = (self.ability.consumeable.mod_conv or self.ability.consumeable.suit_conv) and self.ability.name == 'Death' and G.GAME.selected_back.effect.config.death_targets_random_card
         local noSpectralJokerKill = G.GAME.selected_back.effect.config.spectral_cards_cannot_destroy_jokers and (self.ability.name == 'Ankh' or self.ability.name == 'Hex')
-        local anyOverrides = deathChanges or noSpectralJokerKill
+        local noEctoplasmHandChange = G.GAME.selected_back.effect.config.ectoplasm_cannot_change_hand_size and self.ability.name == 'Ectoplasm'
+        local noOuijaHandChange = G.GAME.selected_back.effect.config.ouija_cannot_change_hand_size and self.ability.name == 'Ouija'
+        local noWraithDeleteMoney = G.GAME.selected_back.effect.config.wraith_cannot_set_money_to_zero and self.ability.name == 'Wraith'
+        local noSpectralDestroyCards = G.GAME.selected_back.effect.config.no_spectral_destroy_cards and (self.ability.name == 'Familiar' or self.ability.name == 'Grim' or self.ability.name == 'Incantation' or self.ability.name == 'Immolate')
+        local spectralSealsAddAdditional = G.GAME.selected_back.effect.config.spectral_seals_add_additional and (self.ability.name == 'Talisman' or self.ability.name == 'Deja Vu' or self.ability.name == 'Trance' or self.ability.name == 'Medium')
+        local anyOverrides = deathChanges or noSpectralJokerKill or noEctoplasmHandChange or noOuijaHandChange or noWraithDeleteMoney or noSpectralDestroyCards or spectralSealsAddAdditional
         local used_tarot
         if anyOverrides then
             stop_use()
@@ -222,7 +225,88 @@ function DeckCreator.Enable(dkc)
                 update_hand_text({immediate = true, nopulse = true, delay = 0}, {mult = 0, chips = 0, level = '', handname = ''})
             end
         end
-        if deathChanges then
+
+        if noSpectralDestroyCards then
+            if self.ability.name == 'Familiar' or self.ability.name == 'Grim' or self.ability.name == 'Incantation' then
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                    play_sound('tarot1')
+                    used_tarot:juice_up(0.3, 0.5)
+                    return true end }))
+                G.E_MANAGER:add_event(Event({
+                    trigger = 'after',
+                    delay = 0.7,
+                    func = function()
+                        local cards = {}
+                        for i=1, self.ability.extra do
+                            cards[i] = true
+                            local _suit, _rank = nil, nil
+                            if self.ability.name == 'Familiar' then
+                                _rank = pseudorandom_element({'J', 'Q', 'K'}, pseudoseed('familiar_create'))
+                                _suit = pseudorandom_element({'S','H','D','C'}, pseudoseed('familiar_create'))
+                            elseif self.ability.name == 'Grim' then
+                                _rank = 'A'
+                                _suit = pseudorandom_element({'S','H','D','C'}, pseudoseed('grim_create'))
+                            elseif self.ability.name == 'Incantation' then
+                                _rank = pseudorandom_element({'2', '3', '4', '5', '6', '7', '8', '9', 'T'}, pseudoseed('incantation_create'))
+                                _suit = pseudorandom_element({'S','H','D','C'}, pseudoseed('incantation_create'))
+                            end
+                            _suit = _suit or 'S'; _rank = _rank or 'A'
+                            local cen_pool = {}
+                            for k, v in pairs(G.P_CENTER_POOLS["Enhanced"]) do
+                                if v.key ~= 'm_stone' then
+                                    cen_pool[#cen_pool+1] = v
+                                end
+                            end
+                            create_playing_card({front = G.P_CARDS[_suit..'_'.._rank], center = pseudorandom_element(cen_pool, pseudoseed('spe_card'))}, G.hand, nil, i ~= 1, {G.C.SECONDARY_SET.Spectral})
+                        end
+                        playing_card_joker_effects(cards)
+                        return true end }))
+            elseif self.ability.name == 'Immolate' then
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                    play_sound('tarot1')
+                    used_tarot:juice_up(0.3, 0.5)
+                    return true end }))
+                ease_dollars(self.ability.extra.dollars)
+            end
+        elseif noWraithDeleteMoney then
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                play_sound('timpani')
+                local card = create_card('Joker', G.jokers, nil, 0.99, nil, nil, nil, 'wra')
+                card:add_to_deck()
+                G.jokers:emplace(card)
+                used_tarot:juice_up(0.3, 0.5)
+                return true end }))
+            delay(0.6)
+        elseif spectralSealsAddAdditional then
+            local conv_card = G.hand.highlighted[1]
+            G.E_MANAGER:add_event(Event({func = function()
+                play_sound('tarot1')
+                used_tarot:juice_up(0.3, 0.5)
+                return true end }))
+
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.1,func = function()
+                conv_card:set_seal(self.ability.extra, nil, true)
+                return true end }))
+
+            delay(0.5)
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
+
+            local eligibleCards = {}
+            for i = 1, #G.hand.cards do
+                if G.hand.cards[i] ~= conv_card and G.hand.cards[i].seal == nil then
+                    table.insert(eligibleCards, G.hand.cards[i])
+                end
+            end
+
+            local randomCard
+            if #eligibleCards > 0 then
+                local randomIndex = math.random(#eligibleCards)
+                randomCard = eligibleCards[randomIndex]
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.1,func = function()
+                    randomCard:set_seal(self.ability.extra, nil, true)
+                    return true end }))
+            end
+        elseif deathChanges then
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
                 play_sound('tarot1')
                 used_tarot:juice_up(0.3, 0.5)
@@ -280,6 +364,44 @@ function DeckCreator.Enable(dkc)
             }))
 
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
+            delay(0.5)
+        elseif noEctoplasmHandChange then
+            local temp_pool = (self.ability.name == 'The Wheel of Fortune' and self.eligible_strength_jokers) or
+                    ((self.ability.name == 'Ectoplasm' or self.ability.name == 'Hex') and self.eligible_editionless_jokers) or {}
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                local eligible_card = pseudorandom_element(temp_pool, pseudoseed(
+                        (self.ability.name == 'The Wheel of Fortune' and 'wheel_of_fortune') or
+                                (self.ability.name == 'Ectoplasm' and 'ectoplasm') or
+                                (self.ability.name == 'Hex' and 'hex')
+                ))
+                local edition = {negative = true}
+                eligible_card:set_edition(edition, true)
+                check_for_unlock({type = 'have_edition'})
+                used_tarot:juice_up(0.3, 0.5)
+                return true end }))
+        elseif noOuijaHandChange then
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                play_sound('tarot1')
+                used_tarot:juice_up(0.3, 0.5)
+                return true end }))
+            for i=1, #G.hand.cards do
+                local percent = 1.15 - (i-0.999)/(#G.hand.cards-0.998)*0.3
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.cards[i]:flip();play_sound('card1', percent);G.hand.cards[i]:juice_up(0.3, 0.3);return true end }))
+            end
+            delay(0.2)
+            local _rank = pseudorandom_element({'2','3','4','5','6','7','8','9','T','J','Q','K','A'}, pseudoseed('ouija'))
+            for i=1, #G.hand.cards do
+                G.E_MANAGER:add_event(Event({func = function()
+                    local card = G.hand.cards[i]
+                    local suit_prefix = string.sub(card.base.suit, 1, 1)..'_'
+                    local rank_suffix =_rank
+                    card:set_base(G.P_CARDS[suit_prefix..rank_suffix])
+                    return true end }))
+            end
+            for i=1, #G.hand.cards do
+                local percent = 0.85 + (i-0.999)/(#G.hand.cards-0.998)*0.3
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.cards[i]:flip();play_sound('tarot2', percent, 0.6);G.hand.cards[i]:juice_up(0.3, 0.3);return true end }))
+            end
             delay(0.5)
         elseif noSpectralJokerKill then
             if self.ability.name == 'Ankh' then

@@ -7,7 +7,6 @@
 ----------------------------------------------
 ------------MOD CODE -------------------------
 
-DKC = SMODS.current_mod
 local moduleCache = {}
 
 local function customLoader(moduleName)
@@ -59,7 +58,7 @@ function SMODS.INIT.DeckCreatorModule()
     local Loader = require "ModloaderHelper"
     Loader.SteamoddedLoaded = true
     if Loader.BalamodLoaded == false then
-        require "DeckCreator".Enable(DKC)
+        require "DeckCreator".Enable()
     end
 end
 

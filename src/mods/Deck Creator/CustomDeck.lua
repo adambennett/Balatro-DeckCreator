@@ -55,6 +55,11 @@ function CustomDeck:blankDeck()
         voucher_slots = 1,
         destroy_random_joker_after_ante_four = 0,
         spectral_cards_cannot_destroy_jokers = false,
+        ectoplasm_cannot_change_hand_size = false,
+        ouija_cannot_change_hand_size = false,
+        wraith_cannot_set_money_to_zero = false,
+        no_spectral_destroy_cards = false,
+        spectral_seals_add_additional = false,
         destroy_joker_on_broken_glass = 0,
         make_stones_lucky = 0,
         random_sell_value_decrease = 0,
@@ -375,6 +380,11 @@ function CustomDeck:fullNew(name, loc_txt, dollars, handSize, discards, hands, r
         voucher_slots = voucher_slots,
         destroy_random_joker_after_ante_four = destroy_random_joker_after_ante_four,
         spectral_cards_cannot_destroy_jokers = spectral_cards_cannot_destroy_jokers,
+        ectoplasm_cannot_change_hand_size = extension.ectoplasm_cannot_change_hand_size,
+        ouija_cannot_change_hand_size = extension.ouija_cannot_change_hand_size,
+        wraith_cannot_set_money_to_zero = extension.wraith_cannot_set_money_to_zero,
+        no_spectral_destroy_cards = extension.no_spectral_destroy_cards,
+        spectral_seals_add_additional = extension.spectral_seals_add_additional,
         destroy_joker_on_broken_glass = destroy_joker_on_broken_glass,
         make_stones_lucky = make_stones_lucky,
         random_sell_value_decrease = random_sell_value_decrease,
@@ -846,6 +856,11 @@ function CustomDeck.fullNewFromExisting(deck, descTable, updateUUID)
                 one_free_item_in_shop = deck.config.one_free_item_in_shop,
                 death_targets_random_card = deck.config.death_targets_random_card,
                 chance_for_negative_joker_on_blue_seal_trigger = deck.config.chance_for_negative_joker_on_blue_seal_trigger,
+                ectoplasm_cannot_change_hand_size = deck.config.ectoplasm_cannot_change_hand_size,
+                ouija_cannot_change_hand_size = deck.config.ouija_cannot_change_hand_size,
+                wraith_cannot_set_money_to_zero = deck.config.wraith_cannot_set_money_to_zero,
+                no_spectral_destroy_cards = deck.config.no_spectral_destroy_cards,
+                spectral_seals_add_additional = deck.config.spectral_seals_add_additional
             }
     )
 end
