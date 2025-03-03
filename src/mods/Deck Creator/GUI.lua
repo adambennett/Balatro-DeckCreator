@@ -55,10 +55,10 @@ function GUI.CloseAllOpenFlags()
     GUI.closeAllHoveredObjects()
     GUI.resetOpenStartingItemConfig()
     GUI.resetOpenBannedItemConfig()
-    --[[if G.GAME and G.GAME.viewed_back then
+    if G.GAME and G.GAME.viewed_back then
         G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[1])
         G.PROFILES[G.SETTINGS.profile].MEMORY.deck = "Red Deck"
-    end]]
+    end
 end
 
 function GUI.setOpenTab(tab)
@@ -77,7 +77,7 @@ end
 function GUI.resetOpenStartingItemConfig()
     GUI.OpenStartingItemConfig = {}
     GUI.OpenStartingItemConfig.openItemType = nil
-    GUI.OpenStartingItemConfig.edition = "None"
+    GUI.OpenStartingItemConfig.edition = "base"
     GUI.OpenStartingItemConfig.copies = 1
     GUI.OpenStartingItemConfig.pinned = false
     GUI.OpenStartingItemConfig.eternal = false
@@ -424,15 +424,15 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         if #Utils.customDeckList < 1 then
-            -- GUI.redrawMainMenu()
+           -- GUI.redrawMainMenu()
             G.FUNCS.DeckCreatorModuleBackToMainMenu()
         else
-            --[[ for k,v in pairs(Utils.customDeckList) do
+            for k,v in pairs(Utils.customDeckList) do
                 if v.config and v.config.centerPosition then
                     G.GAME.viewed_back:change_to(G.P_CENTER_POOLS.Back[v.config.centerPosition])
                     break
                 end
-            end ]]
+            end
             G.FUNCS.overlay_menu({
                 definition = GUI.createManageDecksMenu()
             })
@@ -1084,17 +1084,17 @@ function GUI.registerGlobals()
     G.FUNCS.DeckCreatorModuleAddCardChangeSuit = function(args)
         GUI.addCard.suit = args.to_val
         GUI.addCard.suitKey = string.sub(args.to_val, 1, 1)
-        --[[ if ModloaderHelper.SteamoddedLoaded then
+        if ModloaderHelper.SteamoddedLoaded then
             for _, v in pairs(SMODS.Card.SUITS) do
-                if v.name == args.to_val then
-                    GUI.addCard.suitKey = v.prefix
+                if v.key == args.to_val then
+                    GUI.addCard.suitKey = v.card_key
                     break
                 end
             end
-        end ]]
+        end
     end
     G.FUNCS.DeckCreatorModuleAddCardChangeEdition = function(args)
-        GUI.addCard.edition = args.to_val
+        GUI.addCard.edition = string.lower(args.to_val)
         GUI.addCard.editionKey = string.lower(args.to_val)
         if GUI.addCard.editionKey == 'holographic' then
             GUI.addCard.editionKey = 'holo'
@@ -1448,19 +1448,22 @@ function GUI.registerGlobals()
     end
 
     G.FUNCS.DeckCreatorModuleBackToMainMenu = function()
-        -- G.SETTINGS.paused = true
+        sendTraceMessage("Trying to back out", "DeckCreatorLog")
+        G.SETTINGS.paused = true
         GUI.CloseAllOpenFlags()
         Utils.currentShopJokerPage = 1
         GUI.ManageDecksConfig.manageDecksOpen = false
         GUI.addCard = GUI.resetAddCard()
-        G.FUNCS:exit_overlay_menu()
-        --[[if ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Balamod' then
+        if ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Balamod' then
             G.FUNCS.overlay_menu({
                 definition = GUI.createBalamodMenu()
             })
-        elseif ModloaderHelper.ModsMenuOpenedBy and ModloaderHelper.ModsMenuOpenedBy == 'Steamodded' then
-            G.FUNCS:exit_overlay_menu()
-        end]]
+        elseif ModloaderHelper.SteamoddedLoaded then
+            sendTraceMessage("STEAMODDED", "DeckCreatorLog")
+            G.FUNCS.overlay_menu({
+                definition = create_UIBox_mods()
+            })
+        end
     end
 
     G.FUNCS.DeckCreatorModuleBackToModsScreen = function()
@@ -1561,9 +1564,12 @@ function GUI.registerGlobals()
         Persistence.refreshDeckList()
         Persistence.saveAllDecks()
         GUI.CloseAllOpenFlags()
-        -- GUI.redrawMainMenu()
+        --GUI.redrawMainMenu()
         GUI.addCard = GUI.resetAddCard()
-        G.FUNCS:exit_overlay_menu()
+        --G.FUNCS:exit_overlay_menu()
+        G.FUNCS.overlay_menu({
+            definition = create_UIBox_mods()
+        })
     end
 end
 
@@ -1609,96 +1615,104 @@ function GUI.runBanAllFlips()
 end
 
 function GUI.redrawMainMenu()
-    G.FUNCS:exit_overlay_menu()
-end
-
-function GUI.mainMenuCustomUI(modNodes)
-    local customUI = GUI.mainMenu()
-    for _, uiElement in ipairs(customUI) do
-        table.insert(modNodes, uiElement)
+    if ModloaderHelper.SteamoddedLoaded then
+        --SMODS.customUIElements["ADeckCreatorModule"] = GUI.mainMenu()
     end
 end
 
 function GUI.mainMenu()
+    sendTraceMessage("Building menu", "DeckCreatorLogger")
     return {
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.5,
-                align = "cm"
-            },
-            nodes = {
+        n = G.UIT.ROOT,
+		config = {
+			r = 0.1,
+			minh = 6,
+			minw = 6,
+			align = 'cm',
+			colour = G.C.CLEAR
+		},
+        nodes = {
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.5,
+                    align = "cm"
+                },
+                nodes = {
 
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+                }
             },
-            nodes = {
-                UIBox_button({
-                    label = {" Create Deck "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.GREEN,
-                    button = "DeckCreatorModuleOpenCreateDeck",
-                    minh = 0.8,
-                    minw = 8
-                })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Create Deck "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.GREEN,
+                        button = "DeckCreatorModuleOpenCreateDeck",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             },
-            nodes = {
-                #Utils.customDeckList > 0 and UIBox_button({
-                    label = {" Manage Decks "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.BOOSTER,
-                    button = "DeckCreatorModuleOpenManageDecks",
-                    minh = 0.8,
-                    minw = 8
-                }) or UIBox_button({
-                    label = {" No Custom Decks Found "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.RED,
-                    button = "DeckCreatorModuleEmptyFunc",
-                    minh = 0.8,
-                    minw = 8
-                })
-            }
-        },
-        {
-            n = G.UIT.R,
-            config = {
-                padding = 0.1,
-                align = "cm"
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    #Utils.customDeckList > 0 and UIBox_button({
+                        label = {" Manage Decks "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.BOOSTER,
+                        button = "DeckCreatorModuleOpenManageDecks",
+                        minh = 0.8,
+                        minw = 8
+                    }) or UIBox_button({
+                        label = {" No Custom Decks Found "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.RED,
+                        button = "DeckCreatorModuleEmptyFunc",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             },
-            nodes = {
-                UIBox_button({
-                    label = {" Source Code "},
-                    shadow = true,
-                    scale = 0.75 * 0.5,
-                    colour = G.C.GOLD,
-                    button = "DeckCreatorModuleOpenGithub",
-                    minh = 0.8,
-                    minw = 8
-                })
+            {
+                n = G.UIT.R,
+                config = {
+                    padding = 0.1,
+                    align = "cm"
+                },
+                nodes = {
+                    UIBox_button({
+                        label = {" Source Code "},
+                        shadow = true,
+                        scale = 0.75 * 0.5,
+                        colour = G.C.GOLD,
+                        button = "DeckCreatorModuleOpenGithub",
+                        minh = 0.8,
+                        minw = 8
+                    })
+                }
             }
         }
     }
 end
 
-function GUI.setupCustomModMenuUI(dkc)
-    if ModloaderHelper.SteamoddedLoaded and dkc ~= nil then
-        dkc.custom_ui = GUI.mainMenuCustomUI
+function GUI.registerModMenuUI()
+    if ModloaderHelper.SteamoddedLoaded then
+        sendTraceMessage("Registering config menu", "DeckCreatorLogger")
+        SMODS.current_mod.config_tab = GUI.mainMenu
+        ---SMODS.registerUIElement("ADeckCreatorModule", GUI.mainMenu())
     end
 end
 
@@ -1960,7 +1974,7 @@ end
 function GUI.createDecksMenu(chosen)
     chosen = chosen or "Main Menu"
     return create_UIBox_generic_options({
-        back_func = "DeckCreatorModuleBackToMainMenu", -- GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
+        back_func = "DeckCreatorModuleBackToMainMenu", --GUI.ManageDecksConfig.manageDecksOpen and "DeckCreatorModuleOpenManageDecks" or "DeckCreatorModuleBackToMainMenu",
         contents = {
             {
                 n = G.UIT.R,
@@ -2654,7 +2668,7 @@ function GUI.createManageDecksMenu()
         }
     }
     return create_UIBox_generic_options({
-        back_func = "exit_overlay_menu", --"DeckCreatorModuleBackToMainMenu",
+        back_func = "DeckCreatorModuleBackToMainMenu",
         contents = {
             {n=G.UIT.R, config={align = "cm", padding = 0, draw_layer = 1 }, nodes={
                 t

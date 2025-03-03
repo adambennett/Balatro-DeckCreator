@@ -23,6 +23,13 @@ function DeckCreator.Enable(dkc)
     GUI.setupCustomModMenuUI(DeckCreator.DKC)
     GUI.initializeStaticMods()
     Utils.boosterKeys()
+    -- This is missing from the 0.9.8 compatibility layer. Gotta fix it someday
+    SMODS.Card.RANK_SHORTHAND_LOOKUP = {
+        ['J'] = 'Jack',
+        ['Q'] = 'Queen',
+        ['K'] = 'King',
+        ['A'] = 'Ace',
+    }
 
 
     --[[local Shop = G.UIDEF.shop
@@ -1985,6 +1992,9 @@ function DeckCreator.Enable(dkc)
             end
 
             self:remove()
+            if Utils.getCurrentEditingDeck().config.custom_cards_set == false then
+                Utils.getCurrentEditingDeck().config.custom_cards_set = true
+            end
 
             local memoryBefore = Utils.checkMemory()
             GUI.updateAllDeckEditorAreas()
@@ -2622,6 +2632,7 @@ function DeckCreator.Enable(dkc)
         local deck = self.GAME.viewed_back
 
         if deck and deck.effect and deck.effect.config and deck.effect.config.customDeck and not saveTable then
+            sendTraceMessage("Setting starting items", "DeckCreatorLog")
             args = args or {}
             args.challenge = {}
             args.challenge.jokers = {}
@@ -2672,6 +2683,7 @@ function DeckCreator.Enable(dkc)
         local originalResult = GameStartRun(self, args)
 
         -- re-set deck var after original function modifies
+        -- theres a bug here, somewhere
         deck = self.GAME.selected_back
 
         if deck.effect.config.customDeck then
@@ -2704,29 +2716,35 @@ function DeckCreator.Enable(dkc)
                 end
             end
 
-            if deck.effect.config.custom_cards_set then
-                CardUtils.initializeCustomCardList(deck)
-            else
-                local config = deck.effect.config
-                local randomizeRanks = config.randomize_ranks
-                local randomizeSuits = config.randomize_suits
-                local noNumbered = config.no_numbered_cards
-                local noAces = config.no_aces
-                local poly = config.random_polychrome_cards
-                local holo = config.random_holographic_cards
-                local foil = config.random_foil_cards
-                local edition = config.random_edition_cards
-                local bonus = config.random_bonus_cards
-                local glass = config.random_glass_cards
-                local lucky = config.random_lucky_cards
-                local steel = config.random_steel_cards
-                local stone = config.random_stone_cards
-                local wild = config.random_wild_cards
-                local mult = config.random_mult_cards
-                local enhance = config.random_enhancement_cards
-                if randomizeRanks or randomizeSuits or noNumbered or noAces or poly > 0 or holo > 0 or foil > 0 or edition > 0 or bonus > 0 or glass > 0 or lucky > 0 or steel > 0 or stone > 0 or wild > 0 or mult > 0 or enhance > 0 then
-                    config.customCardList = CardUtils.standardCardSet()
+
+            if not saveTable then
+                if deck.effect.config.custom_cards_set then
+                    sendTraceMessage("Playing custom deck", "DeckCreatorLog")
                     CardUtils.initializeCustomCardList(deck)
+                else
+                    sendTraceMessage("Playing normal deck", "DeckCreatorLog")
+                    local config = deck.effect.config
+                    local randomizeRanks = config.randomize_ranks
+                    local randomizeSuits = config.randomize_suits
+                    local noNumbered = config.no_numbered_cards
+                    local noAces = config.no_aces
+                    local poly = config.random_polychrome_cards
+                    local holo = config.random_holographic_cards
+                    local foil = config.random_foil_cards
+                    local edition = config.random_edition_cards
+                    local bonus = config.random_bonus_cards
+                    local glass = config.random_glass_cards
+                    local lucky = config.random_lucky_cards
+                    local steel = config.random_steel_cards
+                    local gold = config.random_gold_cards
+                    local stone = config.random_stone_cards
+                    local wild = config.random_wild_cards
+                    local mult = config.random_mult_cards
+                    local enhance = config.random_enhancement_cards
+                    if randomizeRanks or randomizeSuits or noNumbered or noAces or poly > 0 or holo > 0 or foil > 0 or edition > 0 or bonus > 0 or glass > 0 or lucky > 0 or gold > 0 or steel > 0 or stone > 0 or wild > 0 or mult > 0 or enhance > 0 then
+                        config.customCardList = CardUtils.standardCardSet()
+                        CardUtils.initializeCustomCardList(deck)
+                    end
                 end
             end
 

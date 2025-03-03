@@ -68,6 +68,7 @@ function Utils.log(message)
     if Utils.mode ~= "PROD" and sendDebugMessage ~= nil then
         sendInfoMessage(message, "DeckCreatorModule")
     end
+    sendDebugMessage(message, "DeckCreatorModule")
 end
 
 function Utils.checkMemory()
@@ -226,7 +227,7 @@ function Utils.suits(includeRandom, fullObject)
             if fullObject ~= nil then
                 table.insert(output, v)
             else
-                table.insert(output, v.name)
+                table.insert(output, v.key)
             end
         end
     else
@@ -247,7 +248,7 @@ function Utils.protoSuits()
     local output = {}
     if ModloaderHelper.SteamoddedLoaded then
         for k,v in pairs(SMODS.Card.SUITS) do
-            table.insert(output, v.prefix)
+            table.insert(output, v.card_key)
         end
     else
         output = {
@@ -278,7 +279,7 @@ function Utils.editions(includeNegative, includeRandom)
     includeRandom = includeRandom or false
     includeNegative = includeNegative or false
     local output = {
-        "None",
+        "base",
         "Foil",
         "Holo",
         "Polychrome",
