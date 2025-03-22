@@ -339,7 +339,7 @@ function DeckCreator.Enable()
                 local randomIndex = math.random(#eligibleCards)
                 randomCard = eligibleCards[randomIndex]
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.1, func = function()
-                    copy_card(rightmost, randomCard)
+                    Utils.copyCard(rightmost, randomCard)
                     return true
                 end}))
             end
@@ -376,7 +376,6 @@ function DeckCreator.Enable()
                 ))
                 local edition = {negative = true}
                 eligible_card:set_edition(edition, true)
-                check_for_unlock({type = 'have_edition'})
                 used_tarot:juice_up(0.3, 0.5)
                 return true end }))
         elseif noOuijaHandChange then
@@ -423,7 +422,7 @@ function DeckCreator.Enable()
 
                 local chosen_joker = pseudorandom_element(G.jokers.cards, pseudoseed('ankh_choice'))
                 G.E_MANAGER:add_event(Event({trigger = 'before', delay = 0.4, func = function()
-                    local card = copy_card(chosen_joker, nil, nil, nil, chosen_joker.edition and chosen_joker.edition.negative)
+                    local card = Utils.copyCard(chosen_joker, nil, nil, nil, chosen_joker.edition and chosen_joker.edition.negative)
                     card:start_materialize()
                     card:add_to_deck()
                     if card.edition and card.edition.negative then
@@ -439,7 +438,6 @@ function DeckCreator.Enable()
                     local eligible_card = pseudorandom_element(temp_pool, pseudoseed('hex'))
                     local edition = {polychrome = true}
                     eligible_card:set_edition(edition, true)
-                    check_for_unlock({type = 'have_edition'})
                     used_tarot:juice_up(0.3, 0.5)
                     return true end
                 }))

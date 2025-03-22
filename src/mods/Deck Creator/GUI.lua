@@ -3047,7 +3047,7 @@ function GUI.dynamicDeckEditorAreaDeckTables()
             for i = 1, #SUITS[suit_map[j]] do
                 if SUITS[suit_map[j]][i] then
                     local _scale = 0.7
-                    local copy = copy_card(SUITS[suit_map[j]][i], nil, _scale)
+                    local copy = Utils.copyCard(SUITS[suit_map[j]][i], nil, _scale)
                     copy.uuid = SUITS[suit_map[j]][i].uuid
                     copy.greyed = nil
                     copy.T.x = view_deck.T.x + view_deck.T.w/2
@@ -3350,7 +3350,7 @@ function GUI.dynamicStartingItemsAreaDeckTables()
         if CardUtils.startingItems.vouchers[i] then
             local base = CardUtils.startingItems.vouchers[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = voucherArea.T.x + voucherArea.T.w/2
@@ -3377,7 +3377,7 @@ function GUI.dynamicStartingItemsAreaDeckTables()
         if CardUtils.startingItems.tarots[i] then
             local base = CardUtils.startingItems.tarots[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = consumableArea.T.x + consumableArea.T.w/2
@@ -3391,7 +3391,7 @@ function GUI.dynamicStartingItemsAreaDeckTables()
         if CardUtils.startingItems.planets[i] then
             local base = CardUtils.startingItems.planets[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = consumableArea.T.x + consumableArea.T.w/2
@@ -3405,7 +3405,7 @@ function GUI.dynamicStartingItemsAreaDeckTables()
         if CardUtils.startingItems.spectrals[i] then
             local base = CardUtils.startingItems.spectrals[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = consumableArea.T.x + consumableArea.T.w/2
@@ -3432,7 +3432,7 @@ function GUI.dynamicStartingItemsAreaDeckTables()
         if CardUtils.startingItems.jokers[i] then
             local base = CardUtils.startingItems.jokers[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = jokerArea.T.x + jokerArea.T.w/2
@@ -4215,7 +4215,7 @@ function GUI.dynamicBannedItemsAreaDeckTables()
         if CardUtils.bannedItems.vouchers[i] then
             local base = CardUtils.bannedItems.vouchers[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = voucherArea.T.x + voucherArea.T.w/2
@@ -4242,7 +4242,7 @@ function GUI.dynamicBannedItemsAreaDeckTables()
         if CardUtils.bannedItems.tarots[i] then
             local base = CardUtils.bannedItems.tarots[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = consumableArea.T.x + consumableArea.T.w/2
@@ -4256,7 +4256,7 @@ function GUI.dynamicBannedItemsAreaDeckTables()
         if CardUtils.bannedItems.planets[i] then
             local base = CardUtils.bannedItems.planets[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = consumableArea.T.x + consumableArea.T.w/2
@@ -4270,7 +4270,7 @@ function GUI.dynamicBannedItemsAreaDeckTables()
         if CardUtils.bannedItems.spectrals[i] then
             local base = CardUtils.bannedItems.spectrals[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = consumableArea.T.x + consumableArea.T.w/2
@@ -4284,7 +4284,7 @@ function GUI.dynamicBannedItemsAreaDeckTables()
         if CardUtils.bannedItems.boosters[i] then
             local base = CardUtils.bannedItems.boosters[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = consumableArea.T.x + consumableArea.T.w/2
@@ -4311,7 +4311,7 @@ function GUI.dynamicBannedItemsAreaDeckTables()
         if CardUtils.bannedItems.jokers[i] then
             local base = CardUtils.bannedItems.jokers[i]
             local _scale = 0.7
-            local copy = copy_card(base, nil, _scale)
+            local copy = Utils.copyCard(base, nil, _scale)
             copy.uuid = base.uuid
             copy.greyed = nil
             copy.T.x = jokerArea.T.x + jokerArea.T.w/2
