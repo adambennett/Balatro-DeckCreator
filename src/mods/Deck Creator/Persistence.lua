@@ -158,25 +158,29 @@ function Persistence.refreshDeckList()
         -- Setup Localize text
         G.localization.descriptions["Back"][deck.slug] = deck.loc_txt
 
+        local function failSafeLoad(center)
+            center.text_parsed = {}
+            for _, line in ipairs(center.text) do
+                center.text_parsed[#center.text_parsed+1] = loc_parse_string(line)
+            end
+            center.name_parsed = {}
+            for _, line in ipairs(type(center.name) == 'table' and center.name or {center.name}) do
+                center.name_parsed[#center.name_parsed+1] = loc_parse_string(line)
+            end
+            if center.unlock then
+                center.unlock_parsed = {}
+                for _, line in ipairs(center.unlock) do
+                    center.unlock_parsed[#center.unlock_parsed+1] = loc_parse_string(line)
+                end
+            end
+        end
+
         -- Load it
         for g_k, group in pairs(G.localization) do
             if g_k == 'descriptions' then
                 for _, set in pairs(group) do
                     for _, center in pairs(set) do
-                        center.text_parsed = {}
-                        for _, line in ipairs(center.text) do
-                            center.text_parsed[#center.text_parsed+1] = loc_parse_string(line)
-                        end
-                        center.name_parsed = {}
-                        for _, line in ipairs(type(center.name) == 'table' and center.name or {center.name}) do
-                            center.name_parsed[#center.name_parsed+1] = loc_parse_string(line)
-                        end
-                        if center.unlock then
-                            center.unlock_parsed = {}
-                            for _, line in ipairs(center.unlock) do
-                                center.unlock_parsed[#center.unlock_parsed+1] = loc_parse_string(line)
-                            end
-                        end
+                        pcall(failSafeLoad, center)
                     end
                 end
             end
