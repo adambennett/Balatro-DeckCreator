@@ -33,7 +33,7 @@ local function serializeDeck(val, depth)
 end
 
 function Persistence.saveAllDecks()
-    local directory = "Mods/Deck Creator/Custom Decks"
+    local directory = "Mods/DeckCreator/CustomDecks"
     local filePath = directory .. "/" .. filename
     local serialized = serializeDeck(Utils.customDeckList, 0)
     love.filesystem.write(filePath, serialized)
@@ -41,7 +41,7 @@ function Persistence.saveAllDecks()
 end
 
 function Persistence.loadAllDeckLists()
-    local directory = "Mods/Deck Creator/Custom Decks"
+    local directory = "Mods/DeckCreator/CustomDecks"
     local files = love.filesystem.getDirectoryItems(directory)
 
     Utils.customDeckList = {}
@@ -164,7 +164,7 @@ function Persistence.refreshDeckList()
                 for _, set in pairs(group) do
                     for _, center in pairs(set) do
                         center.text_parsed = {}
-                        for _, line in ipairs(center.text) do
+                        for _, line in ipairs(center.text_parsed) do
                             center.text_parsed[#center.text_parsed+1] = loc_parse_string(line)
                         end
                         center.name_parsed = {}
@@ -186,7 +186,7 @@ function Persistence.refreshDeckList()
 end
 
 function Persistence.loadRedSealMessages()
-    local directory = "Mods/Deck Creator/assets"
+    local directory = "Mods/DeckCreator/assets"
     local filePath = directory .. "/" .. RedSealFilename
     local messages = { "Mama Liz's Chili Oil" }
     local fileContent = love.filesystem.read(filePath)

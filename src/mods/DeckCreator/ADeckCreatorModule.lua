@@ -15,7 +15,7 @@ local function customLoader(moduleName)
         return moduleCache[filename]
     end
 
-    local filePath = "Mods/Deck Creator/" .. filename
+    local filePath = "Mods/DeckCreator/" .. filename
     local fileContent = love.filesystem.read(filePath)
     if fileContent then
         local moduleFunc = assert(load(fileContent, "@"..filePath))
